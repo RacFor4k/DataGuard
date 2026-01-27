@@ -1,0 +1,173 @@
+/* ========================================================== */
+/* 0. БАЗОВЫЕ ПЕРЕМЕННЫЕ (СВЕТЛАЯ ТЕМА - ПО УМОЛЧАНИЮ) */
+/* ========================================================== */
+:root {
+  /* 1. ФОН И ТЕКСТ */
+  --primary-bg: rgb(255, 255, 255);
+  --secondary-bg: rgb(245, 245, 245);
+  --tertiary-bg: rgb(224, 224, 224);
+
+  --border-color: rgb(204, 204, 204);
+  --focus-color: rgb(74, 84, 255); /* #4a54ff */
+
+  --text-primary: rgba(0, 0, 0, 0.9);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-disabled: rgba(0, 0, 0, 0.3);
+
+  /* 2. СЕМАНТИЧЕСКИЕ ЦВЕТА */
+  --success-primary: rgb(56, 142, 60);    /* #388e3c */
+  --success-secondary: rgb(232, 245, 233); /* #e8f5e9 */
+  --success-border: rgb(165, 214, 167);   /* #a5d6a7 */
+
+  --info-primary: rgb(25, 118, 210);      /* #1976d2 */
+  --info-secondary: rgb(227, 242, 253);   /* #e3f2fd */
+  --info-border: rgb(144, 202, 249);      /* #90caf9 */
+
+  --warning-primary: rgb(245, 124, 0);    /* #f57c00 */
+  --warning-secondary: rgb(255, 248, 225); /* #fff8e1 */
+  --warning-border: rgb(255, 204, 128);   /* #ffcc80 */
+
+  --danger-primary: rgb(211, 47, 47);     /* #d32f2f */
+  --danger-secondary: rgb(255, 235, 238); /* #ffebee */
+  --danger-border: rgb(239, 154, 154);    /* #ef9a9a */
+
+  /* 3. ИНТЕРАКТИВНЫЕ ЭЛЕМЕНТЫ */
+  --accent-primary: hsl(237, 100%, 85%);  /* оставляем HSL — отлично! */
+  --accent-hover: rgb(82, 91, 255);       /* #525bff */
+  --accent-active: rgb(74, 84, 255);      /* #4a54ff */
+
+  --input-bg: rgb(255, 255, 255);
+  --input-border: rgb(158, 158, 158);     /* #9e9e9e */
+}
+
+
+/* ========================================================== */
+/* 1. ТЕМНАЯ ТЕМА */
+/* ========================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 1. ФОН И ТЕКСТ */
+    --primary-bg: rgb(9, 9, 9);
+    --secondary-bg: rgb(36, 36, 36);
+    --tertiary-bg: rgb(51, 51, 51);
+
+    --border-color: rgb(51, 51, 51);
+    --focus-color: rgb(100, 108, 255); /* #646cff */
+
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-disabled: rgba(255, 255, 255, 0.4);
+
+    /* 2. СЕМАНТИЧЕСКИЕ ЦВЕТА */
+    --success-primary: rgb(76, 175, 80);   /* #4caf50 */
+    --success-secondary: rgb(31, 53, 32);  /* #1f3520 */
+    --success-border: rgb(53, 94, 59);     /* #355e3b */
+
+    --info-primary: rgb(33, 150, 243);     /* #2196f3 */
+    --info-secondary: rgb(31, 39, 53);     /* #1f2735 */
+    --info-border: rgb(32, 65, 114);       /* #204172 */
+
+    --warning-primary: rgb(255, 152, 0);   /* #ff9800 */
+    --warning-secondary: rgb(53, 42, 31);  /* #352a1f */
+    --warning-border: rgb(114, 77, 32);    /* #724d20 */
+
+    --danger-primary: rgb(244, 67, 54);    /* #f44336 */
+    --danger-secondary: rgb(53, 31, 31);   /* #351f1f */
+    --danger-border: rgb(114, 32, 32);     /* #722020 */
+
+    /* 3. ИНТЕРАКТИВНЫЕ ЭЛЕМЕНТЫ */
+    --accent-primary: rgb(100, 108, 255);  /* #646cff */
+    --accent-hover: rgb(123, 131, 255);    /* #7b83ff */
+    --accent-active: rgb(74, 84, 255);     /* #4a54ff */
+    --accent-border: hsl(237, 100%, 25%);  /* оставляем HSL */
+
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-border: rgba(255, 255, 255, 0.1);
+  }
+}/* ========================================================== */
+/* 0. БАЗОВЫЕ ПЕРЕМЕННЫЕ (СВЕТЛАЯ ТЕМА - ПО УМОЛЧАНИЮ) */
+/* ========================================================== */
+:root {
+  /* 1. ФОН И ТЕКСТ */
+  --primary-bg: rgb(255, 255, 255);
+  --secondary-bg: rgb(245, 245, 245);
+  --tertiary-bg: rgb(224, 224, 224);
+
+  --border-color: rgb(204, 204, 204);
+  --focus-color: rgb(74, 84, 255); /* #4a54ff */
+
+  --text-primary: rgba(0, 0, 0, 0.9);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-disabled: rgba(0, 0, 0, 0.3);
+
+  /* 2. СЕМАНТИЧЕСКИЕ ЦВЕТА */
+  --success-primary: rgb(56, 142, 60);    /* #388e3c */
+  --success-secondary: rgb(232, 245, 233); /* #e8f5e9 */
+  --success-border: rgb(165, 214, 167);   /* #a5d6a7 */
+
+  --info-primary: rgb(25, 118, 210);      /* #1976d2 */
+  --info-secondary: rgb(227, 242, 253);   /* #e3f2fd */
+  --info-border: rgb(144, 202, 249);      /* #90caf9 */
+
+  --warning-primary: rgb(245, 124, 0);    /* #f57c00 */
+  --warning-secondary: rgb(255, 248, 225); /* #fff8e1 */
+  --warning-border: rgb(255, 204, 128);   /* #ffcc80 */
+
+  --danger-primary: rgb(211, 47, 47);     /* #d32f2f */
+  --danger-secondary: rgb(255, 235, 238); /* #ffebee */
+  --danger-border: rgb(239, 154, 154);    /* #ef9a9a */
+
+  /* 3. ИНТЕРАКТИВНЫЕ ЭЛЕМЕНТЫ */
+  --accent-primary: hsl(237, 100%, 85%);  /* оставляем HSL — отлично! */
+  --accent-hover: rgb(82, 91, 255);       /* #525bff */
+  --accent-active: rgb(74, 84, 255);      /* #4a54ff */
+
+  --input-bg: rgb(255, 255, 255);
+  --input-border: rgb(158, 158, 158);     /* #9e9e9e */
+}
+
+
+/* ========================================================== */
+/* 1. ТЕМНАЯ ТЕМА */
+/* ========================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 1. ФОН И ТЕКСТ */
+    --primary-bg: rgb(9, 9, 9);
+    --secondary-bg: rgb(36, 36, 36);
+    --tertiary-bg: rgb(51, 51, 51);
+
+    --border-color: rgb(51, 51, 51);
+    --focus-color: rgb(100, 108, 255); /* #646cff */
+
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-disabled: rgba(255, 255, 255, 0.4);
+
+    /* 2. СЕМАНТИЧЕСКИЕ ЦВЕТА */
+    --success-primary: rgb(76, 175, 80);   /* #4caf50 */
+    --success-secondary: rgb(31, 53, 32);  /* #1f3520 */
+    --success-border: rgb(53, 94, 59);     /* #355e3b */
+
+    --info-primary: rgb(33, 150, 243);     /* #2196f3 */
+    --info-secondary: rgb(31, 39, 53);     /* #1f2735 */
+    --info-border: rgb(32, 65, 114);       /* #204172 */
+
+    --warning-primary: rgb(255, 152, 0);   /* #ff9800 */
+    --warning-secondary: rgb(53, 42, 31);  /* #352a1f */
+    --warning-border: rgb(114, 77, 32);    /* #724d20 */
+
+    --danger-primary: rgb(244, 67, 54);    /* #f44336 */
+    --danger-secondary: rgb(53, 31, 31);   /* #351f1f */
+    --danger-border: rgb(114, 32, 32);     /* #722020 */
+
+    /* 3. ИНТЕРАКТИВНЫЕ ЭЛЕМЕНТЫ */
+    --accent-primary: rgb(100, 108, 255);  /* #646cff */
+    --accent-hover: rgb(123, 131, 255);    /* #7b83ff */
+    --accent-active: rgb(74, 84, 255);     /* #4a54ff */
+    --accent-border: hsl(237, 100%, 25%);  /* оставляем HSL */
+
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-border: rgba(255, 255, 255, 0.1);
+  }
+}

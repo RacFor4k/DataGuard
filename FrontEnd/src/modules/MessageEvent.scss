@@ -1,0 +1,101 @@
+@use "../variables" as *;
+
+/* Контейнер для всех сообщений */
+.message-container {
+    position: fixed; /* Прибиваем к экрану */
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999; /* Чтобы было поверх всего */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Интервал между сообщениями */
+}
+
+/* Элемент сообщения */
+.message-item {
+    position: relative;
+    background-color: var(--secondary-bg);
+    color: var(--text-primary);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    overflow: hidden; /* Скрывает контент, когда схлопывается */
+    
+    /* Анимация: макс. высота и прозрачность */
+    transition: all 0.5s ease-in-out; 
+    
+    /* Изначальная высота (с запасом) */
+    max-height: 100px; 
+    width: 300px;
+}
+
+/* Цвета по типу */
+.message-item--success {
+    border-left: 5px solid var(--success-primary); /* Зеленый */
+    background-color: var(--success-secondary);
+}
+
+.message-item--info {
+    border-left: 5px solid var(--info-primary); /* Синий */
+    background-color: var(--info-secondary);
+}
+
+.message-item--error {
+    border-left: 5px solid var(--danger-primary); /* Красный */
+    background-color: var(--danger-secondary);
+}
+
+/* Кнопка закрытия */
+.message-close {
+    padding: auto 0 0 0;
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.message-close:hover {
+    opacity: 1;
+}
+
+/* --- АНИМАЦИЯ ИСЧЕЗНОВЕНИЯ (CSSTransition) --- */
+
+// 1. Состояние ДО начала исчезновения (CSS-свойства, которые будут анимированы)
+.message-exit {
+    opacity: 1;
+    max-height: 100px; /* Исходная высота, чтобы анимация была плавной */
+    margin-bottom: 10px; /* Исходный зазор */
+}
+
+// 2. Состояние ВО ВРЕМЯ исчезновения
+.message-exit-active {
+    opacity: 0;
+    max-height: 0; /* Плавно сжимаем высоту */
+    margin-bottom: 0; /* Убираем зазор */
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    
+    // Длительность анимации
+    transition: all 500ms ease-in-out; /* Должно совпадать с timeout={500} в React */
+}
+
+// 3. (Опционально) Анимация появления
+.message-enter {
+    opacity: 0;
+    transform: translateX(100%);
+}
+.message-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: all 500ms ease-in-out;
+}

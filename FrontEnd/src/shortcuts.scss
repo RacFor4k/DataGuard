@@ -1,0 +1,54 @@
+.no-select{
+    -webkit-user-select: none;
+    *{
+       -webkit-user-select: none; 
+    }
+}
+
+.icon{
+    align-items: center;
+    display: flex;
+}
+
+.hide{
+    display: none !important;
+}
+
+.show{
+    display:inherit !important;
+}
+
+.d-flex{
+    display: flex !important;
+}
+
+.no-outline{
+    outline: none;
+}
+
+.w-100{
+    width: 100% !important;
+}
+
+.m-0{
+    margin: 0;
+}
+
+.b-t-1{
+    border-top: 1px solid;
+}
+
+.op-0{
+    opacity: 0;
+}
+
+.d-none{
+    display: none !important; 
+}
+
+.hide-inp{
+        opacity: 0;
+        position: absolute;
+        width: 0;
+        height: 0;
+}

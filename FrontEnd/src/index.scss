@@ -1,0 +1,96 @@
+@use "./variables" as *;
+
+:root {
+  font-family: "Google Sans",roboto,"Noto Sans Myanmar UI","Noto Sans Khmer",arial,sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: var(--text-primary);
+  background-color: var(--primary-bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+p{
+  margin: 0;
+}
+
+a {
+  font-weight: 500;
+  color: var(--accent-primary);
+  text-decoration: inherit;
+}
+a:hover {
+  color: var(--accent-hover);
+}
+
+body {
+  display:grid;
+  margin: 0;
+  width: 100%;
+  min-width: 320px;
+  min-height: 100dvh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--secondary-bg);
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: var(--accent-hover);
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+input{
+  font-family: "Google Sans",roboto,"Noto Sans Myanmar UI","Noto Sans Khmer",arial,sans-serif;
+  border: none;
+  border-radius: 4px;
+  outline: 1px solid;
+}
+
+input:focus{
+  outline-color: var(--accent-hover);
+}
+
+/* Блокировка всех кликов */
+body.clicks-blocked {
+  pointer-events: none;
+}
+
+/* Разрешить клики на оверлее (чтобы можно было закрыть по клику вне элемента, если нужно) */
+#click-blocker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  display: none;
+  pointer-events: auto; /* чтобы оверлей ловил клики */
+}
+
+/* Разрешить клики на целевом элементе */
+body.clicks-blocked .clicks-allowed,
+body.clicks-blocked #clicks-allowed-element {
+  pointer-events: auto !important;
+}
