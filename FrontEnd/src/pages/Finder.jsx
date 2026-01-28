@@ -1,7 +1,7 @@
 import './Finder.scss'
 import Header from '../modules/Header';
 import SearchBar from '../modules/SearchBar';
-import {Toolbar,SkeletToolbar} from '../modules/Toolbar'
+import {Toolbar} from '../modules/Toolbar'
 import { useEffect, useRef, useState } from 'react';
 import {finderUpdate, newFile} from '../services/filesystem'
 import FolderItem from '../modules/FolderItem';
@@ -9,10 +9,12 @@ import FileItem, { newfileItem } from '../modules/FileItem';
 import { AddEvent } from '../services/events';
 import { useNavigate } from 'react-router-dom';
 import { RandInt } from '../services/crypto';
-import { getToken } from '../services/secretStore';
+import { getHashedKey, getToken } from '../services/secretStore';
 import { updateJwt } from '../services/auth';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.DEV
+    ? 'https://localhost:5001/api/'
+    : '/api/';
 const CHUNK_SIZE = 1024*1024*5; //  5MB
 
 
@@ -115,12 +117,17 @@ export default function Finder(){
         
     },[update, path]);
 
+    useEffect(()=>{
+        if(getHashedKey()==null||getToken()==null)
+            navigate('/auth/')
+    })
+
     return (
         <div className='finder-content'>
             <div className='finder-head'>
                 <div className='finder-head-content'>
                     <Header path={path} setPath={setPath}></Header>
-                    <SearchBar></SearchBar>
+                    {/* <SearchBar></SearchBar> */}
                 </div>
                 
             </div>

@@ -1,6 +1,6 @@
 import { enc } from 'crypto-js/core';
-import { 
-    encryptTokenDeterministic, 
+import {
+    encryptTokenDeterministic,
     decryptTokenDeterministic,
     computeAuthResponse,
     hexToBytes,
@@ -11,7 +11,9 @@ import { AddEvent } from './events';
 import { getHashedKey, setHashedKey, setToken } from './secretStore';
 import { jwtDecode } from 'jwt-decode';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.DEV
+    ? import.meta.env.VITE_API_URL
+    : '/api/';
 
 /**
  * Логин с использованием Nonce и доказательства владения ключом.
@@ -21,16 +23,17 @@ const BASE_URL = import.meta.env.VITE_API_URL;
  * @param update Флаг для отображения уведомлений
  */
 export async function loginWithNonce(
-    username: string, 
-    key: CryptoKey, 
+    username: string,
+    key: CryptoKey,
     update: boolean = false
 ): Promise<boolean> {
     try {
+        console.log("erere")
         // 1. Получаем Nonce и ID сессии с сервера
         const response = await fetch(`${BASE_URL}auth/nonce/${username}`);
         if (!response.ok) throw new Error("Failed to get nonce");
-        
-        const nonceData = await response.json(); 
+
+        const nonceData = await response.json();
 
         const hashedKey = await computeAuthResponse(await computeAuthResponse(await cryptoKeyToHex(key)),nonceData.nonce);
 
@@ -46,7 +49,7 @@ export async function loginWithNonce(
         });
 
 
-        
+
         if (loginRes.ok) {
             const data = await loginRes.json();
             const jwt = data.token || data.JwtToken;
@@ -65,11 +68,11 @@ export async function loginWithNonce(
 
 export async function updateJwt() {
     console.log(jwtDecode(localStorage['token']), getHashedKey())
-    const username = jwtDecode(localStorage['token']).name; 
+    const username = jwtDecode(localStorage['token']).name;
     const response = await fetch(`${BASE_URL}auth/nonce/${username}`);
         if (!response.ok) throw new Error("Failed to get nonce");
-        
-        const nonceData = await response.json(); 
+
+        const nonceData = await response.json();
     const hashedKey = await computeAuthResponse(getHashedKey(), nonceData.nonce);
     const loginRes = await fetch(`${BASE_URL}auth/login`, {
             method: 'POST',
@@ -79,6 +82,7 @@ export async function updateJwt() {
                 HashedKey: hashedKey // Отправляем вычисленное доказательство
             })
         });
+        console.log(loginRes)
     if (loginRes.ok) {
             const data = await loginRes.json();
             const jwt = data.token || data.JwtToken;
@@ -112,7 +116,7 @@ export async function signup(username: string, key: CryptoKey, tokenHex: string)
             body: JSON.stringify({
                 UserName: username,
                 hashedKey: hashedKey,
-                EncodedKey: bufferToHex(encodedKey)  
+                EncodedKey: bufferToHex(encodedKey)
             })
         });
 

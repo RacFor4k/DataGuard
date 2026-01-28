@@ -16,7 +16,9 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0",
-    "react-transition-group": "^4.4.5"
+    "react-svg": "^16.4.0",
+    "react-transition-group": "^4.4.5",
+    "streamsaver": "^2.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

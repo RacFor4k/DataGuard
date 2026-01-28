@@ -1,5 +1,5 @@
 import './FolderItem.scss'
-import reactLogo from '../assets/react.svg'
+import { ReactSVG } from 'react-svg';
 import { newFolder } from '../services/filesystem';
 
 export default function FolderItem({name, color, scale, path, setPath, selectable, rename}){
@@ -38,14 +38,14 @@ export default function FolderItem({name, color, scale, path, setPath, selectabl
         data = <p>{name}</p>
     }
     return (
-        <div className={`fineder-item scale-${scale}`} onClick={!rename ? ()=>setPath(`${path}${name}/`) : ''}>
+        <div className={`fineder-item scale-${scale}`} >
             <label className={`selector ${!selectable ? 'd-none' : ''}`}>
                 <input type="checkbox" />
                 <span class="checkmark"></span>
             </label>
-            <div className='fineder-item-content'>
+            <div className='fineder-item-content' onClick={!rename ? ()=>setPath(`${path}${name}/`) : ''}>
                 <div className='finder-icon'>
-                    <img src={reactLogo} alt="" />
+                    <ReactSVG src='folder.svg'/>
                 </div>
                 <div className='folder-data'>
                     {data}

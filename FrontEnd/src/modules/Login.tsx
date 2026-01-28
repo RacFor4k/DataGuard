@@ -34,7 +34,7 @@ export default function Login(){
     return (
         <div className="auth-form">
             <div className="auth-form-head">
-               <img src={reactLogo} alt="" />
+               <img src='/logo.png' alt="" />
                <p>Вход в аккаунт</p>
             </div>
             <div className="auth-form-body">
@@ -44,7 +44,7 @@ export default function Login(){
                         id="login-input"
                         placeholder="Имя пользователя" 
                         //DEMO!
-                        defaultValue="guest"
+                        // defaultValue="guest"
                     />
                     <input 
                         type="password" 
@@ -52,7 +52,7 @@ export default function Login(){
                         id="password-input"
                         placeholder="Пароль" 
                         //DEMO!
-                        placeholder="Пароль: 123"
+                        // placeholder="Пароль: 123"
                     />
                     <div>
                         <text>Нет аккаунта? </text>

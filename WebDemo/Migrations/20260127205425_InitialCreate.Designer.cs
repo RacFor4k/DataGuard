@@ -10,7 +10,7 @@ using WebDemo.Data;
 namespace WebDemo.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260127154420_InitialCreate")]
+    [Migration("20260127205425_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

@@ -44,7 +44,7 @@ namespace WebDemo.Controllers
         public async Task<IActionResult> NewFile([FromBody] Models.NewFile request)
         {
             //добавить проверку на существование папки
-            string? origin = FileSystem.NewFile(request.Path, request.Name);
+            string? origin = FileSystem.NewFile(request.Path, request.Name, User.FindFirstValue("name"));
             if (origin == null)
             {
                 return BadRequest("Файл уже существует");
@@ -86,12 +86,25 @@ namespace WebDemo.Controllers
         {
             if (request.Chunk == null || request.Chunk.Length == 0)
                 return BadRequest("Чанк отсутствует.");
-            if (await FileSystem.WriteChunk(request.Path, request.Chunk.FileName, request.Chunk.OpenReadStream()))
+            if (await FileSystem.WriteChunk(request.Path, request.Chunk.FileName, User.FindFirstValue("name"), request.Chunk.OpenReadStream()))
             {
                 return Ok();
             }
             return StatusCode(500);
 
+        }
+
+        [HttpGet("download")]
+        public async Task<IActionResult> DownloadFile(string path, string fileName)
+        {
+            var userId = Int16.Parse(User.FindFirst("uid").Value);
+
+            // 1. Проверяем в БД, принадлежит ли файл пользователю
+            var fileRecord = await _context.Files
+                .FirstOrDefaultAsync(f => f.OwnerId == userId && f.Path == path && f.Name == fileName);
+            if (fileRecord == null) return NotFound("Файл не найден");
+            var stream = System.IO.File.OpenRead(fileRecord.Origin);
+            return File(stream, "application/octet-stream", fileName);
         }
     }
 }

@@ -12,7 +12,7 @@ function App() {
     <>
       {/* Контент */}
         <Routes>
-          <Route path='/' element={<Home/>}/>
+          <Route path='/'element={<Signup/>}/>
           <Route path='/finder' element={<Finder/>}/>
           <Route path='/auth' element={<Login />}/>
           <Route path='/auth/signup' element={<Signup/>}/> 

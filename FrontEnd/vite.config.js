@@ -10,5 +10,9 @@ export default defineConfig({
   ],
   server: {
     https: true, // Включаем режим https
+  },
+   build: {
+    outDir: '../WebDemo/wwwroot', 
+    emptyOutDir: true, // Очищать wwwroot перед сборкой
   }
 })

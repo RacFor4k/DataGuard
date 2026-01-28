@@ -1,5 +1,9 @@
+import { updateJwt } from './auth';
+
 // src/services/apiClient.ts
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.DEV
+    ? import.meta.env.VITE_API_URL
+    : '/api/';
 
 /**
  * Универсальный fetch-клиент с автоматическим обновлением токена при 401

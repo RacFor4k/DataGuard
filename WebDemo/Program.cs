@@ -56,6 +56,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseDefaultFiles(); // Позволяет искать index.html по умолчанию
+app.UseStaticFiles();  // Отдает файлы из wwwroot (билд Vite)
+
+app.UseRouting();
+app.UseAuthentication();
+
 app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
@@ -63,5 +69,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();

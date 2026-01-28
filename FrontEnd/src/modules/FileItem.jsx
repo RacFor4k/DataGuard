@@ -1,9 +1,50 @@
 import './FileItem.scss'
+import { DownloadService } from '../services/downloadService';
 import reactLogo from '../assets/react.svg'
 import { newFile } from '../services/filesystem';
+import { useState } from 'react';
+import { updateJwt } from '../services/auth';
+import { useNavigate } from 'react-router-dom';
+import { ReactSVG } from 'react-svg'
+
+const BASE_URL = import.meta.env.DEV
+    ? 'https://localhost:5001/api/'
+    : '/api/';
+const CHUNK_SIZE = 1024*1024*5; //  5MB
 
 export default function FileItem({name, color, scale, path, setPath, selectable, rename}){
-   
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [percent, setPercent] = useState(0);
+    const navigate = useNavigate();
+        const handleDownload = async () => {
+        // Добавляем защиту: если мы в режиме переименования, скачивание не запускаем
+        if (rename || isDownloading) return;
+
+        if(!updateJwt()){
+            navigate('/');
+            return;
+        }
+
+        setIsDownloading(true); // Включаем индикатор загрузки
+        setPercent(0);
+
+        try {
+            await DownloadService.download({
+                // Используем name и path напрямую из пропсов
+                url: `${BASE_URL}finder/download?path=${encodeURIComponent(path)}&fileName=${encodeURIComponent(name)}`,
+                fileName: name,
+                token: localStorage['token'],
+                onProgress: (p) => setPercent(p),
+            });
+            console.log("Загрузка завершена");
+        } catch (err) {
+            console.error("Ошибка:", err);
+            alert("Не удалось скачать файл");
+        } finally {
+            setIsDownloading(false); // Выключаем индикатор в любом случае
+        }
+    }
+
     let data;
     if(rename){
         data =     <input
@@ -27,14 +68,17 @@ export default function FileItem({name, color, scale, path, setPath, selectable,
         data = <p>{name}</p>
     }
     return (
-        <div className={`fineder-item scale-${scale}`} onClick={!rename ? ()=>setPath(`${path}${name}/`) : ''}>
+        <div 
+            className={`fineder-item scale-${scale} ${isDownloading ? 'loading' : ''}`} 
+            
+        >
             <label className={`selector ${!selectable ? 'd-none' : ''}`}>
-                <input type="checkbox" />
-                <span class="checkmark"></span>
+                <input type="checkbox" onClick={(e) => e.stopPropagation()} />
+                <span className="checkmark"></span>
             </label>
-            <div className='fineder-item-content'>
+            <div className='fineder-item-content' onClick={handleDownload}>
                 <div className='finder-icon'>
-                    <img src={reactLogo} alt="" />
+                    <ReactSVG src='file.svg'/>
                 </div>
                 <div className='file-data'>
                     {data}
