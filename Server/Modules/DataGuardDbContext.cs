@@ -17,6 +17,13 @@ namespace Server.Modules
                 .ValueGeneratedOnAdd()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+            modelBuilder.Entity<UserGroup>(e => e.ToTable("identity"));
+            modelBuilder.Entity<UserGroup>()
+                .HasKey(e => new { e.UserId, e.GroupId });
+            modelBuilder.Entity<UserGroup>().
+                Property(e => e.JoinedAt)
+                .ValueGeneratedOnAdd()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
         }
     }
 }
