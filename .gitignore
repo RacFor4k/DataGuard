@@ -428,3 +428,5 @@ FodyWeavers.xsd
 *.msp
 
 webdemo/storage/*
+appsettings.*.json
+!appsettings.json
