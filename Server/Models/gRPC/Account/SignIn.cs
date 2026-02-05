@@ -10,6 +10,7 @@ namespace Server.Models.gRPC.Account
         [ProtoMember(3)] public string Email { get; set; } = "";
         [ProtoMember(4)] public string EncryptedToken { get; set; } = "";
         [ProtoMember(5)] public List<KeyValuePair<int, string>> Groups { get; set; } = new List<KeyValuePair<int, string>>();
+        [ProtoMember(6)] public string SeccionId { get; set; } = string.Empty;
     }
 
     [ProtoContract]
