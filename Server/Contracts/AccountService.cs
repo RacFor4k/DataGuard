@@ -10,11 +10,12 @@ namespace Server.Services
         [Service]
         public interface IAccountServise
         {
-            ValueTask<SignUpResponce> signUp(SignUpRequest request, CallContext context = default);
-            ValueTask<SignInResponce> signIn(SignInRequest request, CallContext context = default);
+            ValueTask<SignUpResponce> SignUp(SignUpRequest request, CallContext context = default);
+            ValueTask<SignInResponce> SignIn(SignInRequest request, CallContext context = default);
 
-            ValueTask<CreateCompanyResponce> createCompany(CreateCompanyRequest request, CallContext context = default);
-            ValueTask<LiquidateCompanyResponce> liquidateCompany(LiquidateCompanyRequest request, CallContext context = default);
+            ValueTask<CreateCompanyResponce> CreateCompany(CreateCompanyRequest request, CallContext context = default);
+            ValueTask<LiquidateCompanyResponce> LiquidateCompany(LiquidateCompanyRequest request, CallContext context = default);
+            ValueTask<LiquidateCompanyResponce> LiquidateCompanyConfirm(LiquidateCompanyConfirmRequest request, CallContext context = default);
 
         }
     }
