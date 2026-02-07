@@ -2,11 +2,11 @@
 
 namespace Server.Middleware
 {
-    public class ReplayProtectionMiddleware
+    public class IdempotencyMiddleware
     {
         private readonly IMemoryCache _memoryCache;
         private readonly RequestDelegate _next;
-        public ReplayProtectionMiddleware(IMemoryCache memoryCache, RequestDelegate next)
+        public IdempotencyMiddleware(IMemoryCache memoryCache, RequestDelegate next)
         {
             _memoryCache = memoryCache;
             _next = next;

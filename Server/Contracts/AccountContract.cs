@@ -3,9 +3,9 @@ using ProtoBuf.Grpc;
 using ProtoBuf.Grpc.Configuration;
 using Server.Models.gRPC.Account;
 
-namespace Server.Services
+namespace Server.Contracts
 {
-    public class AccountService
+    public class AccountContract
     {
         [Service]
         public interface IAccountServise
