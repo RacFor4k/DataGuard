@@ -13,7 +13,7 @@ namespace Server.Middleware
         }
         public async Task Invoke(HttpContext context)
         {
-            if(context.)
+            if(context.Request.Headers.TryGetValue("User-uuid", out var user\Uuid))
             if(context.Request.Headers.TryGetValue("Idempotency-Key", out var key))
             {
                 var cacheKey = $"{userId}:{key}";
