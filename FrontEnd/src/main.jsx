@@ -4,11 +4,14 @@ import './index.scss'
 import './shortcuts.scss'
 import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom'
+import { LanguageProvider } from './context/LanguageContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
     <BrowserRouter>
-      <App />
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
     </BrowserRouter>
   // </StrictMode>,
 )

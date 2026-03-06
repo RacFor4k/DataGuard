@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { RandInt } from '../services/crypto';
 import { getHashedKey, getToken } from '../services/secretStore';
 import { updateJwt } from '../services/auth';
+import { useLanguage } from '../context/LanguageContext';
 
 const BASE_URL = import.meta.env.DEV
     ? 'https://localhost:5001/api/'
@@ -28,18 +29,18 @@ export default function Finder(){
     const [path, setPath] = useState('/');
     const [update, Update] = useState(0);
     const [selectable, setSelectable] = useState(false);
-    const [newFolder, setNewFolder] = useState(false); 
-    const [newFileMenu, setNewFileMenu] = useState(false); 
+    const [newFolder, setNewFolder] = useState(false);
     const [uploads, setUploads] = useState([])
     const navigate = useNavigate();
+    const { t } = useLanguage();
 
     const startUpload = (file) => {
-        const id = crypto.randomUUID(); // Генерируем ID для отслеживания
+        const id = crypto.randomUUID(); // Generate ID for tracking
 
-        // Создаем объект загрузки в стейте
+        // Create upload object in state
         setUploads(prev => [...prev, { id, fileName: file.name, progress: 0 }]);
 
-        // Создаем воркер специально для этого файла
+        // Create worker specifically for this file
         const worker = new Worker(
         new URL('../workers/upload.worker.js', import.meta.url),
         { type: 'module' }
@@ -49,16 +50,16 @@ export default function Finder(){
         const { status, progress, error } = event.data;
 
         if (status === 'progress') {
-            setUploads(prev => prev.map(item => 
+            setUploads(prev => prev.map(item =>
             item.id === id ? { ...item, progress } : item
             ));
         } else if (status === 'complete') {
             setUploads(prev => prev.filter(item => item.id !== id));
-            AddEvent('info-message', `Файл ${file.name} загружен`, 'success');
-            worker.terminate(); // Убиваем воркер после завершения
+            AddEvent('info-message', `File ${file.name} uploaded`, 'success');
+            worker.terminate(); // Terminate worker after completion
         } else if (status === 'error') {
             setUploads(prev => prev.filter(item => item.id !== id));
-            AddEvent('info-message', `Ошибка: ${file.name}`, 'error');
+            AddEvent('info-message', `Error: ${file.name}`, 'error');
             worker.terminate();
         }
         };
@@ -87,11 +88,10 @@ export default function Finder(){
     }
 
     const NEW_ITEM_MENU = [
-    {className:"footer-menu-btn", id:"footer-menu-new-file", text:"Новый файл", action:()=>setNewFileMenu(true)},
-    {className:"footer-menu-btn", id:"footer-menu-new-folder", text:"Новая папка", action:()=>setNewFolder(true)},
+    {className:"footer-menu-btn", id:"footer-menu-new-folder", text: t('finder', 'newFolder'), action:()=>setNewFolder(true)},
     {className:"footer-menu-btn", id:"footer-menu-upload-file", text:
         <label>
-            <p>Загрузить файл</p>
+            <p>{t('finder', 'uploadFile')}</p>
             <input type='file' className='hide-inp' onChange={handleFileChange}/>
         </label>,
         action: ()=>{},
@@ -104,17 +104,16 @@ export default function Finder(){
 
     useEffect(()=>{
         finderUpdate(path).then(([state, json])=>{
-            setNewFileMenu(false);
             setNewFolder(false);
             if(state==200){
                 setItems(json);
             }
             else if(state==401){
-                AddEvent('info-message', 'Для доступа необходимо аутентифицироваться!', 'error');
+                AddEvent('info-message', t('messages', 'authRequired'), 'error');
                 navigate('/');
             }
         });
-        
+
     },[update, path]);
 
     useEffect(()=>{
@@ -129,17 +128,16 @@ export default function Finder(){
                     <Header path={path} setPath={setPath}></Header>
                     {/* <SearchBar></SearchBar> */}
                 </div>
-                
+
             </div>
-            
+
             <div className='finder-body'>
-                {newFolder && <FolderItem path={path} scale={'medium'} name='Новая папка' rename={true} setPath={(_path=path)=>{setPath(_path); Update(update+1)}}></FolderItem>}
-                {newFileMenu && <FileItem path={path} scale={'medium'} name='Новый файл' rename={true} setPath={(_path=path)=>{setPath(_path); Update(update+1)}}></FileItem>}
+                {newFolder && <FolderItem path={path} scale={'medium'} name={t('finder', 'newFolder')} rename={true} setPath={(_path=path)=>{setPath(_path); Update(update+1)}}></FolderItem>}
                 <div className='finder-folders'>
                     {console.log(items) || items.folders.map((item)=>(
                         <FolderItem path={path} scale={'medium'} name={item.name} rename={false} setPath={(_path=path)=>{setPath(_path); Update(update+1)}} selectable={selectable}></FolderItem>
                     )) }
-                    
+
                 </div>
                 <div className='finder-files'>
                     {console.log(items) || items.files.map((item)=>(
@@ -148,7 +146,7 @@ export default function Finder(){
                 </div>
                 <div className={`scale-${scale} op-0`}/>
             </div>
-            <Toolbar setSelectable={setSelectable} selectable={selectable} menu={NEW_ITEM_MENU}></Toolbar>  
+            <Toolbar setSelectable={setSelectable} selectable={selectable} menu={NEW_ITEM_MENU}></Toolbar>
         </div>
     );
 }
