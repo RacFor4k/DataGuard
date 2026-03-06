@@ -1,13 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Query.Internal;
 using ProtoBuf;
 
-namespace Server.Models.gRPC.Account
+namespace GrpcContracts.Company
 {
     [ProtoContract]
     public class LiquidateCompanyRequest
     {
         [ProtoMember(1)] public string Token { get; set; }
-        [ProtoMember(2)] public Models.Db.Identity.Status Type { get; set; }
+        [ProtoMember(2)] public LiquidateCompanyStatus Type { get; set; }
     }
 
     [ProtoContract]
@@ -15,7 +14,17 @@ namespace Server.Models.gRPC.Account
     {
         [ProtoMember(1)] public int key { get; set; }
     }
+    
+    [ProtoContract]
     public class LiquidateCompanyResponce
     {
+    }
+    
+    public enum LiquidateCompanyStatus
+    {
+        Active,
+        Closed,
+        Archived,
+        Initial,
     }
 }

@@ -1,6 +1,6 @@
-﻿using ProtoBuf;
+using ProtoBuf;
 
-namespace Server.Models.gRPC.Account
+namespace GrpcContracts.Account
 {
     [ProtoContract]
     public class SignUpResponce

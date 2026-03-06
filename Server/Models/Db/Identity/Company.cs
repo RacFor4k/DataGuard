@@ -20,7 +20,7 @@ namespace Server.Models.Db.Identity
         WhiteTag,
         AdditionalAPIs,
     }
-    public enum Status
+    public enum CompanyStatus
     {
         Active,
         Closed,
@@ -36,7 +36,7 @@ namespace Server.Models.Db.Identity
         public int ExtendedStorageModules { get; set; } 
         public int UsedStorage {  get; set; }
         public int AvalibleStorage { get; set; }
-        public Status Status { get; set; }
+        public CompanyStatus Status { get; set; }
         public DateTime DateTime { get; set; }
     }
 }

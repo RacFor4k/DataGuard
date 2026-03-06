@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="GrpcContracts.Tests/GrpcContracts.Tests.csproj" />
+  <Project Path="GrpcContracts/GrpcContracts.csproj" Id="deaee078-bca0-4eef-acfd-dff0324c76b5" />
   <Project Path="Server/Server.csproj" Id="e67e7355-ce12-4925-9340-69a169822093" />
 </Solution>

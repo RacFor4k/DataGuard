@@ -16,6 +16,9 @@ namespace Server.Modules
                 .Property(e=>e.CreationTime)
                 .ValueGeneratedOnAdd()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            modelBuilder.Entity<User>()
+                .Property(e => e.RefreshToken)
+                .IsRequired(false);
 
             modelBuilder.Entity<UserGroup>(e => e.ToTable("identity"));
             modelBuilder.Entity<UserGroup>()
