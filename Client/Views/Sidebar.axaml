@@ -1,0 +1,146 @@
+<!--
+    Sidebar - Боковое меню навигации в стиле Fluent Design
+    
+    Режимы:
+    - Развернутый: 250px (иконки + текст)
+    - Свернутый: 60px (только иконки по центру)
+    
+    Структура:
+    - Верхнее меню: 5 элементов (Главная, Мессенджер, Файлы, Группы, Аудит)
+    - Нижнее меню: 3 элемента (Настройки, Аккаунт, Выход)
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.ViewModels"
+             xmlns:models="using:Client.Models"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="250" d:DesignHeight="600"
+             x:Class="Client.Views.Sidebar"
+             x:DataType="vm:SidebarViewModel">
+
+    <!-- СТИЛИ -->
+    <UserControl.Styles>
+        <!-- Базовый стиль кнопок -->
+        <Style Selector="Button.nav-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="4,1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+
+        <!-- Наведение мыши -->
+        <Style Selector="Button.nav-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
+        </Style>
+
+        <!-- Выбранная кнопка -->
+        <Style Selector="Button.nav-button.selected">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- ШАБЛОН ДЛЯ NAVIGATIONITEM -->
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="models:NavigationItem">
+            <DockPanel>
+                <Viewbox Width="16" Height="16"
+                         DockPanel.Dock="Left">
+                    <Path Data="{Binding Icon}"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform"/>
+                </Viewbox>
+                <TextBlock Text="{Binding Name}"
+                           Margin="12,0,0,0"
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           Classes="nav-text"/>
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
+    <Border Background="{DynamicResource SystemControlChromeMediumLowAcrylicWindowMediumBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="0,0,1,0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- ВЕРХНЕЕ МЕНЮ -->
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="4,8,4,4">
+                    <!-- Кнопка переключения режима -->
+                    <Button Classes="nav-button" Command="{Binding ToggleExpandCommand}">
+                        <DockPanel>
+                            <Viewbox Width="16" Height="16"
+                                     DockPanel.Dock="Left">
+                                <Path Data="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Stretch="Uniform"/>
+                            </Viewbox>
+                            <TextBlock Text="Свернуть"
+                                       Margin="12,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="14"
+                                       Classes="nav-text"/>
+                        </DockPanel>
+                    </Button>
+
+                    <Separator Margin="8,4" Opacity="0.3"/>
+
+                    <!-- Элементы навигации (5 штук) -->
+                    <StackPanel x:Name="TopButtonsPanel" Spacing="2">
+                        <Button Classes="nav-button"
+                                Content="{Binding TopItems[0]}"
+                                Command="{Binding SelectItemCommand}"
+                                CommandParameter="{Binding TopItems[0]}"/>
+                        <Button Classes="nav-button"
+                                Content="{Binding TopItems[1]}"
+                                Command="{Binding SelectItemCommand}"
+                                CommandParameter="{Binding TopItems[1]}"/>
+                        <Button Classes="nav-button"
+                                Content="{Binding TopItems[2]}"
+                                Command="{Binding SelectItemCommand}"
+                                CommandParameter="{Binding TopItems[2]}"/>
+                        <Button Classes="nav-button"
+                                Content="{Binding TopItems[3]}"
+                                Command="{Binding SelectItemCommand}"
+                                CommandParameter="{Binding TopItems[3]}"/>
+                        <Button Classes="nav-button"
+                                Content="{Binding TopItems[4]}"
+                                Command="{Binding SelectItemCommand}"
+                                CommandParameter="{Binding TopItems[4]}"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- НИЖНЕЕ МЕНЮ -->
+            <Border Grid.Row="1"
+                    Padding="4"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,1,0,0">
+                <StackPanel x:Name="BottomButtonsPanel" Spacing="2">
+                    <Button Classes="nav-button"
+                            Content="{Binding BottomItems[0]}"
+                            Command="{Binding SelectItemCommand}"
+                            CommandParameter="{Binding BottomItems[0]}"/>
+                    <Button Classes="nav-button"
+                            Content="{Binding BottomItems[1]}"
+                            Command="{Binding SelectItemCommand}"
+                            CommandParameter="{Binding BottomItems[1]}"/>
+                    <Button Classes="nav-button"
+                            Content="{Binding BottomItems[2]}"
+                            Command="{Binding SelectItemCommand}"
+                            CommandParameter="{Binding BottomItems[2]}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

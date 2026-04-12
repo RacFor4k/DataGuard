@@ -25,7 +25,7 @@ namespace Server.Services
             _jwtModule = jwtModule;
             _random = new Random((int)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         }
-
+         
         // Асинхронный метод получения nonce для аутентификации
         public async ValueTask<AuthNonceResponce> AuthNonce(AuthNonceRequest request, CallContext context = default)
         {

@@ -1,0 +1,34 @@
+<!--
+    FilePage - Страница файлов.
+
+    Вкладки (FileTabs) вынесены на уровень MainWindow (на самый верх окна).
+    Здесь только область контента выбранной вкладки.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+             x:Class="Client.Views.FilePage"
+             x:DataType="vm:FilePageViewModel">
+
+    <!-- Область контента выбранной вкладки (заглушка) -->
+    <Border Background="{DynamicResource SystemControlPageBackgroundCache}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Spacing="12">
+            <TextBlock Text="📂"
+                       FontSize="48"
+                       HorizontalAlignment="Center"
+                       Opacity="0.4"/>
+            <TextBlock Text="Содержимое вкладки"
+                       FontSize="14"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="В будущем здесь будет отображаться содержимое выбранной вкладки"
+                       FontSize="12"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</UserControl>
