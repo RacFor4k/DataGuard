@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option csharp_namespace = "Contracts.Protos.Auth";
+
+// Определение сервиса аутентификации.
+service Authentication {
+  // Регистрирует нового пользователя
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+
+  // Утсановка зашифрованного ключа пользователя мастер-ключом
+  rpc SetMasterEncryptedKey (SetMasterEncryptedKeyRequest) returns (SetMasterEncryptedKeyResponse);
+
+  // Вход существующего пользователя
+  rpc Login (LoginRequest) returns (LoginResponse);
+
+  // Обновление токена пользователя
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
+}
+
+// Запрос на регистрацию пользователя
+message RegisterRequest {
+  string registration_code = 1; // 12 символов nanoid (Английский алфавит)
+  string pin = 2; // от 6 до 18 цифр
+  bytes encrypteded_key = 3; // base64 зашифрованный ключ
+  bytes public_key = 4; // публичный ключ пользователя
+}
+
+// Ответ на запрос регистрации пользователя
+message RegisterResponse {
+  bool success = 1;
+  bytes public_master_key = 2; // публичный мастер-ключ
+  string jwt_token = 3;
+  string message = 4;
+
+}
+
+// Запрос на установку зашифрованного ключа пользователя мастер-ключом
+message SetMasterEncryptedKeyRequest {
+  bytes master_encrypted_key = 1; // мастер-ключ
+  string jwt_token = 2; 
+}
+
+// Ответ на запрос установки зашифрованного ключа пользователя мастер-ключом
+message SetMasterEncryptedKeyResponse {
+  bool success = 1;
+  string jwt_token = 2; 
+  string message = 3;
+}
+
+// Запрос на вход пользователя
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// Ответ на запрос входа пользователя
+message LoginResponse {
+  bool success = 1;
+  string jwt_token = 2; 
+  string message = 3;
+}
+
+// Запрос на обновление токена пользователя
+message RefreshTokenRequest {
+  string token = 1;
+}
+
+// Ответ на запрос обновления токена пользователя
+message RefreshTokenResponse {
+  bool success = 1;
+  string token = 2;
+  string message = 3;
+}

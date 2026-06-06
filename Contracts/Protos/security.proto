@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option csharp_namespace = "Contracts.Protos.Security";
+
+service SecurityService {
+    rpc GetNonce (NonceRequest) returns (NonceResponse);
+}
+
+message NonceRequest {
+    string client_uuid = 1;
+}
+
+message NonceResponse {
+    string nonce = 1;
+    string server_signature = 2;
+}

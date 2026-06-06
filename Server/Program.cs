@@ -1,84 +1,50 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using ProtoBuf.Grpc.Server;
-using System.Text;
-using GrpcContracts;
-using Server.Modules;
+using Server.Interfaces;
 using Server.Services;
-using Server.Middleware;
+using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
+// Создание и настройка приложения
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавление сервисов в контейнер зависимостей
+// ── Настройка сервисов ───────────────────────────────────────────────────────
 
-// Регистрация MemoryCache для кэширования nonce и других данных
-builder.Services.AddMemoryCache();
+// Подключение к Redis
+var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection") ?? throw new InvalidOperationException("Redis connection string not found.");
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
 
-// Регистрация DbContext с PostgreSQL
-builder.Services.AddDbContext<DataGuardDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Подключение к БД
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Postgres connection string not found.");
+builder.Services.AddDbContext<DataGuardDbContext>(options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
+// JWT Service
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// REST контроллеры
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+// OpenAPI (Swagger) для разработки
 builder.Services.AddOpenApi();
 
+// gRPC сервисы
 builder.Services.AddGrpc();
 
-// Регистрация сервисов с областью видимости Scoped
-builder.Services.AddScoped<IAccountServise, AccountService>();
-builder.Services.AddScoped<IJwtModule, JwtModule>();
-
-// Регистрация middleware
-builder.Services.AddScoped<TimeSynchronization>();
-builder.Services.AddScoped<IdempotencyMiddleware>();
-
-// JWT Authentication
-var jwtConfig = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtConfig["SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey не настроен");
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        ValidateIssuer = true,
-        ValidIssuer = jwtConfig["Issuer"],
-        ValidateAudience = true,
-        ValidAudience = jwtConfig["Audience"],
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-});
-
-builder.Services.AddAuthorization();
+// ── Пайплайн приложения ─────────────────────────────────────────────────────
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// OpenAPI endpoint (только для разработки)
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-
-// Добавление middleware для синхронизации времени
-app.UseMiddleware<TimeSynchronization>();
-
-// Добавление middleware для идемпотентности запросов
-app.UseMiddleware<IdempotencyMiddleware>();
-
-app.UseAuthentication();
 app.UseAuthorization();
 
+// gRPC endpoint
+app.MapGrpcService<AuthenticationService>();
+
+// REST endpoints
 app.MapControllers();
-app.MapGrpcService<AccountService>();
 
 app.Run();

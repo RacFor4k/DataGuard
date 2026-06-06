@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:18
+    container_name: dg_postgres18_db
+    restart: always
+    environment:
+      # Задайте ваши логин, пароль и имя базы данных здесь:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Важно: для Postgres 18+ путь внутри контейнера должен быть строго /var/lib/postgresql
+      - pg_data_v18:/var/lib/postgresql
+
+  redis:
+    image: redis:latest
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+volumes:
+  pg_data_v18:
+  redis_data:
