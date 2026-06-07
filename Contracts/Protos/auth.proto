@@ -15,6 +15,9 @@ service Authentication {
 
   // Обновление токена пользователя
   rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
+
+  // Создание кода регистрации
+  rpc CreateRegistrationCode (CreateRegistrationCodeRequest) returns (CreateRegistrationCodeResponse);
 }
 
 // Запрос на регистрацию пользователя
@@ -69,5 +72,22 @@ message RefreshTokenRequest {
 message RefreshTokenResponse {
   bool success = 1;
   string token = 2;
+  string message = 3;
+}
+
+// Запрос на создание кода регистрации
+message CreateRegistrationCodeRequest {
+  string name = 1;
+  string surname = 2;
+  string email = 3;
+  repeated string groups = 4;
+  repeated string admin_groups = 5;
+  string token = 6;
+}
+
+// Ответ на запрос создания кода регистрации
+message CreateRegistrationCodeResponse {
+  bool success = 1;
+  string registration_code = 2;
   string message = 3;
 }

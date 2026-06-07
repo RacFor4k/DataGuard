@@ -76,9 +76,9 @@ namespace Server.Services
                 Name = registrationData.Name,
                 Surname = registrationData.Surname,
                 Email = registrationData.Email,
-                PinCodeHash = registrationData.PinCodeHash,
+                PinCodeHash = request.Pin,
                 PublicKey = request.PublicKey.ToByteArray(),
-                EncryptedKey = registrationData.EncryptedKey,
+                EncryptedKey = request.EncryptededKey.ToByteArray(),
                 MasterEncryptedKey = null
             };
             await _dbContext.Users.AddAsync(user);
@@ -129,7 +129,7 @@ namespace Server.Services
                 return new RegisterResponse { Success = false, Message = "Pin is empty" };
             }
 
-            return new RegisterResponse { Success = true, Message = "OK", PublicMasterKey = ByteString.CopyFrom(registrationData.MasterPublicKey) };
+            return new RegisterResponse { Success = true, Message = "OK", PublicMasterKey = ByteString.CopyFrom(Convert.ToByte("asdasd")) };
         }
 
         /// <summary>

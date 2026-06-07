@@ -11,10 +11,7 @@ namespace Server.Models
         public required string Name { get; set; }
         public required string Surname { get; set; }
         public required string Email { get; set; }
-        public required IEnumerable<string> Groups { get; set; }
+        public required IEnumerable<Guid> Groups { get; set; }
         public required IEnumerable<Guid> AdminGroups { get; set; }
-        public required string PinCodeHash { get; set; }
-        public required byte[] EncryptedKey { get; set; }
-        public required byte[] MasterPublicKey { get; set; }
     }
 }

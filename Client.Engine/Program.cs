@@ -21,7 +21,7 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddGrpc();
 
-builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.AuthenticationBase>(options =>
+builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.AuthenticationClient>(options =>
 {
     options.Address = new Uri(builder.Configuration["Grpc:AuthUrl"] ?? throw new InvalidOperationException("Missing Grpc:AuthUrl configuration"));
 });
