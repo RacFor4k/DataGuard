@@ -168,17 +168,17 @@ namespace Server.Services
             if(_userAccessor.User == null || !_userAccessor.User.IsAccessToken())
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
+                return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
             }
             if (request.MasterEncryptedKey.Length != 512)
             {
                 _logger.LogInformation($"{context.Peer}\tMaster encrypted key is empty");
-                return new SetMasterEncryptedKeyResponse { Status = 400, Message = "Master encrypted key is empty", JwtToken = "" };
+                return new SetMasterEncryptedKeyResponse { Status = 400, Message = "Master encrypted key is empty", JwtRefreshToken = "", JwtAccessToken = "" };
             }
             if (!_userAccessor.User.Groups.Contains("system:master-key"))
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterEncryptedKeyResponse { Status = 403, Message = "Token is invalid", JwtToken = "" };
+                return new SetMasterEncryptedKeyResponse { Status = 403, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
             }
             
             _userAccessor.User.Groups = await _dbContext.GroupMembers
@@ -186,9 +186,10 @@ namespace Server.Services
                 .Select(gm => gm.Group.Name)
                 .ToListAsync();
 
-            string jwtToken = await _jwtService.GenerateRefreshTokenAsync(_userAccessor.User);
-            await _jwtService.RevokeTokenAsync(request.JwtToken);
-            return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtToken = jwtToken };
+            string jwtRefreshToken = await _jwtService.GenerateRefreshTokenAsync(_userAccessor.User);
+            string jwtAccessToken = await _jwtService.GenerateAccessTokenAsync(_userAccessor.User);
+            await _jwtService.RevokeTokenAsync(_userAccessor.User);
+            return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
         /// <summary>

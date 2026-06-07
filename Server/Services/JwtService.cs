@@ -72,10 +72,6 @@ namespace Server.Services
         
         public Task<string> GenerateRefreshTokenAsync(UserJwt userJwt)
         {
-            if (userJwt.IsAccessToken())
-            {
-                throw new InvalidOperationException("Token is an access token");
-            }
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
