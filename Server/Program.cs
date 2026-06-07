@@ -2,7 +2,7 @@ using Server.Interfaces;
 using Server.Services;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
-using Server.Middleware;
+using Server.Middlewares;
 
 // Создание и настройка приложения
 var builder = WebApplication.CreateBuilder(args);

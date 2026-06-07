@@ -6,7 +6,7 @@ using Server.Interfaces;
 using Server.Models;
 using Server.Services;
 
-namespace Server.Middleware
+namespace Server.Middlewares
 {
     public class JwtMiddleware
     {
