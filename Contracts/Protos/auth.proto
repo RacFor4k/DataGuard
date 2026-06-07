@@ -65,13 +65,13 @@ message LoginResponse {
 
 // Запрос на обновление токена пользователя
 message RefreshTokenRequest {
-  string token = 1;
+  string jwt_token = 1;
 }
 
 // Ответ на запрос обновления токена пользователя
 message RefreshTokenResponse {
   bool success = 1;
-  string token = 2;
+  string jwt_token = 2;
   string message = 3;
 }
 
@@ -82,7 +82,7 @@ message CreateRegistrationCodeRequest {
   string email = 3;
   repeated string groups = 4;
   repeated string admin_groups = 5;
-  string token = 6;
+  string jwt_token = 6;
 }
 
 // Ответ на запрос создания кода регистрации

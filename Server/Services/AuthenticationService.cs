@@ -139,7 +139,7 @@ namespace Server.Services
         public override async Task<SetMasterEncryptedKeyResponse> SetMasterEncryptedKey(SetMasterEncryptedKeyRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Set master encrypted key request from {context.Peer}");
-
+            UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
             return new SetMasterEncryptedKeyResponse { Success = true, Message = "OK" };
         }
 
@@ -159,7 +159,7 @@ namespace Server.Services
         /// </summary>
         public override async Task<RefreshTokenResponse> RefreshToken(RefreshTokenRequest request, ServerCallContext context)
         {
-            return new RefreshTokenResponse { Success = true, Message = "OK", Token = "JWT" };
+            return new RefreshTokenResponse { Success = true, Message = "OK", JwtToken = "JWT" };
         }
 
         public override async Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
@@ -190,7 +190,7 @@ namespace Server.Services
                 return new CreateRegistrationCodeResponse { Success = false, Message = "Groups is empty" };
             }
             
-            UserJwt? userJwt = _jwtService.ParceToken(request.Token);
+            UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
             if (userJwt == null)
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
