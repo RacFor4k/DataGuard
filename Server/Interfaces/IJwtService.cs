@@ -29,14 +29,14 @@ public interface IJwtService
     /// <param name="token">JWT токен для валидации.</param>
     /// <param name="isRefreshToken">Признак, что проверяем Refresh токен.</param>
     /// <returns>Список claims из токена, если токен валиден, иначе null.</returns>
-    Task<IEnumerable<Claim>?> VerifyTokenAsync(string token);
+    Task<IEnumerable<Claim>?> VerifyTokenAsync(string token, bool isRefreshToken = false);
 
     /// <summary>
     /// Извлекает UserJwt из токена.
     /// </summary>
     /// <param name="token">JWT токен.</param>
     /// <returns>UserJwt объект или null, если не найден.</returns>
-    Task<UserJwt?> ParceTokenAsync(string token);
+    UserJwt? ParceToken(string token);
 
     /// <summary>
     /// Принудительное аннулирование Access и Refresh токенов.

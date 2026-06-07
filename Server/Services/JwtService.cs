@@ -36,7 +36,7 @@ namespace Server.Services
         /// </summary>
         /// <param name="userJwt">UserJwt объект.</param>
         /// <returns>Access токен.</returns>
-        public async Task<string> GenerateAccessTokenAsync(UserJwt userJwt) 
+        public Task<string> GenerateAccessTokenAsync(UserJwt userJwt) 
         {
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -63,10 +63,10 @@ namespace Server.Services
                 expires: userJwt.ExpirationTime,
                 signingCredentials: credentials);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
         }
         
-        public async Task<string> GenerateRefreshTokenAsync(UserJwt userJwt)
+        public Task<string> GenerateRefreshTokenAsync(UserJwt userJwt)
         {
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -87,12 +87,12 @@ namespace Server.Services
                 expires: userJwt.ExpirationTime,
                 signingCredentials: credentials);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
         }
 
-        public async Task<IEnumerable<Claim>?> VerifyTokenAsync(string token)
+        public async Task<IEnumerable<Claim>?> VerifyTokenAsync(string token, bool isRefreshToken = false)
         {
-            if (string.IsNullOrWhiteSpace(token) || await IsTokenBlacklistedAsync(token))
+            if (string.IsNullOrWhiteSpace(token))
             {
                 return null;
             }
@@ -109,7 +109,20 @@ namespace Server.Services
                     IssuerSigningKey = securityKey,
                     ClockSkew = TimeSpan.FromMinutes(1)
                 }, out SecurityToken validatedToken);
-                return ((JwtSecurityToken)validatedToken).Claims;
+                JwtSecurityToken validatedJwtToken = (JwtSecurityToken)validatedToken;
+                if (isRefreshToken)
+                {
+                    DbUserJwt? dbToken = await _dbContext.UserJwtRefreshTokens.FindAsync(validatedJwtToken.Id);
+                    if (dbToken == null)
+                    {
+                        return null;
+                    }
+                    if (validatedJwtToken.Subject != dbToken.UserId)
+                    {
+                        return null;
+                    }
+                }
+                return validatedJwtToken.Claims;
             }
             catch(Exception e)
             {
@@ -118,7 +131,7 @@ namespace Server.Services
             }
         }
 
-        public async Task<UserJwt?> ParceTokenAsync(string token)
+        public UserJwt? ParceToken (string token)
         {
             if (string.IsNullOrWhiteSpace(token))
             {
@@ -165,7 +178,7 @@ namespace Server.Services
         {
             try
             {
-                UserJwt userJwt = await ParceTokenAsync(token) ?? throw new InvalidOperationException("Token is invalid");
+                UserJwt userJwt = ParceToken(token) ?? throw new InvalidOperationException("Token is invalid");
                 DbUserJwt? dbUserJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(userJwt.JwtId);
                 if (dbUserJwt == null)
                 {
@@ -189,7 +202,7 @@ namespace Server.Services
 
         public async Task<bool> IsTokenBlacklistedAsync(string token)
         {
-            UserJwt? userJwt = await ParceTokenAsync(token);
+            UserJwt? userJwt = ParceToken(token);
             if (userJwt == null)
             {
                 return false;
@@ -199,7 +212,7 @@ namespace Server.Services
 
         public async Task AddTokenToBlacklistAsync(string token)
         {
-            UserJwt? userJwt = await ParceTokenAsync(token);
+            UserJwt? userJwt = ParceToken(token);
             if (userJwt == null)
             {
                 throw new InvalidOperationException("Token is invalid");

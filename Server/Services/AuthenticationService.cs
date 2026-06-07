@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
 using StackExchange.Redis.KeyspaceIsolation;
+using NanoidDotNet;
 
 namespace Server.Services
 {
@@ -88,7 +89,7 @@ namespace Server.Services
             {
                 var groupMember = new GroupMember
                 {
-                    GroupId = Guid.CreateVersion7(),
+                    GroupId = group,
                     UserId = user.UUID,
                     CompanyId = registrationData.CompanyId,
                     JoinDate = DateTime.UtcNow,
@@ -161,52 +162,67 @@ namespace Server.Services
             return new RefreshTokenResponse { Success = true, Message = "OK", Token = "JWT" };
         }
 
-        public override Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
+        public override async Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Create registration code request from {context.Peer}");
 
             if(string.IsNullOrEmpty(request.Name))
             {
                 _logger.LogInformation($"{context.Peer}\tName is empty");
-                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Name is empty" });
+                return new CreateRegistrationCodeResponse { Success = false, Message = "Name is empty" };
             }
 
             if (string.IsNullOrEmpty(request.Surname))
             {
                 _logger.LogInformation($"{context.Peer}\tSurname is empty");
-                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Surname is empty" });
+                return new CreateRegistrationCodeResponse { Success = false, Message = "Surname is empty" };
             }
 
             if (string.IsNullOrEmpty(request.Email))
             {
                 _logger.LogInformation($"{context.Peer}\tEmail is empty");
-                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Email is empty" });
+                return new CreateRegistrationCodeResponse { Success = false, Message = "Email is empty" };
             }
 
             if (request.Groups.Count == 0)
             {
                 _logger.LogInformation($"{context.Peer}\tGroups is empty");
-                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Groups is empty" });
+                return new CreateRegistrationCodeResponse { Success = false, Message = "Groups is empty" };
             }
-
-            try{
+            
+            UserJwt? userJwt = _jwtService.ParceToken(request.Token);
+            if (userJwt == null)
+            {
+                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                return new CreateRegistrationCodeResponse { Success = false, Message = "Token is invalid" };
+            }
+            Guid companyId = _dbContext.Users.Where(u => u.UUID == userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
+            try
+            {
                 var registrationData = new RegistrationData
                 {
                     Name = request.Name,
                     Surname = request.Surname,
                     Email = request.Email,
-                    CompanyId = null,
+                    CompanyId = companyId,
                     Groups = request.Groups.Select(Guid.Parse).ToList(),
                     AdminGroups = request.AdminGroups.Select(Guid.Parse).ToList()
                 };
+                string registrationCode = await Nanoid.GenerateAsync(Nanoid.Alphabets.UppercaseLettersAndDigits, 12);
+                if(!await _redis.StringSetAsync(registrationCode, JsonSerializer.Serialize(registrationData)))
+                {
+                    _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
+                    return new CreateRegistrationCodeResponse { Success = false, Message = "Registration code is invalid" };
+                }            
+                return new CreateRegistrationCodeResponse { Success = true, Message = "OK", RegistrationCode = registrationCode };
             }
             catch (Exception ex)
             {
                 _logger.LogInformation($"{context.Peer}\tRegistration data is invalid");
-                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Registration data is invalid" });
+                return new CreateRegistrationCodeResponse { Success = false, Message = "Registration data is invalid" };
             }
 
-            
+
         }
     }
 }

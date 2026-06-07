@@ -7,7 +7,7 @@ namespace Server.Models
 {
     public class RegistrationData
     {
-        public required Guid CompanyId { get; set; }
+        public Guid CompanyId { get; set; } = Guid.CreateVersion7();
         public required string Name { get; set; }
         public required string Surname { get; set; }
         public required string Email { get; set; }

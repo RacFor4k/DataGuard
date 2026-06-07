@@ -11,7 +11,7 @@ namespace Server.Models
     public class Icon
     {
         [Key]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.CreateVersion7();
         public Guid? CompanyId { get; set; }
         public required string Path { get; set; }
         public string? Name { get; set; }

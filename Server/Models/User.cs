@@ -9,7 +9,7 @@ namespace Server.Models
     public class User
     {
         [Key]
-        public Guid UUID { get; set; }
+        public Guid UUID { get; set; } = Guid.CreateVersion7();
         public required Guid CompanyId { get; set; }
         public required string Name { get; set; }
         public required string Surname { get; set; }
