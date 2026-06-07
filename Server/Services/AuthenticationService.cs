@@ -70,7 +70,12 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tUser is already registered");
                 return new RegisterResponse { Status = 409, Message = "User is already registered" };
             }
-
+            Company? company = await _dbContext.Companies.Where(c => c.CompanyId == registrationData.CompanyId).FirstOrDefaultAsync();
+            if (company == null)
+            {
+                _logger.LogInformation($"{context.Peer}\tCompany is invalid");
+                return new RegisterResponse { Status = 400, Message = "Company is invalid" };
+            }
             var user = new User
             {
                 CompanyId = registrationData.CompanyId,
@@ -80,37 +85,47 @@ namespace Server.Services
                 PinCodeHash = request.Pin,
                 PublicKey = request.PublicKey.ToByteArray(),
                 EncryptedKey = request.EncryptededKey.ToByteArray(),
-                MasterEncryptedKey = null
+                MasterEncryptedKey = null,
+                Company = company
             };
             await _dbContext.Users.AddAsync(user);
-
-
-            foreach (var group in registrationData.Groups)
+            try
             {
-                var groupMember = new GroupMember
+                foreach (var groupId in registrationData.Groups)
                 {
-                    GroupId = group,
-                    UserId = user.UUID,
-                    CompanyId = registrationData.CompanyId,
-                    JoinDate = DateTime.UtcNow,
-                    Role = GroupRole.User
-                };
-                await _dbContext.GroupMembers.AddAsync(groupMember);
-            }
+                    var groupMember = new GroupMember
+                    {
+                        GroupId = groupId,
+                        Group = await _dbContext.Groups.Where(g => g.Id == groupId).FirstAsync(),
+                        UserId = user.UUID,
+                        User = user,
+                        CompanyId = registrationData.CompanyId,
+                        JoinDate = DateTime.UtcNow,
+                        Role = GroupRole.User
+                    };
+                    await _dbContext.GroupMembers.AddAsync(groupMember);
+                }
 
-            foreach (var adminGroup in registrationData.AdminGroups)
+                foreach (var adminGroupId in registrationData.AdminGroups)
+                {
+                    var groupMember = new GroupMember
+                    {
+                        GroupId = adminGroupId,
+                        Group = await _dbContext.Groups.Where(g => g.Id == adminGroupId).FirstAsync(),
+                        UserId = user.UUID,
+                        User = user,
+                        CompanyId = registrationData.CompanyId,
+                        JoinDate = DateTime.UtcNow,
+                        Role = GroupRole.Admin
+                    };
+                    await _dbContext.GroupMembers.AddAsync(groupMember);
+                }
+            }
+            catch (Exception ex)
             {
-                var groupMember = new GroupMember
-                {
-                    GroupId = adminGroup,
-                    UserId = user.UUID,
-                    CompanyId = registrationData.CompanyId,
-                    JoinDate = DateTime.UtcNow,
-                    Role = GroupRole.Admin
-                };
-                await _dbContext.GroupMembers.AddAsync(groupMember);
+                _logger.LogInformation($"{context.Peer}\tGroupMembers is invalid\n{ex.Message}");
+                return new RegisterResponse { Status = 400, Message = "GroupMembers is invalid" };
             }
-
             // Создание токена
             UserJwt userJwt = new UserJwt
             {
@@ -118,9 +133,15 @@ namespace Server.Services
                 Name = user.Name,
                 Surname = user.Surname,
                 Email = user.Email,
-                Groups = new List<string> { "User" },
+                Groups = ["system:master-key"],
                 JwtId = Guid.CreateVersion7().ToString(),
             };
+            byte[]? masterPublicKey = await _dbContext.Users.Where(u => u.UUID == user.UUID).Select(u => u.Company.PublicKey).FirstOrDefaultAsync();
+            if (masterPublicKey == null)
+            {
+                _logger.LogInformation($"{context.Peer}\tMaster public key is invalid");
+                return new RegisterResponse { Status = 400, Message = "Company is invalid" };
+            }
             await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"{context.Peer}\tUser registered");
 
@@ -130,7 +151,7 @@ namespace Server.Services
                 return new RegisterResponse { Status = 400, Message = "Pin is empty" };
             }
 
-            return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(Convert.ToByte("asdasd")) };
+            return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey) };
         }
 
         /// <summary>
@@ -144,6 +165,11 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
             }
+            if (request.MasterEncryptedKey.Length != 512)
+            {
+                _logger.LogInformation($"{context.Peer}\tMaster encrypted key is empty");
+                return new SetMasterEncryptedKeyResponse { Status = 400, Message = "Master encrypted key is empty", JwtToken = "" };
+            }
 
             UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
             if (userJwt == null)
@@ -151,9 +177,20 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
             }
-
+            if (!userJwt.Groups.Contains("system:master-key"))
+            {
+                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                return new SetMasterEncryptedKeyResponse { Status = 403, Message = "Token is invalid", JwtToken = "" };
+            }
             
-            return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtToken = "" };
+            userJwt.Groups = await _dbContext.GroupMembers
+                .Where(gm => gm.UserId == userJwt.Subject)
+                .Select(gm => gm.Group.Name)
+                .ToListAsync();
+
+            string jwtToken = await _jwtService.GenerateRefreshTokenAsync(userJwt);
+            await _jwtService.RevokeTokenAsync(request.JwtToken);
+            return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtToken = jwtToken };
         }
 
         /// <summary>
@@ -162,6 +199,7 @@ namespace Server.Services
         /// </summary>
         public override async Task<LoginResponse> Login(LoginRequest request, ServerCallContext context)
         {
+            _logger.LogInformation($"Login request from {context.Peer}");
             return new LoginResponse { Status = 200, Message = "OK", JwtToken = "JWT" };
         }
 

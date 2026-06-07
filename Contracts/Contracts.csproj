@@ -18,6 +18,7 @@
 
 	<ItemGroup>
 		<ProtoBuf Include="Protos\auth.proto" GrpcServices="Both" />
+    <ProtoBuf Include="Protos\security.proto" GrpcServices="Both" />
 	</ItemGroup>
 	
 

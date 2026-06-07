@@ -41,7 +41,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
-// gRPC endpoint
+// gRPC endpoint с HTTPS
 app.MapGrpcService<AuthenticationService>();
 
 // REST endpoints

@@ -6,11 +6,13 @@ service SecurityService {
     rpc GetNonce (NonceRequest) returns (NonceResponse);
 }
 
+// TODO реализовать
 message NonceRequest {
-    string client_uuid = 1;
 }
 
+// TODO реализовать
 message NonceResponse {
-    string nonce = 1;
-    string server_signature = 2;
+    int32 status = 1;
+    string message = 2;
+    string nonce = 3;
 }

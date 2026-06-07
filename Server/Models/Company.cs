@@ -15,6 +15,7 @@ namespace Server.Models
         public required string Name { get; set; }
         public string? Description { get; set; }
         public string? Logo { get; set; }
+        public required byte[] PublicKey { get; set; }
         public ICollection<User> Users { get; set; } = new List<User>();
         public ICollection<Group> Groups { get; set; } = new List<Group>();
     }

@@ -19,7 +19,7 @@ namespace Server.Models
         public required byte[] PublicKey { get; set; }
         public required byte[] EncryptedKey { get; set; }
         public byte[]? MasterEncryptedKey { get; set; }
-        public Company? Company { get; set; }
+        public required Company Company { get; set; }
     }
 
 

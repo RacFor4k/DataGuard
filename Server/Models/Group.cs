@@ -20,14 +20,16 @@ namespace Server.Models
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
         public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
-        public Company? Company { get; set; }
+        public required Company Company { get; set; }
     }
 
     [Table("group_members", Schema = "identity")]
     public class GroupMember
     {
         public required Guid GroupId { get; set; }
+        public required Group Group { get; set; }
         public required Guid UserId { get; set; }
+        public required User User { get; set; }
         public required Guid CompanyId { get; set; }
         public required DateTime JoinDate { get; set; }
         public required GroupRole Role { get; set; }
