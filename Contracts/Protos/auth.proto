@@ -30,11 +30,10 @@ message RegisterRequest {
 
 // Ответ на запрос регистрации пользователя
 message RegisterResponse {
-  bool success = 1;
-  bytes public_master_key = 2; // публичный мастер-ключ
-  string jwt_token = 3;
-  string message = 4;
-
+  int32 status = 1;
+  string message = 2;
+  bytes public_master_key = 3; // публичный мастер-ключ
+  string jwt_token = 4;
 }
 
 // Запрос на установку зашифрованного ключа пользователя мастер-ключом
@@ -45,9 +44,9 @@ message SetMasterEncryptedKeyRequest {
 
 // Ответ на запрос установки зашифрованного ключа пользователя мастер-ключом
 message SetMasterEncryptedKeyResponse {
-  bool success = 1;
-  string jwt_token = 2; 
-  string message = 3;
+  int32 status = 1;
+  string message = 2;
+  string jwt_token = 3;
 }
 
 // Запрос на вход пользователя
@@ -58,9 +57,9 @@ message LoginRequest {
 
 // Ответ на запрос входа пользователя
 message LoginResponse {
-  bool success = 1;
-  string jwt_token = 2; 
-  string message = 3;
+  int32 status = 1;
+  string message = 2;
+  string jwt_token = 3;
 }
 
 // Запрос на обновление токена пользователя
@@ -70,9 +69,9 @@ message RefreshTokenRequest {
 
 // Ответ на запрос обновления токена пользователя
 message RefreshTokenResponse {
-  bool success = 1;
-  string jwt_token = 2;
-  string message = 3;
+  int32 status = 1;
+  string message = 2;
+  string jwt_token = 3;
 }
 
 // Запрос на создание кода регистрации
@@ -87,7 +86,7 @@ message CreateRegistrationCodeRequest {
 
 // Ответ на запрос создания кода регистрации
 message CreateRegistrationCodeResponse {
-  bool success = 1;
-  string registration_code = 2;
-  string message = 3;
+  int32 status = 1;
+  string message = 2;
+  string registration_code = 3;
 }

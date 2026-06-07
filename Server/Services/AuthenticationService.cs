@@ -48,27 +48,27 @@ namespace Server.Services
             if (string.IsNullOrEmpty(request.RegistrationCode))
             {
                 _logger.LogInformation($"{context.Peer}\tRegistration code is empty");
-                return new RegisterResponse { Success = false, Message = "Registration code is empty" };
+                return new RegisterResponse { Status = 400, Message = "Registration code is empty" };
             }
 
             string? rawRegistrationData = await _redis.StringGetAsync(request.RegistrationCode);
             if (string.IsNullOrEmpty(rawRegistrationData))
             {
                 _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
-                return new RegisterResponse { Success = false, Message = "Registration code is invalid" };
+                return new RegisterResponse { Status = 400, Message = "Registration code is invalid" };
             }
 
             RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
             if (registrationData == null)
             {
                 _logger.LogInformation($"{context.Peer}\tRegistration data is invalid");
-                return new RegisterResponse { Success = false, Message = "Registration data is invalid" };
+                return new RegisterResponse { Status = 400, Message = "Registration data is invalid" };
             }
 
             if (await _dbContext.Users.AnyAsync(u => u.Email == registrationData.Email))
             {
                 _logger.LogInformation($"{context.Peer}\tUser is already registered");
-                return new RegisterResponse { Success = false, Message = "User is already registered" };
+                return new RegisterResponse { Status = 409, Message = "User is already registered" };
             }
 
             var user = new User
@@ -127,10 +127,10 @@ namespace Server.Services
             if (string.IsNullOrEmpty(request.Pin))
             {
                 _logger.LogInformation($"{context.Peer}\tPin is empty");
-                return new RegisterResponse { Success = false, Message = "Pin is empty" };
+                return new RegisterResponse { Status = 400, Message = "Pin is empty" };
             }
 
-            return new RegisterResponse { Success = true, Message = "OK", PublicMasterKey = ByteString.CopyFrom(Convert.ToByte("asdasd")) };
+            return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(Convert.ToByte("asdasd")) };
         }
 
         /// <summary>
@@ -139,8 +139,21 @@ namespace Server.Services
         public override async Task<SetMasterEncryptedKeyResponse> SetMasterEncryptedKey(SetMasterEncryptedKeyRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Set master encrypted key request from {context.Peer}");
+            if(_jwtService.VerifyTokenAsync(request.JwtToken)==null)
+            {
+                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
+            }
+
             UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
-            return new SetMasterEncryptedKeyResponse { Success = true, Message = "OK" };
+            if (userJwt == null)
+            {
+                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
+            }
+
+            
+            return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtToken = "" };
         }
 
         /// <summary>
@@ -149,7 +162,7 @@ namespace Server.Services
         /// </summary>
         public override async Task<LoginResponse> Login(LoginRequest request, ServerCallContext context)
         {
-            return new LoginResponse { Success = true, Message = "OK", JwtToken = "JWT" };
+            return new LoginResponse { Status = 200, Message = "OK", JwtToken = "JWT" };
         }
 
         /// <summary>
@@ -159,7 +172,7 @@ namespace Server.Services
         /// </summary>
         public override async Task<RefreshTokenResponse> RefreshToken(RefreshTokenRequest request, ServerCallContext context)
         {
-            return new RefreshTokenResponse { Success = true, Message = "OK", JwtToken = "JWT" };
+            return new RefreshTokenResponse { Status = 200, Message = "OK", JwtToken = "JWT" };
         }
 
         public override async Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
@@ -169,32 +182,32 @@ namespace Server.Services
             if(string.IsNullOrEmpty(request.Name))
             {
                 _logger.LogInformation($"{context.Peer}\tName is empty");
-                return new CreateRegistrationCodeResponse { Success = false, Message = "Name is empty" };
+                return new CreateRegistrationCodeResponse { Status = 400, Message = "Name is empty" };
             }
 
             if (string.IsNullOrEmpty(request.Surname))
             {
                 _logger.LogInformation($"{context.Peer}\tSurname is empty");
-                return new CreateRegistrationCodeResponse { Success = false, Message = "Surname is empty" };
+                return new CreateRegistrationCodeResponse { Status = 400, Message = "Surname is empty" };
             }
 
             if (string.IsNullOrEmpty(request.Email))
             {
                 _logger.LogInformation($"{context.Peer}\tEmail is empty");
-                return new CreateRegistrationCodeResponse { Success = false, Message = "Email is empty" };
+                return new CreateRegistrationCodeResponse { Status = 400, Message = "Email is empty" };
             }
 
             if (request.Groups.Count == 0)
             {
                 _logger.LogInformation($"{context.Peer}\tGroups is empty");
-                return new CreateRegistrationCodeResponse { Success = false, Message = "Groups is empty" };
+                return new CreateRegistrationCodeResponse { Status = 400, Message = "Groups is empty" };
             }
             
             UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
             if (userJwt == null)
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new CreateRegistrationCodeResponse { Success = false, Message = "Token is invalid" };
+                return new CreateRegistrationCodeResponse { Status = 401, Message = "Token is invalid" };
             }
             Guid companyId = _dbContext.Users.Where(u => u.UUID == userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
             try
@@ -212,14 +225,14 @@ namespace Server.Services
                 if(!await _redis.StringSetAsync(registrationCode, JsonSerializer.Serialize(registrationData)))
                 {
                     _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
-                    return new CreateRegistrationCodeResponse { Success = false, Message = "Registration code is invalid" };
+                    return new CreateRegistrationCodeResponse { Status = 507, Message = "Registration code is invalid" };
                 }            
-                return new CreateRegistrationCodeResponse { Success = true, Message = "OK", RegistrationCode = registrationCode };
+                return new CreateRegistrationCodeResponse { Status = 200, Message = "OK", RegistrationCode = registrationCode };
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"{context.Peer}\tRegistration data is invalid");
-                return new CreateRegistrationCodeResponse { Success = false, Message = "Registration data is invalid" };
+                _logger.LogInformation($"{context.Peer}\tRegistration data is invalid\n{ex.Message}");
+                return new CreateRegistrationCodeResponse { Status = 400, Message = "Registration data is invalid" };
             }
 
 
