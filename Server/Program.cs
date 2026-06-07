@@ -19,6 +19,9 @@ builder.Services.AddDbContext<DataGuardDbContext>(options => options.UseNpgsql(c
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 
+// Security service
+builder.Services.AddScoped<ISecurityService, SecurityService>();
+
 // REST контроллеры
 builder.Services.AddControllers();
 
@@ -41,8 +44,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
-// gRPC endpoint с HTTPS
+// gRPC endpoints
 app.MapGrpcService<AuthenticationService>();
+app.MapGrpcService<SecurityRequestsService>();
 
 // REST endpoints
 app.MapControllers();

@@ -12,6 +12,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
 using StackExchange.Redis.KeyspaceIsolation;
 using NanoidDotNet;
+using System.Security.Cryptography;
 
 namespace Server.Services
 {
@@ -25,17 +26,20 @@ namespace Server.Services
         private readonly IDatabase  _redis;
         private readonly ILogger<AuthenticationService> _logger;
         private readonly IJwtService _jwtService;
+        private readonly ISecurityService _securityService;
 
         public AuthenticationService(
             DataGuardDbContext dbContext, 
             IConnectionMultiplexer redis, 
             ILogger<AuthenticationService> logger,
-            IJwtService jwtService)
+            IJwtService jwtService,
+            ISecurityService securityService)
         {
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("auth:");
             _logger = logger;
             _jwtService = jwtService;
+            _securityService = securityService;
         }
 
         /// <summary>
@@ -50,7 +54,11 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tRegistration code is empty");
                 return new RegisterResponse { Status = 400, Message = "Registration code is empty" };
             }
-
+            if (request.Pin.Length != 32)
+            {
+                _logger.LogInformation($"{context.Peer}\tPin is invalid");
+                return new RegisterResponse { Status = 400, Message = "Pin is invalid" };
+            }
             string? rawRegistrationData = await _redis.StringGetAsync(request.RegistrationCode);
             if (string.IsNullOrEmpty(rawRegistrationData))
             {
@@ -82,7 +90,7 @@ namespace Server.Services
                 Name = registrationData.Name,
                 Surname = registrationData.Surname,
                 Email = registrationData.Email,
-                PinCodeHash = request.Pin,
+                PinCodeHash = request.Pin.ToByteArray(),
                 PublicKey = request.PublicKey.ToByteArray(),
                 EncryptedKey = request.EncryptededKey.ToByteArray(),
                 MasterEncryptedKey = null,
@@ -145,12 +153,6 @@ namespace Server.Services
             await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"{context.Peer}\tUser registered");
 
-            if (string.IsNullOrEmpty(request.Pin))
-            {
-                _logger.LogInformation($"{context.Peer}\tPin is empty");
-                return new RegisterResponse { Status = 400, Message = "Pin is empty" };
-            }
-
             return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey) };
         }
 
@@ -200,7 +202,40 @@ namespace Server.Services
         public override async Task<LoginResponse> Login(LoginRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Login request from {context.Peer}");
-            return new LoginResponse { Status = 200, Message = "OK", JwtToken = "JWT" };
+            if(string.IsNullOrEmpty(request.UserId))
+            {
+                return new LoginResponse { Status = 400, Message = "UserId is empty" };
+            }
+            if(request.Pin.Length != 32)
+            {
+                return new LoginResponse { Status = 400, Message = "Pin is invalid" };
+            }
+            if(string.IsNullOrEmpty(request.NonceToken))
+            {
+                return new LoginResponse { Status = 400, Message = "NonceToken is empty" };
+            }
+            if(await _securityService.VerifyNonceToken(request.NonceToken))
+            {
+                return new LoginResponse { Status = 400, Message = "NonceToken is invalid" };
+            }
+            User? user = await _dbContext.Users.Where(u => u.UUID == Guid.Parse(request.UserId)).FirstOrDefaultAsync();
+            if(user == null)
+            {
+                return new LoginResponse { Status = 404, Message = "User is not found" };
+            }
+            if(CryptographicOperations.FixedTimeEquals(user.PinCodeHash, request.Pin.ToByteArray()))
+            {
+                return new LoginResponse { Status = 401, Message = "Pin is invalid" };
+            }
+            UserJwt? userJwt = new UserJwt{
+                Subject = user.UUID,
+                Name = user.Name,
+                Surname = user.Surname,
+                Email = user.Email,
+                Groups = user.GroupMembers.Select(gm => gm.Group.Name).ToList(),
+            };
+            string jwtRefreshToken = await _jwtService.GenerateRefreshTokenAsync(userJwt);
+            return new LoginResponse { Status = 200, Message = "OK", JwtToken = jwtRefreshToken };
         }
 
         /// <summary>

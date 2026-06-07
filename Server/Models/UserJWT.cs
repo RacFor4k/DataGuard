@@ -15,7 +15,7 @@ namespace Server.Models
         public required string Surname { get; set; }
         public required string Email { get; set; }
         public required List<string> Groups { get; set; }
-        public required string JwtId { get; set; }
+        public string JwtId { get; set; } = Guid.CreateVersion7().ToString();
     }
 
     [Table("UserJwtRefreshTokens", Schema = "identity")]

@@ -15,7 +15,7 @@ namespace Server.Models
         public required string Surname { get; set; }
         public required string Email { get; set; }
         public ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
-        public required string PinCodeHash { get; set; }
+        public required byte[] PinCodeHash { get; set; }
         public required byte[] PublicKey { get; set; }
         public required byte[] EncryptedKey { get; set; }
         public byte[]? MasterEncryptedKey { get; set; }
