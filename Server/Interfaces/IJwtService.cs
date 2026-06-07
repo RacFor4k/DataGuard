@@ -29,7 +29,7 @@ public interface IJwtService
     /// <param name="token">JWT токен для валидации.</param>
     /// <param name="isRefreshToken">Признак, что проверяем Refresh токен.</param>
     /// <returns>Список claims из токена, если токен валиден, иначе null.</returns>
-    Task<IEnumerable<Claim>?> VerifyTokenAsync(string token, bool isRefreshToken = false);
+    Task<UserJwt?> VerifyTokenAsync(string token);
 
     /// <summary>
     /// Извлекает UserJwt из токена.
@@ -43,6 +43,8 @@ public interface IJwtService
     /// </summary>
     /// <param name="token">JWT токен.</param>
     /// <returns>True, если токен успешно аннулирован, иначе false.</returns>
+    Task<bool> RevokeTokenAsync(UserJwt userJwt);
+
     Task<bool> RevokeTokenAsync(string token);
 
     /// <summary>
@@ -50,11 +52,11 @@ public interface IJwtService
     /// </summary>
     /// <param name="token">JWT токен.</param>
     /// <returns>True, если токен в черном списке, иначе false.</returns>
-    Task<bool> IsTokenBlacklistedAsync(string token);
+    Task<bool> IsTokenBlacklistedAsync(UserJwt userJwt);
 
     /// <summary>
     /// Добавляет токен в черный список.
     /// </summary>
     /// <param name="token">JWT токен.</param>
-    Task AddTokenToBlacklistAsync(string token);
+    Task AddTokenToBlacklistAsync(UserJwt userJwt);
 }

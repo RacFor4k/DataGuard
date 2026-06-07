@@ -27,19 +27,22 @@ namespace Server.Services
         private readonly ILogger<AuthenticationService> _logger;
         private readonly IJwtService _jwtService;
         private readonly ISecurityService _securityService;
+        private readonly UserAccessor _userAccessor;
 
         public AuthenticationService(
             DataGuardDbContext dbContext, 
             IConnectionMultiplexer redis, 
             ILogger<AuthenticationService> logger,
             IJwtService jwtService,
-            ISecurityService securityService)
+            ISecurityService securityService,
+            UserAccessor userAccessor)
         {
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("auth:");
             _logger = logger;
             _jwtService = jwtService;
             _securityService = securityService;
+            _userAccessor = userAccessor;
         }
 
         /// <summary>
@@ -162,7 +165,7 @@ namespace Server.Services
         public override async Task<SetMasterEncryptedKeyResponse> SetMasterEncryptedKey(SetMasterEncryptedKeyRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Set master encrypted key request from {context.Peer}");
-            if(_jwtService.VerifyTokenAsync(request.JwtToken)==null)
+            if(_userAccessor.User == null || !_userAccessor.User.IsAccessToken())
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
@@ -172,25 +175,18 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tMaster encrypted key is empty");
                 return new SetMasterEncryptedKeyResponse { Status = 400, Message = "Master encrypted key is empty", JwtToken = "" };
             }
-
-            UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
-            if (userJwt == null)
-            {
-                _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtToken = "" };
-            }
-            if (!userJwt.Groups.Contains("system:master-key"))
+            if (!_userAccessor.User.Groups.Contains("system:master-key"))
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new SetMasterEncryptedKeyResponse { Status = 403, Message = "Token is invalid", JwtToken = "" };
             }
             
-            userJwt.Groups = await _dbContext.GroupMembers
-                .Where(gm => gm.UserId == userJwt.Subject)
+            _userAccessor.User.Groups = await _dbContext.GroupMembers
+                .Where(gm => gm.UserId == _userAccessor.User.Subject)
                 .Select(gm => gm.Group.Name)
                 .ToListAsync();
 
-            string jwtToken = await _jwtService.GenerateRefreshTokenAsync(userJwt);
+            string jwtToken = await _jwtService.GenerateRefreshTokenAsync(_userAccessor.User);
             await _jwtService.RevokeTokenAsync(request.JwtToken);
             return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtToken = jwtToken };
         }
@@ -245,6 +241,7 @@ namespace Server.Services
         /// </summary>
         public override async Task<RefreshTokenResponse> RefreshToken(RefreshTokenRequest request, ServerCallContext context)
         {
+
             return new RefreshTokenResponse { Status = 200, Message = "OK", JwtToken = "JWT" };
         }
 

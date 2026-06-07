@@ -2,6 +2,7 @@ using Server.Interfaces;
 using Server.Services;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
+using Server.Middleware;
 
 // Создание и настройка приложения
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,9 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Security service
 builder.Services.AddScoped<ISecurityService, SecurityService>();
+
+// User accessor
+builder.Services.AddScoped<UserAccessor>();
 
 // REST контроллеры
 builder.Services.AddControllers();
@@ -43,6 +47,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
+// JWT middleware
+app.UseMiddleware<JwtMiddleware>();
 
 // gRPC endpoints
 app.MapGrpcService<AuthenticationService>();

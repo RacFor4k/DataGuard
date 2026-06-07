@@ -38,6 +38,10 @@ namespace Server.Services
         /// <returns>Access токен.</returns>
         public Task<string> GenerateAccessTokenAsync(UserJwt userJwt) 
         {
+            if (!userJwt.IsAccessToken())
+            {
+                throw new InvalidOperationException("Token is not an access token");
+            }
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -68,6 +72,10 @@ namespace Server.Services
         
         public Task<string> GenerateRefreshTokenAsync(UserJwt userJwt)
         {
+            if (userJwt.IsAccessToken())
+            {
+                throw new InvalidOperationException("Token is an access token");
+            }
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -90,69 +98,100 @@ namespace Server.Services
             return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
         }
 
-        public async Task<IEnumerable<Claim>?> VerifyTokenAsync(string token, bool isRefreshToken = false)
+        public async Task<UserJwt?> VerifyTokenAsync(string token)
         {
             if (string.IsNullOrWhiteSpace(token))
             {
                 return null;
             }
 
-            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
+            var tokenHandler = new JwtSecurityTokenHandler();
+            
+            // Получение настроек из конфигурации
+            var key = _config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json");
+            var issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
+            var audience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not found in appsettings.json");
+            
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+
+            var validationParameters = new TokenValidationParameters
+            {
+                // Проверка подписи
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = securityKey,
+
+                // Проверка издателя и потребителя
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidateAudience = true,
+                ValidAudience = audience,
+
+                // Проверка времени действия токена (экспирация)
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromMinutes(1) // Допустимый сдвиг времени для компенсации рассинхронизации часов
+            };
+
             try
             {
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                // Метод ValidateToken проверяет подпись, время действия (Lifetime), Issuer и Audience
+                var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+
+                if (validatedToken is not JwtSecurityToken validatedJwtToken)
                 {
-                    ValidIssuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not found in appsettings.json"),
-                    ValidAudience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not found in appsettings.json"),
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = securityKey,
-                    ClockSkew = TimeSpan.FromMinutes(1)
-                }, out SecurityToken validatedToken);
-                JwtSecurityToken validatedJwtToken = (JwtSecurityToken)validatedToken;
-                if (isRefreshToken)
-                {
-                    DbUserJwt? dbToken = await _dbContext.UserJwtRefreshTokens.FindAsync(validatedJwtToken.Id);
-                    if (dbToken == null)
-                    {
-                        return null;
-                    }
-                    if (validatedJwtToken.Subject != dbToken.UserId)
-                    {
-                        return null;
-                    }
+                    return null;
                 }
-                return validatedJwtToken.Claims;
+
+                UserJwt? userJwt = ParceToken(validatedJwtToken);
+                if (userJwt == null)
+                {
+                    return null;
+                }
+
+                if (await IsTokenBlacklistedAsync(userJwt))
+                {
+                    return null;
+                }
+                return userJwt;
             }
-            catch(Exception e)
+            catch (SecurityTokenExpiredException ex)
             {
-                _logger.LogInformation($"Token validation failed: {e.Message}");
+                _logger.LogInformation($"Token expired: {ex.Message}");
+                return null;
+            }
+            catch (SecurityTokenInvalidSignatureException ex)
+            {
+                _logger.LogInformation($"Invalid token signature: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"Token validation failed: {ex.Message}");
                 return null;
             }
         }
 
-        public UserJwt? ParceToken (string token)
+        public UserJwt? ParceToken(JwtSecurityToken jwtSecurityToken)
         {
-            if (string.IsNullOrWhiteSpace(token))
+            if (jwtSecurityToken == null)
             {
                 return null;
             }
 
-            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-
             try
             {
-                JwtSecurityToken jwtSecurityToken = tokenHandler.ReadJwtToken(token);
-
                 string issuer = jwtSecurityToken.Issuer;
-                string audience = String.Join(",", jwtSecurityToken.Audiences);
+                string audience = string.Join(",", jwtSecurityToken.Audiences);
                 DateTime expirationTime = jwtSecurityToken.ValidTo;
+                
                 Guid subject = Guid.Parse(jwtSecurityToken.Subject);
-                string name = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.GivenName)?.Value ?? string.Empty;
-                string surname = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value ?? string.Empty;
-                string email = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value ?? string.Empty;
+                
+                string? name = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.GivenName)?.Value;
+                string? surname = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value;
+                string? email = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
                 List<string> groups = jwtSecurityToken.Claims.Where(c => c.Type == "roles").Select(c => c.Value).ToList();
-                string jwtId = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value ?? string.Empty;
+                
+                string jwtId = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value 
+                            ?? throw new InvalidOperationException("JWT Id is empty");
 
                 return new UserJwt
                 {
@@ -164,8 +203,29 @@ namespace Server.Services
                     Surname = surname,
                     Email = email,
                     Groups = groups,
-                    JwtId = jwtId
+                    JwtId = jwtId,
                 };
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Token mapping failed: {e.Message}");
+                return null;
+            }
+        }
+        public UserJwt? ParceToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return null;
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            try
+            {
+                var jwtSecurityToken = tokenHandler.ReadJwtToken(token);
+                
+                return ParceToken(jwtSecurityToken);
             }
             catch (Exception e)
             {
@@ -174,11 +234,10 @@ namespace Server.Services
             }
         }
 
-        public async Task<bool> RevokeTokenAsync(string token)
+        public async Task<bool> RevokeTokenAsync(UserJwt userJwt)
         {
             try
             {
-                UserJwt userJwt = ParceToken(token) ?? throw new InvalidOperationException("Token is invalid");
                 DbUserJwt? dbUserJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(userJwt.JwtId);
                 if (dbUserJwt == null)
                 {
@@ -199,31 +258,40 @@ namespace Server.Services
                 return false;
             }
         }
-
-        public async Task<bool> IsTokenBlacklistedAsync(string token)
+        public async Task<bool> RevokeTokenAsync(string token)
         {
             UserJwt? userJwt = ParceToken(token);
             if (userJwt == null)
             {
                 return false;
             }
-            return await _redis.KeyExistsAsync($"blacklist:{userJwt.JwtId}");
+            return await RevokeTokenAsync(userJwt);
         }
 
-        public async Task AddTokenToBlacklistAsync(string token)
+        public async Task<bool> IsTokenBlacklistedAsync(UserJwt userJwt)
         {
-            UserJwt? userJwt = ParceToken(token);
-            if (userJwt == null)
+            if(userJwt.IsAccessToken())
+                return await _redis.KeyExistsAsync($"blacklist:{userJwt.JwtId}");
+            else
             {
-                throw new InvalidOperationException("Token is invalid");
+                DbUserJwt? dbToken = await _dbContext.UserJwtRefreshTokens.FindAsync(userJwt.JwtId);
+                if (dbToken == null)
+                {
+                    return false;
+                }
+                return true;
             }
+        }
+
+        public async Task AddTokenToBlacklistAsync(UserJwt userJwt)
+        {
             DateTime expirationTime = userJwt.ExpirationTime ?? throw new InvalidOperationException("Token expiration time is invalid");
             TimeSpan ttl = expirationTime - DateTime.UtcNow;
             if (ttl < TimeSpan.Zero)
             {
-                throw new InvalidOperationException("Token is expired");
+                return;
             }
-            await _redis.StringSetAsync($"blacklist:{userJwt.JwtId}", token, ttl);
+            await _redis.StringSetAsync($"blacklist:{userJwt.JwtId}", userJwt.Subject.ToString(), ttl);
         }
 
     }

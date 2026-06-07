@@ -33,20 +33,21 @@ message RegisterResponse {
   int32 status = 1;
   string message = 2;
   bytes public_master_key = 3; // публичный мастер-ключ
-  string jwt_token = 4;
+  string jwt_refresh_token = 4;
+  string jwt_access_token = 5;
 }
 
 // Запрос на установку зашифрованного ключа пользователя мастер-ключом
 message SetMasterEncryptedKeyRequest {
   bytes master_encrypted_key = 1; // мастер-ключ
-  string jwt_token = 2; 
 }
 
 // Ответ на запрос установки зашифрованного ключа пользователя мастер-ключом
 message SetMasterEncryptedKeyResponse {
   int32 status = 1;
   string message = 2;
-  string jwt_token = 3;
+  string jwt_refresh_token = 3;
+  string jwt_access_token = 4;
 }
 
 // Запрос на вход пользователя
@@ -62,6 +63,7 @@ message LoginResponse {
   string message = 2;
   string jwt_token = 3;
   string jwt_refresh_token = 4;
+  string jwt_access_token = 5;
 }
 
 // Запрос на обновление токена пользователя
