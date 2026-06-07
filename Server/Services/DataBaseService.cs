@@ -10,6 +10,7 @@ namespace Server.Services
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMember> GroupMembers { get; set; }
         public DbSet<Icon> Icons { get; set; }
+        public DbSet<Company> Companies { get; set; }
         public DataGuardDbContext(DbContextOptions<DataGuardDbContext> options) : base(options){}
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -36,6 +37,19 @@ namespace Server.Services
                 entity.HasOne(g => g.Icon)
                     .WithMany()
                     .HasForeignKey(g => g.IconId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Company>(entity =>
+            {
+                entity.HasMany(c => c.Users)
+                    .WithOne(u => u.Company)
+                    .HasForeignKey(u => u.CompanyId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(c => c.Groups)
+                    .WithOne(g => g.Company)
+                    .HasForeignKey(g => g.CompanyId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }

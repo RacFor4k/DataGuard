@@ -20,6 +20,7 @@ namespace Server.Models
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
         public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
+        public Company? Company { get; set; }
     }
 
     [Table("group_members", Schema = "identity")]

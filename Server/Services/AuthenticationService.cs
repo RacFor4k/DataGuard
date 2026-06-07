@@ -160,5 +160,53 @@ namespace Server.Services
         {
             return new RefreshTokenResponse { Success = true, Message = "OK", Token = "JWT" };
         }
+
+        public override Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
+        {
+            _logger.LogInformation($"Create registration code request from {context.Peer}");
+
+            if(string.IsNullOrEmpty(request.Name))
+            {
+                _logger.LogInformation($"{context.Peer}\tName is empty");
+                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Name is empty" });
+            }
+
+            if (string.IsNullOrEmpty(request.Surname))
+            {
+                _logger.LogInformation($"{context.Peer}\tSurname is empty");
+                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Surname is empty" });
+            }
+
+            if (string.IsNullOrEmpty(request.Email))
+            {
+                _logger.LogInformation($"{context.Peer}\tEmail is empty");
+                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Email is empty" });
+            }
+
+            if (request.Groups.Count == 0)
+            {
+                _logger.LogInformation($"{context.Peer}\tGroups is empty");
+                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Groups is empty" });
+            }
+
+            try{
+                var registrationData = new RegistrationData
+                {
+                    Name = request.Name,
+                    Surname = request.Surname,
+                    Email = request.Email,
+                    CompanyId = null,
+                    Groups = request.Groups.Select(Guid.Parse).ToList(),
+                    AdminGroups = request.AdminGroups.Select(Guid.Parse).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"{context.Peer}\tRegistration data is invalid");
+                return Task.FromResult(new CreateRegistrationCodeResponse { Success = false, Message = "Registration data is invalid" });
+            }
+
+            
+        }
     }
 }
