@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using StackExchange.Redis.KeyspaceIsolation;
 using NanoidDotNet;
 using System.Security.Cryptography;
+using Common.Helpers;
 
 namespace Server.Services
 {
@@ -137,26 +138,18 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tGroupMembers is invalid\n{ex.Message}");
                 return new RegisterResponse { Status = 400, Message = "GroupMembers is invalid" };
             }
-            // Создание токена
-            UserJwt userJwt = new UserJwt
-            {
-                Subject = user.UUID,
-                Name = user.Name,
-                Surname = user.Surname,
-                Email = user.Email,
-                Groups = ["system:master-key"],
-                JwtId = Guid.CreateVersion7().ToString(),
-            };
+            string refreshJwtToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+            string accessJwtToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
             byte[]? masterPublicKey = await _dbContext.Users.Where(u => u.UUID == user.UUID).Select(u => u.Company.PublicKey).FirstOrDefaultAsync();
             if (masterPublicKey == null)
             {
                 _logger.LogInformation($"{context.Peer}\tMaster public key is invalid");
-                return new RegisterResponse { Status = 400, Message = "Company is invalid" };
+                return new RegisterResponse { Status = 400, Message = "Company is invalid", JwtAccessToken="", JwtRefreshToken = "", PublicMasterKey = ByteString.CopyFrom() };
             }
             await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"{context.Peer}\tUser registered");
 
-            return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey) };
+            return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey), JwtAccessToken = accessJwtToken, JwtRefreshToken = refreshJwtToken };
         }
 
         /// <summary>
@@ -165,7 +158,7 @@ namespace Server.Services
         public override async Task<SetMasterEncryptedKeyResponse> SetMasterEncryptedKey(SetMasterEncryptedKeyRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Set master encrypted key request from {context.Peer}");
-            if(_userAccessor.User == null || !_userAccessor.User.IsAccessToken())
+            if(_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
@@ -175,20 +168,15 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tMaster encrypted key is empty");
                 return new SetMasterEncryptedKeyResponse { Status = 400, Message = "Master encrypted key is empty", JwtRefreshToken = "", JwtAccessToken = "" };
             }
-            if (!_userAccessor.User.Groups.Contains("system:master-key"))
+            if (!_userAccessor.userJwt.GetGroups().Contains("system:master-key"))
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new SetMasterEncryptedKeyResponse { Status = 403, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
             }
             
-            _userAccessor.User.Groups = await _dbContext.GroupMembers
-                .Where(gm => gm.UserId == _userAccessor.User.Subject)
-                .Select(gm => gm.Group.Name)
-                .ToListAsync();
-
-            string jwtRefreshToken = await _jwtService.GenerateRefreshTokenAsync(_userAccessor.User);
-            string jwtAccessToken = await _jwtService.GenerateAccessTokenAsync(_userAccessor.User);
-            await _jwtService.RevokeTokenAsync(_userAccessor.User);
+            string jwtRefreshToken = _jwtService.GenerateRefreshToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
+            string jwtAccessToken = _jwtService.GenerateAccessToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
+            await _jwtService.RevokeTokenAsync(_userAccessor.userJwt);
             return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
@@ -224,15 +212,9 @@ namespace Server.Services
             {
                 return new LoginResponse { Status = 401, Message = "Pin is invalid" };
             }
-            UserJwt? userJwt = new UserJwt{
-                Subject = user.UUID,
-                Name = user.Name,
-                Surname = user.Surname,
-                Email = user.Email,
-                Groups = user.GroupMembers.Select(gm => gm.Group.Name).ToList(),
-            };
-            string jwtRefreshToken = await _jwtService.GenerateRefreshTokenAsync(userJwt);
-            return new LoginResponse { Status = 200, Message = "OK", JwtToken = jwtRefreshToken };
+            string jwtRefreshToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+            string jwtAccessToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+            return new LoginResponse { Status = 200, Message = "OK", JwtToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
         /// <summary>
@@ -242,8 +224,16 @@ namespace Server.Services
         /// </summary>
         public override async Task<RefreshTokenResponse> RefreshToken(RefreshTokenRequest request, ServerCallContext context)
         {
-
-            return new RefreshTokenResponse { Status = 200, Message = "OK", JwtToken = "JWT" };
+            if(_userAccessor.userJwt == null)
+            {
+                return new RefreshTokenResponse { Status = 401, Message = "Token is invalid", JwtAccessToken = "" };
+            }
+            if (!_userAccessor.userJwt.IsAccessToken())
+            {
+                string jwtAccessToken = _jwtService.GenerateAccessToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
+                return new RefreshTokenResponse { Status = 200, Message = "OK", JwtAccessToken = jwtAccessToken };
+            }
+            return new RefreshTokenResponse { Status = 401, Message = "Token is invalid", JwtAccessToken = "" };
         }
 
         public override async Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
@@ -274,13 +264,12 @@ namespace Server.Services
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Groups is empty" };
             }
             
-            UserJwt? userJwt = _jwtService.ParceToken(request.JwtToken);
-            if (userJwt == null)
+            if (_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new CreateRegistrationCodeResponse { Status = 401, Message = "Token is invalid" };
             }
-            Guid companyId = _dbContext.Users.Where(u => u.UUID == userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
+            Guid companyId = _dbContext.Users.Where(u => u.UUID.ToString() == _userAccessor.userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
             try
             {
                 var registrationData = new RegistrationData

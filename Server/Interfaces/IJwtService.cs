@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Server.Models;
 
@@ -12,51 +13,46 @@ public interface IJwtService
     /// <summary>
     /// Генерирует короткий Access токен для аутентифицированного пользователя.
     /// </summary>
-    /// <param name="userId">UUID пользователя.</param>
+    /// <param name="subject">Идентификатор пользователя.</param>
+    /// <param name="name">Имя пользователя.</param>
+    /// <param name="surname">Фамилия пользователя.</param>
     /// <param name="email">Email пользователя.</param>
-    /// <returns>JWT токен с 30-минутным сроком действия.</returns>
-    Task<string> GenerateAccessTokenAsync(UserJwt userJwt);
+    /// <param name="groups">Группы пользователя.</param>
+    /// <returns>JWT access токен.</returns>
+    string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups);
 
     /// <summary>
     /// Генерирует долгий Refresh токен для обновления Access токена.
     /// </summary>
-    /// <returns>JWT токен.</returns>
-    Task<string> GenerateRefreshTokenAsync(UserJwt userJwt);
+    /// <param name="subject">Идентификатор пользователя.</param>
+    /// <returns>JWT refresh токен.</returns>
+    string GenerateRefreshToken(string subject, string name, string surname, string email, string[] groups);
 
     /// <summary>
     /// Проверяет валидность JWT токена (подпись, срок действия).
     /// </summary>
     /// <param name="token">JWT токен для валидации.</param>
-    /// <param name="isRefreshToken">Признак, что проверяем Refresh токен.</param>
-    /// <returns>Список claims из токена, если токен валиден, иначе null.</returns>
-    Task<UserJwt?> VerifyTokenAsync(string token);
-
-    /// <summary>
-    /// Извлекает UserJwt из токена.
-    /// </summary>
-    /// <param name="token">JWT токен.</param>
-    /// <returns>UserJwt объект или null, если не найден.</returns>
-    UserJwt? ParceToken(string token);
+    /// <returns>Токен или null, если токен не валиден.</returns>
+    Task<JwtSecurityToken?> VerifyTokenAsync(string token);
 
     /// <summary>
     /// Принудительное аннулирование Access и Refresh токенов.
     /// </summary>
-    /// <param name="token">JWT токен.</param>
+    /// <param name="jwtToken">JWT токен.</param>
     /// <returns>True, если токен успешно аннулирован, иначе false.</returns>
-    Task<bool> RevokeTokenAsync(UserJwt userJwt);
-
-    Task<bool> RevokeTokenAsync(string token);
+    Task<bool> RevokeTokenAsync(JwtSecurityToken jwtToken);
 
     /// <summary>
-    /// Проверяет, является ли токен в черном списке.
+    /// Проверяет, аннулирован ли токен.
     /// </summary>
-    /// <param name="token">JWT токен.</param>
-    /// <returns>True, если токен в черном списке, иначе false.</returns>
-    Task<bool> IsTokenBlacklistedAsync(UserJwt userJwt);
+    /// <param name="Jwttoken">JWT токен.</param>
+    /// <returns>True, если токен аннулирован, иначе false.</returns>
+    Task<bool> IsTokenRevokedAsync(JwtSecurityToken jwtToken);
 
     /// <summary>
-    /// Добавляет токен в черный список.
+    /// Разбирает JWT токен.
     /// </summary>
     /// <param name="token">JWT токен.</param>
-    Task AddTokenToBlacklistAsync(UserJwt userJwt);
+    /// <returns>JWT токен.</returns>
+    JwtSecurityToken ParseToken(string token);
 }

@@ -6,7 +6,7 @@ namespace Server.Services
     public class DataGuardDbContext : DbContext
     {
         public DbSet<User> Users { get; set; }
-        public DbSet<DbUserJwt> UserJwtRefreshTokens { get; set; }
+        public DbSet<UserJwt> UserJwtRefreshTokens { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMember> GroupMembers { get; set; }
         public DbSet<Icon> Icons { get; set; }

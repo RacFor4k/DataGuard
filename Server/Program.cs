@@ -3,6 +3,7 @@ using Server.Services;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using Server.Middlewares;
+using Server.Options;
 
 // Создание и настройка приложения
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexe
 // Подключение к БД
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Postgres connection string not found.");
 builder.Services.AddDbContext<DataGuardDbContext>(options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
+
+// Options Services
+builder.Services.AddOptions<JwtSettings>().Bind(builder.Configuration.GetSection("Jwt")).ValidateDataAnnotations();
 
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();

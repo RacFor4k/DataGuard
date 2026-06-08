@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 using Server.Interfaces;
@@ -35,18 +36,7 @@ namespace Server.Middlewares
                 return;
             }
             string token = authHeader.Substring(7);
-            if(await _jwtService.VerifyTokenAsync(token) == null)
-            {
-                await _next(context);
-                return;
-            } 
-            UserJwt? userJwt = _jwtService.ParceToken(token);
-            if (userJwt == null)
-            {
-                await _next(context);
-                return;
-            }
-            _userAccessor.User = userJwt;
+            _userAccessor.userJwt = await _jwtService.VerifyTokenAsync(token);
             await _next(context);
         }
     }

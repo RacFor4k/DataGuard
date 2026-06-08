@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Server.Models;
+using Server.Options;
 using StackExchange.Redis;
 using StackExchange.Redis.KeyspaceIsolation;
 
@@ -20,14 +17,21 @@ namespace Server.Services
     {
         private readonly DataGuardDbContext _dbContext;
         private readonly IDatabase  _redis;
-        private readonly IConfiguration _config;
+        private readonly IOptions<JwtSettings> _jwtSettings;
         public ILogger<JwtService> _logger { get; set; }
+        private static readonly JwtSecurityTokenHandler _jwtHandler = new JwtSecurityTokenHandler();
 
-        public JwtService(DataGuardDbContext dbContext, IConnectionMultiplexer redis, IConfiguration config, ILogger<JwtService> logger)
+        public JwtService(DataGuardDbContext dbContext, IConnectionMultiplexer redis, IOptions<JwtSettings> jwtSettings, ILogger<JwtService> logger)
         {
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("jwt:");
-            _config = config;
+            _jwtSettings = jwtSettings;
+            if(string.IsNullOrWhiteSpace(_jwtSettings.Value.Issuer))
+                throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
+            if(string.IsNullOrWhiteSpace(_jwtSettings.Value.Audience))
+                throw new InvalidOperationException("JWT Audience not found in appsettings.json");
+            if(string.IsNullOrWhiteSpace(_jwtSettings.Value.HexKey))
+                throw new InvalidOperationException("JWT HexKey not found in appsettings.json");
             _logger = logger;
         }
         /// <summary>
@@ -36,65 +40,61 @@ namespace Server.Services
         /// </summary>
         /// <param name="userJwt">UserJwt объект.</param>
         /// <returns>Access токен.</returns>
-        public Task<string> GenerateAccessTokenAsync(UserJwt userJwt) 
+        public string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups) 
         {
-            if (!userJwt.IsAccessToken())
-            {
-                throw new InvalidOperationException("Token is not an access token");
-            }
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtSettings.Value.HexKey));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            userJwt.Issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
-            userJwt.Audience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not found in appsettings.json");
-            userJwt.ExpirationTime = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:AccessTokenExpirationMinutes"] ?? throw new InvalidOperationException("JWT AccessTokenExpirationMinutes not found in appsettings.json")));
             
-            var claims = new[]
+            Claim[] claims =
             {
-                new Claim(JwtRegisteredClaimNames.Sub, userJwt.Subject.ToString()),
-                new Claim(JwtRegisteredClaimNames.Name, string.Concat(userJwt.Name, " ", userJwt.Surname)),
-                new Claim(JwtRegisteredClaimNames.GivenName, userJwt.Name),
-                new Claim(JwtRegisteredClaimNames.FamilyName, userJwt.Surname),
-                new Claim(JwtRegisteredClaimNames.Email, userJwt.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, userJwt.JwtId),
-                new Claim("roles", string.Join(",", userJwt.Groups))
+                new Claim(JwtRegisteredClaimNames.Sub, subject),
+                new Claim(JwtRegisteredClaimNames.Name, $"{name} {surname}"),
+                new Claim(JwtRegisteredClaimNames.GivenName, name),
+                new Claim(JwtRegisteredClaimNames.FamilyName, surname),
+                new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Typ, "access"),
             };
+            claims.Concat(groups.Select(g => new Claim("role", g)));
             
             JwtSecurityToken token = new JwtSecurityToken(
-                issuer: userJwt.Issuer,
-                audience: userJwt.Audience,
+                issuer: _jwtSettings.Value.Issuer,
+                audience: _jwtSettings.Value.Audience,
                 claims: claims,
-                expires: userJwt.ExpirationTime,
-                signingCredentials: credentials);
-
-            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
+                expires: DateTime.UtcNow.Add(_jwtSettings.Value.AccessTokenExpiration),
+                signingCredentials: credentials
+            );
+            return _jwtHandler.WriteToken(token);
         }
         
-        public Task<string> GenerateRefreshTokenAsync(UserJwt userJwt)
+        public string GenerateRefreshToken(string subject, string name, string surname, string email, string[] groups)
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json")));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtSettings.Value.HexKey));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            userJwt.Issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
-            userJwt.ExpirationTime = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["Jwt:RefreshTokenExpirationMinutes"] ?? throw new InvalidOperationException("JWT AccessTokenExpirationMinutes not found in appsettings.json")));
-            
-            var claims = new[]
+            Claim[] claims =
             {
-                new Claim(JwtRegisteredClaimNames.Sub, userJwt.Subject.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, userJwt.JwtId),
+                new Claim(JwtRegisteredClaimNames.Sub, subject),
+                new Claim(JwtRegisteredClaimNames.Name, $"{name} {surname}"),
+                new Claim(JwtRegisteredClaimNames.GivenName, name),
+                new Claim(JwtRegisteredClaimNames.FamilyName, surname),
+                new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Typ, "refresh"),
             };
+            claims.Concat(groups.Select(g => new Claim("role", g)));
             
             JwtSecurityToken token = new JwtSecurityToken(
-                issuer: userJwt.Issuer,
-                audience: userJwt.Audience,
+                issuer: _jwtSettings.Value.Issuer,
+                audience: _jwtSettings.Value.Audience,
                 claims: claims,
-                expires: userJwt.ExpirationTime,
+                expires: DateTime.UtcNow.Add(_jwtSettings.Value.RefreshTokenExpiration),
                 signingCredentials: credentials);
 
-            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
+            return _jwtHandler.WriteToken(token);
         }
 
-        public async Task<UserJwt?> VerifyTokenAsync(string token)
+        public async Task<JwtSecurityToken?> VerifyTokenAsync(string token)
         {
             if (string.IsNullOrWhiteSpace(token))
             {
@@ -102,13 +102,7 @@ namespace Server.Services
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            
-            // Получение настроек из конфигурации
-            var key = _config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in appsettings.json");
-            var issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
-            var audience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not found in appsettings.json");
-            
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtSettings.Value.HexKey));
 
             var validationParameters = new TokenValidationParameters
             {
@@ -118,11 +112,10 @@ namespace Server.Services
 
                 // Проверка издателя и потребителя
                 ValidateIssuer = true,
-                ValidIssuer = issuer,
+                ValidIssuer = _jwtSettings.Value.Issuer,
                 ValidateAudience = true,
-                ValidAudience = audience,
+                ValidAudience = _jwtSettings.Value.Audience,
 
-                // Проверка времени действия токена (экспирация)
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.FromMinutes(1) // Допустимый сдвиг времени для компенсации рассинхронизации часов
             };
@@ -137,17 +130,11 @@ namespace Server.Services
                     return null;
                 }
 
-                UserJwt? userJwt = ParceToken(validatedJwtToken);
-                if (userJwt == null)
+                if (await IsTokenRevokedAsync(validatedJwtToken))
                 {
                     return null;
                 }
-
-                if (await IsTokenBlacklistedAsync(userJwt))
-                {
-                    return null;
-                }
-                return userJwt;
+                return validatedJwtToken;
             }
             catch (SecurityTokenExpiredException ex)
             {
@@ -165,130 +152,64 @@ namespace Server.Services
                 return null;
             }
         }
-
-        public UserJwt? ParceToken(JwtSecurityToken jwtSecurityToken)
+        public async Task<bool> RevokeTokenAsync(JwtSecurityToken jwtToken)
         {
-            if (jwtSecurityToken == null)
-            {
-                return null;
-            }
-
             try
             {
-                string issuer = jwtSecurityToken.Issuer;
-                string audience = string.Join(",", jwtSecurityToken.Audiences);
-                DateTime expirationTime = jwtSecurityToken.ValidTo;
-                
-                Guid subject = Guid.Parse(jwtSecurityToken.Subject);
-                
-                string? name = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.GivenName)?.Value;
-                string? surname = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value;
-                string? email = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
-                List<string> groups = jwtSecurityToken.Claims.Where(c => c.Type == "roles").Select(c => c.Value).ToList();
-                
-                string jwtId = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value 
-                            ?? throw new InvalidOperationException("JWT Id is empty");
-
-                return new UserJwt
+                if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
+                    throw new InvalidOperationException("Token type claim not found");
+                if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
                 {
-                    Issuer = issuer,
-                    Audience = audience,
-                    ExpirationTime = expirationTime,
-                    Subject = subject,
-                    Name = name,
-                    Surname = surname,
-                    Email = email,
-                    Groups = groups,
-                    JwtId = jwtId,
-                };
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"Token mapping failed: {e.Message}");
-                return null;
-            }
-        }
-        public UserJwt? ParceToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                return null;
-            }
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            try
-            {
-                var jwtSecurityToken = tokenHandler.ReadJwtToken(token);
-                
-                return ParceToken(jwtSecurityToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"Token parsing failed: {e.Message}");
-                return null;
-            }
-        }
-
-        public async Task<bool> RevokeTokenAsync(UserJwt userJwt)
-        {
-            try
-            {
-                DbUserJwt? dbUserJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(userJwt.JwtId);
-                if (dbUserJwt == null)
-                {
+                    if (!DateTime.TryParse(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Exp)?.Value, out DateTime expirationTime))
+                    {
+                        return true;
+                    }
+                    TimeSpan ttl = expirationTime - DateTime.UtcNow;
+                    if (ttl < TimeSpan.Zero)
+                    {
+                        return true;
+                    }
+                    await _redis.StringSetAsync($"blacklist:{jwtToken.Id}", jwtToken.Subject.ToString(), ttl);
                     return true;
                 }
-                _dbContext.UserJwtRefreshTokens.Remove(dbUserJwt);
-                await _dbContext.SaveChangesAsync();
-                return true;
-            }
-            catch (InvalidOperationException e)
-            {
-                _logger.LogInformation($"Token revoking failed: {e.Message}");
-                return false;
+                else
+                {
+                    UserJwt? userJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(jwtToken.Id);
+                    if (userJwt == null)
+                    {
+                        return true;
+                    }
+                    _dbContext.UserJwtRefreshTokens.Remove(userJwt);
+                    await _dbContext.SaveChangesAsync();
+                    return true;
+                }
             }
             catch (Exception e)
             {
                 _logger.LogError($"Token revoking failed: {e.Message}");
                 return false;
             }
-        }
-        public async Task<bool> RevokeTokenAsync(string token)
+        }        
+        public async Task<bool> IsTokenRevokedAsync(JwtSecurityToken jwtToken)
         {
-            UserJwt? userJwt = ParceToken(token);
-            if (userJwt == null)
-            {
-                return false;
-            }
-            return await RevokeTokenAsync(userJwt);
-        }
-
-        public async Task<bool> IsTokenBlacklistedAsync(UserJwt userJwt)
-        {
-            if(userJwt.IsAccessToken())
-                return await _redis.KeyExistsAsync($"blacklist:{userJwt.JwtId}");
+            if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
+                throw new InvalidOperationException("Token type claim not found");
+            if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
+                return await _redis.KeyExistsAsync($"blacklist:{jwtToken.Id}");
             else
             {
-                DbUserJwt? dbToken = await _dbContext.UserJwtRefreshTokens.FindAsync(userJwt.JwtId);
-                if (dbToken == null)
+                UserJwt? userJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(jwtToken.Id);
+                if (userJwt == null)
                 {
                     return false;
                 }
                 return true;
             }
         }
-
-        public async Task AddTokenToBlacklistAsync(UserJwt userJwt)
+        
+        public JwtSecurityToken ParseToken(string token)
         {
-            DateTime expirationTime = userJwt.ExpirationTime ?? throw new InvalidOperationException("Token expiration time is invalid");
-            TimeSpan ttl = expirationTime - DateTime.UtcNow;
-            if (ttl < TimeSpan.Zero)
-            {
-                return;
-            }
-            await _redis.StringSetAsync($"blacklist:{userJwt.JwtId}", userJwt.Subject.ToString(), ttl);
+            return _jwtHandler.ReadJwtToken(token);
         }
-
     }
 }

@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Client.Engine.Interfaces
+namespace Client.Engine.Models
 {
-    public interface ITaskQueue
+    public abstract class BrigeTask
     {
+        
     }
 }
