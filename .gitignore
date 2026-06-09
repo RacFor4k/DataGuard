@@ -436,4 +436,4 @@ appsettings.*.json
 !appsettings.json
 
 # Qwen
-.qwen/*
+.qwen

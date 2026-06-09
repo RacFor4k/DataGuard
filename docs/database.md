@@ -1,8 +1,8 @@
-# Database
+# База данных
 
 ## PostgreSQL
 
-Primary data store. Connection configured via `DefaultConnection` in `appsettings.json`.
+Основное хранилище данных. Подключение настраивается через `DefaultConnection` в `appsettings.json`.
 
 ```json
 "ConnectionStrings": {
@@ -12,27 +12,32 @@ Primary data store. Connection configured via `DefaultConnection` in `appsetting
 
 ## Entity Framework Core
 
-- `DataGuardDbContext` registered in DI as scoped.
-- SnakeCase naming convention enforced via `UseSnakeCaseNamingConvention()`.
-- Migrations stored in `Server/Migrations/`.
+- `DataGuardDbContext` зарегистрирован в DI как scoped.
+- Используется соглашение об именовании в snake_case через `UseSnakeCaseNamingConvention()`.
+- Миграции хранятся в `Server/Migrations/`.
 
 ## Redis
 
-Used for caching and distributed state. Configured via `RedisConnection`.
+Используется для кэширования и распределённого состояния. Настраивается через `Redis:Configuration`.
 
 ```json
-"ConnectionStrings": {
-  "RedisConnection": "localhost:6379"
+"Redis": {
+  "Configuration": "localhost:6379"
 }
 ```
 
-## Data Access Pattern
+## Паттерн доступа к данным
 
-- Services access data through repositories or directly via `DataGuardDbContext`.
-- EF Core handles connection pooling and query optimization.
+- Сервисы получают доступ к данным через репозитории или напрямую через `DataGuardDbContext`.
+- EF Core управляет пулом подключений и оптимизацией запросов.
 
-## Migrations
+## Миграции
 
-Apply with:
+Применяются командой:
 ```bash
 dotnet ef database update --project Server --startup-project Server
+```
+
+### Создание новой миграции
+```bash
+dotnet ef migrations add <MigrationName> --project Server --output-dir Migrations

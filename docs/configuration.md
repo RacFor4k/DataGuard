@@ -1,35 +1,48 @@
-# Configuration
+# Конфигурация
 
-Конфигурация приложения, переменные окружения, классы Options.
+Настройка приложения, переменные окружения и классы Options.
 
-## Environment Variables
+## Переменные окружения
 
-Локальный запуск использует `appsettings.Development.json`. Для production используйте переменные окружения.
+Локальный запуск использует `appsettings.Development.json`. Для продакшн используйте переменные окружения.
 
-### Server
+### Сервер
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ConnectionStrings__DefaultConnection` | PostgreSQL connection string | Yes |
-| `Jwt__Key` | JWT signing key (min 32 chars) | Yes |
-| `Jwt__Issuer` | JWT issuer | Yes |
-| `Jwt__Audience` | JWT audience | Yes |
-| `Redis__Configuration` | Redis connection string | Yes |
+| Переменная                     | Описание                                      | Требуется |
+|-------------------------------|-----------------------------------------------|-----------|
+| `ConnectionStrings__DefaultConnection` | Строка подключения к PostgreSQL       | Да        |
+| `Jwt__Key`                     | Ключ подписи JWT (минимум 32 символа)        | Да        |
+| `Jwt__Issuer`                  | Эмитент JWT                                   | Да        |
+| `Jwt__Audience`                | Адресат JWT                                   | Да        |
+| `Redis__Configuration`         | Строка подключения к Redis                   | Да        |
 
 ### Client.Engine
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `Redis__Configuration` | Redis connection string | Yes |
-| `Queue__Name` | Queue name for processing | Yes |
+| Переменная                     | Описание                                      | Требуется |
+|-------------------------------|-----------------------------------------------|-----------|
+| `Redis__Configuration`         | Строка подключения к Redis                   | Да        |
+| `Queue__Name`                  | Имя очереди для обработки                        | Да        |
+| `ApiEndpoint`                  | Эндпоинт API для аутентификации сервиса      | Да        |
+| `Jwt__ClientKey`                | JWT ключ для клиента                           | Да        |
 
-## Options Classes
+## Классы Options
 
 ### JwtOptions ([Server/Options/JwtOptions.cs](Server/Options/JwtOptions.cs))
 
 ```json
 {
   "Jwt": {
+    "Key": "development-key-change-in-production",
+    "Issuer": "DataGuard",
+    "Audience": "DataGuardClients"
+  },
+  "ApiSettings": {
+    "ClientAuthKey": "client-secret-key"
+  },
+  "QueueSettings": {
+    "Name": "default-queue"
+  }
+}  "Jwt": {
     "Key": "your-secret-key-min-32-chars",
     "Issuer": "DataGuard",
     "Audience": "DataGuardClients"
@@ -67,6 +80,12 @@
   "CompanyManager": {
     "Endpoint": "http://localhost:8080"
   },
+  "ApiSettings": {
+    "ClientAuthKey": "client-secret-key"
+  },
+  "QueueSettings": {
+    "Name": "default-queue"
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
@@ -76,33 +95,48 @@
 }
 ```
 
-## Configuration Binding
+## Привязка конфигурации
 
 В [Server/Program.cs](Server/Program.cs):
 
 ```csharp
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<CompanyManagerOptions>(builder.Configuration.GetSection("CompanyManager"));
+builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
+builder.Services.Configure<QueueSettings>(builder.Configuration.GetSection("QueueSettings"));
 ```
 
-## Environment-Specific Settings
+## Настройки для разных окружений
 
 - `appsettings.json` — базовые настройки
-- `appsettings.Development.json` — переопределения для разработки (git-игнорируется)
-- `appsettings.Production.json` — переопределения для production
+- `appsettings.Development.json` — переопределения для разработки (игнорируется в git)
+- `appsettings.Production.json` — переопределения для продакшн
 
-## Secrets Management
+## Управление секретами
 
-Для production используйте:
-- [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) для разработки
-- [Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/) или аналоги для production
+Для продакшн используйте:
+- [User Secrets](https://learn.microsoft.com/ru-ru/aspnet/core/security/app-secrets) для разработки
+- [Azure Key Vault](https://learn.microsoft.com/ru-ru/azure/key-vault/) или аналоги для продакшн
 - Docker secrets при запуске в контейнерах
 
-## Docker Compose Overrides
+## Переопределения для Docker Compose
 
-Переменные можно передать через `.env` файл:
+Переменные окружения можно передать через файл `.env`:
 
 ```env
+# PostgreSQL
 POSTGRES_PASSWORD=secure-password
+
+# Redis
 REDIS_PASSWORD=redis-password
+
+# JWT
 JWT_KEY=production-key-here
+JWT_ISSUER=DataGuard
+JWT_AUDIENCE=DataGuardClients
+
+# Очередь
+QUEUE_NAME=production-queue
+
+# API
+CLIENT_AUTH_KEY=production-client-key

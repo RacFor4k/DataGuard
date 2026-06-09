@@ -1,14 +1,14 @@
-# Setup
+# Настройка
 
-Локальная разработка, зависимости, запуск.
+Локальная разработка, зависимости и запуск.
 
-## Prerequisites
+## Предварительные требования
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Docker Compose](https://docs.docker.com/compose/)
 
-## Infrastructure
+## Инфраструктура
 
 Запуск зависимостей (PostgreSQL, Redis):
 
@@ -16,11 +16,11 @@
 docker-compose up -d
 ```
 
-Сервисы из `docker-compose.yml` должны подняться на:
+Сервисы из `docker-compose.yml` должны быть доступны на:
 - PostgreSQL — `localhost:5432`
 - Redis — `localhost:6379`
 
-## Server (REST + gRPC)
+## Сервер (REST + gRPC)
 
 ```bash
 cd Server
@@ -28,20 +28,20 @@ dotnet run
 ```
 
 По умолчанию:
-- REST + Swagger: `https://localhost:<port>` и `/swagger`
+- REST + Swagger: `https://localhost:<порт>` и `/swagger`
 - gRPC: `http://localhost:8081` (можно указать явно через `--urls`)
 
 ### Swagger UI
 
-После запуска откройте `/swagger` в браузере для тестирования REST endpoints.
+После запуска откройте `/swagger` в браузере для тестирования REST-эндпоинтов.
 
-### gRPC endpoint
+### gRPC-эндпоинт
 
-gRPC сервис слушает порт `8081` по протоколу HTTP/2. Убедитесь, что `docker-compose` не конфликтует с этим портом.
+gRPC-сервис слушает порт `8081` по протоколу HTTP/2. Убедитесь, что `docker-compose` не конфликтует с этим портом.
 
-## Client.Engine
+## Клиент.Engine
 
-Фоновый воркер, обрабатывающий очередь сообщений.
+Фоновый воркер для обработки очереди сообщений.
 
 ```bash
 cd Client.Engine

@@ -1,13 +1,13 @@
-# DataGuard Documentation
+# Документация DataGuard
 
-Welcome to the DataGuard documentation.
+Добро пожаловать в документацию DataGuard.
 
-## Contents
+## Содержание
 
-- [Architecture](architecture.md) — High-level design, component boundaries, runtime flows.
-- [Setup](setup.md) — Local development setup, dependencies, running services.
-- [Security](security.md) — Threat model, authentication, authorization, encryption.
-- [Database](database.md) — Schema, migrations, repositories, Entity Framework Core setup.
-- [API Reference](api.md) — REST and gRPC endpoints, protobuf definitions.
-- [Client.Engine](client-engine.md) — Background worker configuration, queue processing.
-- [Configuration](configuration.md) — appsettings, environment variables, options classes.
+- [Архитектура](architecture.md) — общий дизайн, границы компонентов, потоки выполнения.
+- [Настройка](setup.md) — установка для локальной разработки, зависимости, запуск сервисов.
+- [Безопасность](security.md) — модель угроз, аутентификация, авторизация, шифрование.
+- [База данных](database.md) — схема, миграции, репозитории, настройка Entity Framework Core.
+- [Справочник API](api.md) — REST и gRPC эндпоинты, определения protobuf.
+- [Клиент.Engine](client-engine.md) — конфигурация фонового рабочего процесса, обработка очередей.
+- [Конфигурация](configuration.md) — appsettings, переменные окружения, классы Options.

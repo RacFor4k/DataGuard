@@ -1,40 +1,40 @@
-# Architecture
+# Архитектура
 
-High-level design, component boundaries, runtime flows.
+Общий дизайн, границы компонентов и потоки выполнения.
 
-## Overview
+## Обзор
 
-DataGuard is a multi-service .NET 10 application:
+DataGuard — многокомпонентное приложение на .NET 10:
 
-- `Server` — ASP.NET Core host exposing REST controllers and gRPC services.
-- `Contracts` — shared contracts including Protobuf definitions.
-- `Common` — shared helpers/utilities.
-- `Client.Engine` — background worker/consumer.
+- `Server` — хост ASP.NET Core с REST-контроллерами и gRPC-сервисами.
+- `Contracts` — общие контракты, включая определения Protobuf.
+- `Common` — общие вспомогательные классы и утилиты.
+- `Client.Engine` — фоновый рабочий процесс/потребитель.
 
-Infrastructure dependencies:
+Инфраструктурные зависимости:
 
-- PostgreSQL via Entity Framework Core.
-- Redis via StackExchange.Redis.
+- PostgreSQL через Entity Framework Core.
+- Redis через StackExchange.Redis.
 
-## Server startup (observed)
+## Запуск сервера
 
-From [Server/Program.cs](Server/Program.cs):
+На основе [Server/Program.cs](Server/Program.cs):
 
-- Registers `IConnectionMultiplexer` for Redis.
-- Registers `DataGuardDbContext` with Npgsql and snake_case naming.
-- Binds `JwtOptions` and `CompanyManagerOptions`.
-- Registers `IJwtService`, `ISecurityService`, `UserAccessor`.
-- Adds REST controllers and gRPC.
-- Maps gRPC services:
+- Регистрирует `IConnectionMultiplexer` для Redis.
+- Регистрирует `DataGuardDbContext` с Npgsql и именованием в snake_case.
+- Привязывает `JwtOptions` и `CompanyManagerOptions`.
+- Регистрирует `IJwtService`, `ISecurityService`, `UserAccessor`.
+- Добавляет REST-контроллеры и gRPC.
+- Маппит gRPC-сервисы:
   - `AuthenticationService`
   - `SecurityRequestsService`
-- Applies `JwtMiddleware` before endpoints.
+- Применяет `JwtMiddleware` перед обработкой эндпоинтов.
 
-## Communication layers
+## Слои коммуникации
 
-- REST — standard ASP.NET Core controller endpoints.
-- gRPC — Protocol Buffers based services; expected to be Base64-compatible with REST where applicable (per repo guidelines).
+- REST — стандартные эндпоинты ASP.NET Core контроллеров.
+- gRPC — сервисы на основе Protocol Buffers; ожидается совместимость с Base64 для REST-эквивалентов (по правилам репозитория).
 
-## Security
+## Безопасность
 
-See [security.md](security.md) for threat model and mitigations.
+Подробности модели угроз и мер по смягчению см. в файле [security.md](security.md).
