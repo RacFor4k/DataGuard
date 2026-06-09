@@ -12,17 +12,13 @@ namespace Server.Middlewares
     public class JwtMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IJwtService _jwtService;
-        private readonly UserAccessor _userAccessor;
 
-        public JwtMiddleware(RequestDelegate next, IJwtService jwtService, UserAccessor userAccessor)
+        public JwtMiddleware(RequestDelegate next)
         {
             _next = next;
-            _jwtService = jwtService;
-            _userAccessor = userAccessor;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, IJwtService jwtService, UserAccessor userAccessor)
         {
             string? authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
             if (authHeader == null)
@@ -36,7 +32,7 @@ namespace Server.Middlewares
                 return;
             }
             string token = authHeader.Substring(7);
-            _userAccessor.userJwt = await _jwtService.VerifyTokenAsync(token);
+            userAccessor.userJwt = await jwtService.VerifyTokenAsync(token);
             await _next(context);
         }
     }

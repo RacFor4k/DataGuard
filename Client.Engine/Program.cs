@@ -26,7 +26,6 @@ builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.Authenticati
     options.Address = new Uri(builder.Configuration["Grpc:AuthUrl"] ?? throw new InvalidOperationException("Missing Grpc:AuthUrl configuration"));
 });
 
-builder.Services.AddSingleton<BridgeTaskQueue>();
 builder.Services.AddHostedService<QueueProcessorWorker>();
 
 // Консольные команды

@@ -27,7 +27,7 @@ namespace Client.Engine.Workers
             {
                 while (await _taskReader.WaitToReadAsync(cancellationToken))
                 {
-                    while(_taskReader.TryRead(out BrigeTask task))
+                    while(_taskReader.TryRead(out BrigeTask? task))
                     {
                         try
                         {

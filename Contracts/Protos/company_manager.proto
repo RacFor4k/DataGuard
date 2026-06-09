@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option csharp_namespace = "Contracts.Protos.CompanyManager";
+
+package comnpany_manager;
+
+service CompanyManager {
+    
+}

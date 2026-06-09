@@ -33,9 +33,6 @@ builder.Services.AddScoped<UserAccessor>();
 // REST контроллеры
 builder.Services.AddControllers();
 
-// OpenAPI (Swagger) для разработки
-builder.Services.AddOpenApi();
-
 // gRPC сервисы
 builder.Services.AddGrpc();
 
@@ -46,11 +43,9 @@ var app = builder.Build();
 // OpenAPI endpoint (только для разработки)
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
 
 // JWT middleware
 app.UseMiddleware<JwtMiddleware>();
