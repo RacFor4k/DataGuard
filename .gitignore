@@ -434,3 +434,6 @@ FodyWeavers.xsd
 webdemo/storage/*
 appsettings.*.json
 !appsettings.json
+
+# Qwen
+.qwen/*
