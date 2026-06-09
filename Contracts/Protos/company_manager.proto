@@ -5,5 +5,18 @@ option csharp_namespace = "Contracts.Protos.CompanyManager";
 package comnpany_manager;
 
 service CompanyManager {
-    
+    rpc CreateCompany (CreateCompanyRequest) returns (CreateCompanyResponse);
+}
+
+message CreateCompanyRequest {
+    string nonce_token = 1;
+    string master_key_hash = 2;
+    string company_name = 3;
+    string company_email = 4;
+}
+
+message CreateCompanyResponse {
+    int32 status = 1;
+    string message = 2;
+    string registration_code = 3;
 }

@@ -22,7 +22,7 @@ namespace Server.Services
         {
             _logger.LogInformation($"Get nonce request from {context.Peer}");
             string token = await _securityService.GetNonceToken();
-            return new NonceResponse { Status = 200, Message = "OK", Nonce = token };
+            return new NonceResponse { Status = 200, Message = "OK", NonceToken = token };
         }
     }
 }

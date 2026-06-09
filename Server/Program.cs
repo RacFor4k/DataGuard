@@ -19,7 +19,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<DataGuardDbContext>(options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 // Options Services
-builder.Services.AddOptions<JwtSettings>().Bind(builder.Configuration.GetSection("Jwt")).ValidateDataAnnotations();
+builder.Services.AddOptions<JwtOptions>().Bind(builder.Configuration.GetSection("Jwt")).ValidateDataAnnotations();
+builder.Services.AddOptions<CompanyManagerOptions>().Bind(builder.Configuration.GetSection("CompanyManager")).ValidateDataAnnotations();
 
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();

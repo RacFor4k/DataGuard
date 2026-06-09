@@ -12,7 +12,6 @@ namespace Server.Models
     {
         [Key]
         public Guid Id { get; set; } = Guid.CreateVersion7();
-        public required Guid CompanyId { get; set; }
         public Guid? IconId { get; set; }
         public Icon? Icon { get; set; }
         public required string Name { get; set; }

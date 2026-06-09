@@ -17,20 +17,20 @@ namespace Server.Services
     {
         private readonly DataGuardDbContext _dbContext;
         private readonly IDatabase  _redis;
-        private readonly IOptions<JwtSettings> _jwtSettings;
+        private readonly IOptions<JwtOptions> _jwtOptions;
         public ILogger<JwtService> _logger { get; set; }
         private static readonly JwtSecurityTokenHandler _jwtHandler = new JwtSecurityTokenHandler();
 
-        public JwtService(DataGuardDbContext dbContext, IConnectionMultiplexer redis, IOptions<JwtSettings> jwtSettings, ILogger<JwtService> logger)
+        public JwtService(DataGuardDbContext dbContext, IConnectionMultiplexer redis, IOptions<JwtOptions> jwtOptions, ILogger<JwtService> logger)
         {
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("jwt:");
-            _jwtSettings = jwtSettings;
-            if(string.IsNullOrWhiteSpace(_jwtSettings.Value.Issuer))
+            _jwtOptions = jwtOptions;
+            if(string.IsNullOrWhiteSpace(_jwtOptions.Value.Issuer))
                 throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
-            if(string.IsNullOrWhiteSpace(_jwtSettings.Value.Audience))
+            if(string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
                 throw new InvalidOperationException("JWT Audience not found in appsettings.json");
-            if(string.IsNullOrWhiteSpace(_jwtSettings.Value.HexKey))
+            if(string.IsNullOrWhiteSpace(_jwtOptions.Value.HexKey))
                 throw new InvalidOperationException("JWT HexKey not found in appsettings.json");
             _logger = logger;
         }
@@ -42,7 +42,7 @@ namespace Server.Services
         /// <returns>Access токен.</returns>
         public string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups) 
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtSettings.Value.HexKey));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtOptions.Value.HexKey));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             
             Claim[] claims =
@@ -58,10 +58,10 @@ namespace Server.Services
             claims.Concat(groups.Select(g => new Claim("role", g)));
             
             JwtSecurityToken token = new JwtSecurityToken(
-                issuer: _jwtSettings.Value.Issuer,
-                audience: _jwtSettings.Value.Audience,
+                issuer: _jwtOptions.Value.Issuer,
+                audience: _jwtOptions.Value.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.Add(_jwtSettings.Value.AccessTokenExpiration),
+                expires: DateTime.UtcNow.Add(_jwtOptions.Value.AccessTokenExpiration),
                 signingCredentials: credentials
             );
             return _jwtHandler.WriteToken(token);
@@ -69,7 +69,7 @@ namespace Server.Services
         
         public string GenerateRefreshToken(string subject, string name, string surname, string email, string[] groups)
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtSettings.Value.HexKey));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtOptions.Value.HexKey));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             Claim[] claims =
@@ -85,10 +85,10 @@ namespace Server.Services
             claims.Concat(groups.Select(g => new Claim("role", g)));
             
             JwtSecurityToken token = new JwtSecurityToken(
-                issuer: _jwtSettings.Value.Issuer,
-                audience: _jwtSettings.Value.Audience,
+                issuer: _jwtOptions.Value.Issuer,
+                audience: _jwtOptions.Value.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.Add(_jwtSettings.Value.RefreshTokenExpiration),
+                expires: DateTime.UtcNow.Add(_jwtOptions.Value.RefreshTokenExpiration),
                 signingCredentials: credentials);
 
             return _jwtHandler.WriteToken(token);
@@ -102,7 +102,7 @@ namespace Server.Services
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtSettings.Value.HexKey));
+            var securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtOptions.Value.HexKey));
 
             var validationParameters = new TokenValidationParameters
             {
@@ -112,9 +112,9 @@ namespace Server.Services
 
                 // Проверка издателя и потребителя
                 ValidateIssuer = true,
-                ValidIssuer = _jwtSettings.Value.Issuer,
+                ValidIssuer = _jwtOptions.Value.Issuer,
                 ValidateAudience = true,
-                ValidAudience = _jwtSettings.Value.Audience,
+                ValidAudience = _jwtOptions.Value.Audience,
 
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.FromMinutes(1) // Допустимый сдвиг времени для компенсации рассинхронизации часов

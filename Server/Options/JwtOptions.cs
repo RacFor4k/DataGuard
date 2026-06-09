@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Server.Options
 {
-    public class JwtSettings
+    public class JwtOptions
     {
         public string Issuer { get; set; } = string.Empty;
         public string Audience { get; set; } = string.Empty;

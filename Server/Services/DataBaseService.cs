@@ -44,12 +44,10 @@ namespace Server.Services
             {
                 entity.HasMany(c => c.Users)
                     .WithOne(u => u.Company)
-                    .HasForeignKey(u => u.CompanyId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasMany(c => c.Groups)
                     .WithOne(g => g.Company)
-                    .HasForeignKey(g => g.CompanyId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }

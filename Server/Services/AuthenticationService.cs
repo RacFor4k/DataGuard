@@ -69,6 +69,7 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
                 return new RegisterResponse { Status = 400, Message = "Registration code is invalid" };
             }
+            await _redis.KeyDeleteAsync(request.RegistrationCode);
 
             RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
             if (registrationData == null)
@@ -90,7 +91,6 @@ namespace Server.Services
             }
             var user = new User
             {
-                CompanyId = registrationData.CompanyId,
                 Name = registrationData.Name,
                 Surname = registrationData.Surname,
                 Email = registrationData.Email,
@@ -103,53 +103,41 @@ namespace Server.Services
             await _dbContext.Users.AddAsync(user);
             try
             {
-                foreach (var groupId in registrationData.Groups)
+                var groups = _dbContext.Groups.Where(g => registrationData.Groups.Contains(g.Id));
+                var groupMembers = new List<GroupMember>();
+                foreach (var group in groups)
                 {
                     var groupMember = new GroupMember
                     {
-                        GroupId = groupId,
-                        Group = await _dbContext.Groups.Where(g => g.Id == groupId).FirstAsync(),
+                        GroupId = group.Id,
+                        Group = group,
                         UserId = user.UUID,
                         User = user,
                         CompanyId = registrationData.CompanyId,
                         JoinDate = DateTime.UtcNow,
-                        Role = GroupRole.User
+                        Role = registrationData.AdminGroups.Contains(group.Id) ? GroupRole.Admin : GroupRole.User
                     };
-                    await _dbContext.GroupMembers.AddAsync(groupMember);
+                    groupMembers.Add(groupMember);
                 }
+                await _dbContext.GroupMembers.AddRangeAsync(groupMembers);
+                string refreshJwtToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+                string accessJwtToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+                byte[]? masterPublicKey = await _dbContext.Users.Where(u => u.UUID == user.UUID).Select(u => u.Company.PublicKey).FirstOrDefaultAsync();
+                if (masterPublicKey == null)
+                {
+                    _logger.LogInformation($"{context.Peer}\tMaster public key is invalid");
+                    return new RegisterResponse { Status = 400, Message = "Company is invalid", JwtAccessToken="", JwtRefreshToken = "", PublicMasterKey = ByteString.CopyFrom() };
+                }
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation($"{context.Peer}\tUser registered");
 
-                foreach (var adminGroupId in registrationData.AdminGroups)
-                {
-                    var groupMember = new GroupMember
-                    {
-                        GroupId = adminGroupId,
-                        Group = await _dbContext.Groups.Where(g => g.Id == adminGroupId).FirstAsync(),
-                        UserId = user.UUID,
-                        User = user,
-                        CompanyId = registrationData.CompanyId,
-                        JoinDate = DateTime.UtcNow,
-                        Role = GroupRole.Admin
-                    };
-                    await _dbContext.GroupMembers.AddAsync(groupMember);
-                }
+                return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey), JwtAccessToken = accessJwtToken, JwtRefreshToken = refreshJwtToken };
             }
             catch (Exception ex)
             {
                 _logger.LogInformation($"{context.Peer}\tGroupMembers is invalid\n{ex.Message}");
                 return new RegisterResponse { Status = 400, Message = "GroupMembers is invalid" };
             }
-            string refreshJwtToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
-            string accessJwtToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
-            byte[]? masterPublicKey = await _dbContext.Users.Where(u => u.UUID == user.UUID).Select(u => u.Company.PublicKey).FirstOrDefaultAsync();
-            if (masterPublicKey == null)
-            {
-                _logger.LogInformation($"{context.Peer}\tMaster public key is invalid");
-                return new RegisterResponse { Status = 400, Message = "Company is invalid", JwtAccessToken="", JwtRefreshToken = "", PublicMasterKey = ByteString.CopyFrom() };
-            }
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"{context.Peer}\tUser registered");
-
-            return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey), JwtAccessToken = accessJwtToken, JwtRefreshToken = refreshJwtToken };
         }
 
         /// <summary>
@@ -208,7 +196,7 @@ namespace Server.Services
             {
                 return new LoginResponse { Status = 404, Message = "User is not found" };
             }
-            if(CryptographicOperations.FixedTimeEquals(user.PinCodeHash, request.Pin.ToByteArray()))
+            if(!CryptographicOperations.FixedTimeEquals(user.PinCodeHash, request.Pin.ToByteArray()))
             {
                 return new LoginResponse { Status = 401, Message = "Pin is invalid" };
             }
@@ -269,7 +257,7 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
                 return new CreateRegistrationCodeResponse { Status = 401, Message = "Token is invalid" };
             }
-            Guid companyId = _dbContext.Users.Where(u => u.UUID.ToString() == _userAccessor.userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
+            Guid companyId = _dbContext.Users.Where(u => u.UUID.ToString() == _userAccessor.userJwt.Subject).Select(u => u.Company.CompanyId).FirstOrDefault();
             try
             {
                 var registrationData = new RegistrationData
