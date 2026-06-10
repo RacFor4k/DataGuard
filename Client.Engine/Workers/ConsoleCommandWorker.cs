@@ -2,11 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Client.Engine.Services;
 
 namespace Client.Engine.Workers
 {
     public class ConsoleCommandWorker : BackgroundService
     {
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        public ConsoleCommandWorker(IServiceScopeFactory serviceScopeFactory)
+        {
+            _serviceScopeFactory = serviceScopeFactory;
+        }
         protected override Task ExecuteAsync(CancellationToken cancellationToken)
         {       
             Task.Factory.StartNew(

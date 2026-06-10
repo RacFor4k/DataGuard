@@ -1,18 +1,17 @@
 syntax = "proto3";
 
-option csharp_namespace = "Contracts.Protos.CompanyManager";
+option csharp_namespace = "Contracts.Protos.Client.CompanyManager";
 
-package comnpany_manager;
+package client.company_manager;
 
-service CompanyManager {
+service Company {
     rpc CreateCompany (CreateCompanyRequest) returns (CreateCompanyResponse);
 }
 
 message CreateCompanyRequest {
-    string nonce_token = 1;
-    string master_key = 2;
-    string company_name = 3;
-    string company_email = 4;
+    string master_key = 1;
+    string company_name = 2;
+    string company_email = 3;
 }
 
 message CreateCompanyResponse {

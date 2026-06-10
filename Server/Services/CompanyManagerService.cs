@@ -28,8 +28,8 @@ namespace Server.Services
             _logger = logger;
             _securityService = securityService;
             _companyManagerOptions = companyManagerOptions;
-            if (string.IsNullOrWhiteSpace(_companyManagerOptions.Value.MasterKeyHash))
-                throw new InvalidOperationException("MasterKeyHash not found in appsettings.json");
+            if (string.IsNullOrWhiteSpace(_companyManagerOptions.Value.MasterKey))
+                throw new InvalidOperationException("MasterKey not found in appsettings.json");
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("auth:");
         }
@@ -42,10 +42,10 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tNonce token is empty");
                 return new CreateCompanyResponse { Status = 400, Message = "Nonce token is empty", RegistrationCode = "" };
             }
-            if (string.IsNullOrEmpty(request.MasterKeyHash))
+            if (string.IsNullOrEmpty(request.MasterKey))
             {
-                _logger.LogInformation($"{context.Peer}\tMaster key hash is empty");
-                return new CreateCompanyResponse { Status = 400, Message = "Master key hash is empty", RegistrationCode = "" };
+                _logger.LogInformation($"{context.Peer}\tMaster key is empty");
+                return new CreateCompanyResponse { Status = 400, Message = "Master key is empty", RegistrationCode = "" }; 
             }
             if (string.IsNullOrEmpty(request.CompanyName))
             {
@@ -67,7 +67,7 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tNonce token is invalid");
                 return new CreateCompanyResponse { Status = 400, Message = "Nonce token is invalid", RegistrationCode = "" };
             }
-            if (request.MasterKeyHash != _companyManagerOptions.Value.MasterKeyHash)
+            if (request.MasterKey != _companyManagerOptions.Value.MasterKey)
             {
                 _logger.LogInformation($"{context.Peer}\tMaster key is invalid");
                 return new CreateCompanyResponse { Status = 400, Message = "Master key is invalid", RegistrationCode = "" };

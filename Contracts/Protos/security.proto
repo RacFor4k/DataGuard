@@ -2,17 +2,28 @@ syntax = "proto3";
 
 option csharp_namespace = "Contracts.Protos.Security";
 
+package security;
+
 service SecurityService {
     rpc GetNonce (NonceRequest) returns (NonceResponse);
+    rpc GetSalt (SaltRequest) returns (SaltResponse);
 }
 
-// TODO реализовать
 message NonceRequest {
 }
 
-// TODO реализовать
 message NonceResponse {
     int32 status = 1;
     string message = 2;
     string nonce_token = 3;
+}
+
+message SaltRequest {
+    string email = 1;
+}
+
+message SaltResponse {
+    int32 status = 1;
+    string message = 2;
+    bytes salt = 3;
 }

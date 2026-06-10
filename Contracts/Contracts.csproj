@@ -20,6 +20,8 @@
 		<ProtoBuf Include="Protos\auth.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\security.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\company_manager.proto" GrpcServices="Both" />
+    <ProtoBuf Include="Protos\Client\auth.proto" GrpcServices="Both" />
+    <ProtoBuf Include="Protos\Client\company_manager.proto" GrpcServices="Both" />
 	</ItemGroup>
 	
 

@@ -7,6 +7,6 @@ namespace Server.Options
 {
     public class CompanyManagerOptions
     {
-        public string? MasterKeyHash { get; set; }
+        public string? MasterKey { get; set; }
     }
 }

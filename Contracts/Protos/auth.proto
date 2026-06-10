@@ -9,8 +9,8 @@ service Authentication {
   // Регистрирует нового пользователя
   rpc Register (RegisterRequest) returns (RegisterResponse);
 
-  // Утсановка зашифрованного ключа пользователя мастер-ключом
-  rpc SetMasterEncryptedKey (SetMasterEncryptedKeyRequest) returns (SetMasterEncryptedKeyResponse);
+  // Установка зашифрованного ключа пользователя мастер-ключом
+  rpc SetMasterKey (SetMasterKeyRequest) returns (SetMasterKeyResponse);
 
   // Вход существующего пользователя
   rpc Login (LoginRequest) returns (LoginResponse);
@@ -24,10 +24,10 @@ service Authentication {
 
 // Запрос на регистрацию пользователя
 message RegisterRequest {
-  string registration_code = 1; // 12 символов nanoid (Английский алфавит)
-  bytes pin = 2; // от 6 до 18 цифр
-  bytes encrypteded_key = 3; // base64 зашифрованный ключ
-  bytes public_key = 4; // публичный ключ пользователя
+  string registration_code = 1; // 12 символов nanoid (Английский алфавит и цифры)
+  bytes encrypted_pin = 2; // от 8 до 18 символов (зашифрованный)
+  bytes encrypted_key = 3; // зашифрованный ключ
+  bytes pin_hash = 4; // хэш ключа
 }
 
 // Ответ на запрос регистрации пользователя
@@ -40,12 +40,12 @@ message RegisterResponse {
 }
 
 // Запрос на установку зашифрованного ключа пользователя мастер-ключом
-message SetMasterEncryptedKeyRequest {
-  bytes master_encrypted_key = 1; // мастер-ключ
+message SetMasterKeyRequest {
+  bytes master_key = 1; // мастер-ключ
 }
 
 // Ответ на запрос установки зашифрованного ключа пользователя мастер-ключом
-message SetMasterEncryptedKeyResponse {
+message SetMasterKeyResponse {
   int32 status = 1;
   string message = 2;
   string jwt_refresh_token = 3;
@@ -55,7 +55,7 @@ message SetMasterEncryptedKeyResponse {
 // Запрос на вход пользователя
 message LoginRequest {
   string user_id = 1;
-  bytes pin = 2;
+  bytes pin_hash = 2;
   string nonce_token = 3;
 }
 
@@ -63,7 +63,7 @@ message LoginRequest {
 message LoginResponse {
   int32 status = 1;
   string message = 2;
-  string jwt_token = 3;
+  bytes encrypted_key = 3;
   string jwt_refresh_token = 4;
   string jwt_access_token = 5;
 }

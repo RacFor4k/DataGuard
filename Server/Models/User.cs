@@ -14,10 +14,12 @@ namespace Server.Models
         public required string Surname { get; set; }
         public required string Email { get; set; }
         public ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
-        public required byte[] PinCodeHash { get; set; }
-        public required byte[] PublicKey { get; set; }
+        public required byte[] EncryptedPin { get; set; }
         public required byte[] EncryptedKey { get; set; }
-        public byte[]? MasterEncryptedKey { get; set; }
+        public required byte[] ServerPinHash { get; set; }
+        public required byte[] ClientSalt { get; set; }
+        public required byte[] ServerSalt { get; set; }
+        public byte[]? MasterKey { get; set; }
         public required Company Company { get; set; }
     }
 

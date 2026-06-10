@@ -1,5 +1,6 @@
 using Client.Engine;
 using Client.Engine.Interfaces;
+using Client.Engine.Models;
 using Client.Engine.Services;
 using Client.Engine.Workers;
 using Microsoft.AspNetCore.Builder;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.IO;
+using System.Threading.Channels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,14 +28,12 @@ builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.Authenticati
     options.Address = new Uri(builder.Configuration["Grpc:AuthUrl"] ?? throw new InvalidOperationException("Missing Grpc:AuthUrl configuration"));
 });
 
-builder.Services.AddHostedService<QueueProcessorWorker>();
-
 // Консольные команды
 if(Environment.UserInteractive)
     builder.Services.AddHostedService<ConsoleCommandWorker>();
 
 var app = builder.Build();
 
-app.MapGrpcService<TaskReceiver>();
+app.MapGrpcService<AuthenticationService>();
 
 app.Run();

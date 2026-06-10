@@ -21,6 +21,7 @@ builder.Services.AddDbContext<DataGuardDbContext>(options => options.UseNpgsql(c
 // Options Services
 builder.Services.AddOptions<JwtOptions>().Bind(builder.Configuration.GetSection("Jwt")).ValidateDataAnnotations();
 builder.Services.AddOptions<CompanyManagerOptions>().Bind(builder.Configuration.GetSection("CompanyManager")).ValidateDataAnnotations();
+builder.Services.AddOptions<SecurityOptions>().Bind(builder.Configuration.GetSection("Security")).ValidateDataAnnotations();
 
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();

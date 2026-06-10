@@ -9,5 +9,8 @@ namespace Server.Interfaces
     {
         public Task<string> GetNonceToken();
         public Task<bool> VerifyNonceToken(string nonce);
+        public byte[] GenerateSalt();
+        public Task<byte[]> HashPasswordAsync(string password, byte[] salt);
+        public Task<byte[]> HashPasswordAsync(byte[] password, byte[] salt);
     }
 }

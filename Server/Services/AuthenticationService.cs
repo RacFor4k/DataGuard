@@ -58,10 +58,20 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tRegistration code is empty");
                 return new RegisterResponse { Status = 400, Message = "Registration code is empty" };
             }
-            if (request.Pin.Length != 32)
+            if (request.EncryptedPin.Length != 32)
             {
                 _logger.LogInformation($"{context.Peer}\tPin is invalid");
                 return new RegisterResponse { Status = 400, Message = "Pin is invalid" };
+            }
+            if (request.EncryptedKey.Length != 32)
+            {
+                _logger.LogInformation($"{context.Peer}\tKey is invalid");
+                return new RegisterResponse { Status = 400, Message = "Key is invalid" };
+            }
+            if (request.PinHash.Length != 32)
+            {
+                _logger.LogInformation($"{context.Peer}\tPin hash is invalid");
+                return new RegisterResponse { Status = 400, Message = "Pin hash is invalid" };
             }
             string? rawRegistrationData = await _redis.StringGetAsync(request.RegistrationCode);
             if (string.IsNullOrEmpty(rawRegistrationData))
@@ -89,15 +99,20 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tCompany is invalid");
                 return new RegisterResponse { Status = 400, Message = "Company is invalid" };
             }
+            byte[] clientSalt = _securityService.GenerateSalt();
+            byte[] serverSalt = _securityService.GenerateSalt();
+            byte[] serverPinHash = await _securityService.HashPasswordAsync(request.EncryptedPin.ToByteArray(), serverSalt);
             var user = new User
             {
                 Name = registrationData.Name,
                 Surname = registrationData.Surname,
                 Email = registrationData.Email,
-                PinCodeHash = request.Pin.ToByteArray(),
-                PublicKey = request.PublicKey.ToByteArray(),
-                EncryptedKey = request.EncryptededKey.ToByteArray(),
-                MasterEncryptedKey = null,
+                EncryptedPin = request.EncryptedPin.ToByteArray(),
+                EncryptedKey = request.EncryptedKey.ToByteArray(),
+                ServerPinHash = serverPinHash,
+                ClientSalt = clientSalt,
+                ServerSalt = serverSalt,
+                MasterKey = null,
                 Company = company
             };
             await _dbContext.Users.AddAsync(user);
@@ -143,29 +158,29 @@ namespace Server.Services
         /// <summary>
         /// Установка зашифрованного ключа пользователя мастер-ключом.
         /// </summary>
-        public override async Task<SetMasterEncryptedKeyResponse> SetMasterEncryptedKey(SetMasterEncryptedKeyRequest request, ServerCallContext context)
+        public override async Task<SetMasterKeyResponse> SetMasterKey(SetMasterKeyRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Set master encrypted key request from {context.Peer}");
+            _logger.LogInformation($"Set master key request from {context.Peer}");
             if(_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterEncryptedKeyResponse { Status = 401, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
+                return new SetMasterKeyResponse { Status = 401, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
             }
-            if (request.MasterEncryptedKey.Length != 512)
+            if (request.MasterKey.Length != 512)
             {
-                _logger.LogInformation($"{context.Peer}\tMaster encrypted key is empty");
-                return new SetMasterEncryptedKeyResponse { Status = 400, Message = "Master encrypted key is empty", JwtRefreshToken = "", JwtAccessToken = "" };
+                _logger.LogInformation($"{context.Peer}\tMaster key is empty");
+                return new SetMasterKeyResponse { Status = 400, Message = "Master key is empty", JwtRefreshToken = "", JwtAccessToken = "" };
             }
             if (!_userAccessor.userJwt.GetGroups().Contains("system:master-key"))
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterEncryptedKeyResponse { Status = 403, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
+                return new SetMasterKeyResponse { Status = 403, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
             }
             
             string jwtRefreshToken = _jwtService.GenerateRefreshToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
             string jwtAccessToken = _jwtService.GenerateAccessToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
             await _jwtService.RevokeTokenAsync(_userAccessor.userJwt);
-            return new SetMasterEncryptedKeyResponse { Status = 200, Message = "OK", JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
+            return new SetMasterKeyResponse { Status = 200, Message = "OK", JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
         /// <summary>
@@ -179,7 +194,7 @@ namespace Server.Services
             {
                 return new LoginResponse { Status = 400, Message = "UserId is empty" };
             }
-            if(request.Pin.Length != 32)
+            if(request.PinHash.Length != 32)
             {
                 return new LoginResponse { Status = 400, Message = "Pin is invalid" };
             }
@@ -196,13 +211,14 @@ namespace Server.Services
             {
                 return new LoginResponse { Status = 404, Message = "User is not found" };
             }
-            if(!CryptographicOperations.FixedTimeEquals(user.PinCodeHash, request.Pin.ToByteArray()))
+            var pinHash = await _securityService.HashPasswordAsync(request.PinHash.ToByteArray(), user.ServerSalt);
+            if(!CryptographicOperations.FixedTimeEquals(user.ServerPinHash, pinHash))
             {
                 return new LoginResponse { Status = 401, Message = "Pin is invalid" };
             }
             string jwtRefreshToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
             string jwtAccessToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
-            return new LoginResponse { Status = 200, Message = "OK", JwtToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
+            return new LoginResponse { Status = 200, Message = "OK", EncryptedKey = ByteString.CopyFrom(user.EncryptedKey), JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
         /// <summary>

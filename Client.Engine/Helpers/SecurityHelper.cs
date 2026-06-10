@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Client.Engine.Helpers
 {
-    public class CompanyHelper
+    public class SecurityHelper
     {
         
     }
