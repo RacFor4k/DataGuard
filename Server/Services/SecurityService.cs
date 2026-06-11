@@ -19,6 +19,7 @@ namespace Server.Services
         private readonly IDatabase _redis;
         private readonly ILogger<SecurityService> _logger;
         private readonly IOptions<SecurityOptions> _securityOptions;
+        private readonly byte[] _nonceSecretKey;
 
         public SecurityService(IConnectionMultiplexer redis, ILogger<SecurityService> logger, IOptions<SecurityOptions> securityOptions)
         {
@@ -27,13 +28,14 @@ namespace Server.Services
             _securityOptions = securityOptions;
             if (_securityOptions.Value.NonceSecretKey == null)
                 throw new InvalidOperationException("Nonce secret key is not found.");
+            _nonceSecretKey = _securityOptions.Value.NonceSecretKey;
         }
         public async Task<string> GetNonceToken()
         {
             string nonce = Guid.NewGuid().ToString();
             long expiration = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds();
             string token = $"{expiration}.{nonce}";
-            string signature = Convert.ToBase64String(HMACSHA256.HashData(_securityOptions.Value.NonceSecretKey, Encoding.UTF8.GetBytes(token)));
+            string signature = Convert.ToBase64String(HMACSHA256.HashData(_nonceSecretKey, Encoding.UTF8.GetBytes(token)));
             await _redis.StringSetAsync($"nonce:{nonce}", true, TimeSpan.FromMinutes(5));
             
             return $"{token}.{signature}";
@@ -56,7 +58,7 @@ namespace Server.Services
             }
             string nonce = parts[1];
             string signature = parts[2];
-            byte[] expectedHash = HMACSHA256.HashData(_securityOptions.Value.NonceSecretKey, Encoding.UTF8.GetBytes($"{expiration}.{nonce}"));
+            byte[] expectedHash = HMACSHA256.HashData(_nonceSecretKey, Encoding.UTF8.GetBytes($"{expiration}.{nonce}"));
             byte[] providedHash = Convert.FromBase64String(signature);
             if(!CryptographicOperations.FixedTimeEquals(expectedHash,providedHash))
             {

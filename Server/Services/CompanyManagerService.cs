@@ -40,37 +40,37 @@ namespace Server.Services
             if (string.IsNullOrEmpty(request.NonceToken))
             {
                 _logger.LogInformation($"{context.Peer}\tNonce token is empty");
-                return new CreateCompanyResponse { Status = 400, Message = "Nonce token is empty", RegistrationCode = "" };
+                return new CreateCompanyResponse { Status = 400, Message = "Nonce token is empty" };
             }
             if (string.IsNullOrEmpty(request.MasterKey))
             {
                 _logger.LogInformation($"{context.Peer}\tMaster key is empty");
-                return new CreateCompanyResponse { Status = 400, Message = "Master key is empty", RegistrationCode = "" }; 
+                return new CreateCompanyResponse { Status = 400, Message = "Master key is empty" }; 
             }
             if (string.IsNullOrEmpty(request.CompanyName))
             {
                 _logger.LogInformation($"{context.Peer}\tCompany name is empty");
-                return new CreateCompanyResponse { Status = 400, Message = "Company name is empty", RegistrationCode = "" };
+                return new CreateCompanyResponse { Status = 400, Message = "Company name is empty" };
             }
             if (string.IsNullOrEmpty(request.CompanyEmail))
             {
                 _logger.LogInformation($"{context.Peer}\tCompany email is empty");
-                return new CreateCompanyResponse { Status = 400, Message = "Company email is empty", RegistrationCode = "" };
+                return new CreateCompanyResponse { Status = 400, Message = "Company email is empty" };
             }
             if (!MailAddress.TryCreate(request.CompanyEmail, out _))
             {
                 _logger.LogInformation($"{context.Peer}\tCompany email is invalid");
-                return new CreateCompanyResponse { Status = 400, Message = "Company email is invalid", RegistrationCode = "" };
+                return new CreateCompanyResponse { Status = 400, Message = "Company email is invalid" };
             }
             if (await _securityService.VerifyNonceToken(request.NonceToken))
             {
                 _logger.LogInformation($"{context.Peer}\tNonce token is invalid");
-                return new CreateCompanyResponse { Status = 400, Message = "Nonce token is invalid", RegistrationCode = "" };
+                return new CreateCompanyResponse { Status = 400, Message = "Nonce token is invalid" };
             }
             if (request.MasterKey != _companyManagerOptions.Value.MasterKey)
             {
                 _logger.LogInformation($"{context.Peer}\tMaster key is invalid");
-                return new CreateCompanyResponse { Status = 400, Message = "Master key is invalid", RegistrationCode = "" };
+                return new CreateCompanyResponse { Status = 400, Message = "Master key is invalid" };
             }
             Company company = new Company
             {

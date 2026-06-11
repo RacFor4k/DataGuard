@@ -27,7 +27,7 @@ builder.Services.AddOptions<SecurityOptions>().Bind(builder.Configuration.GetSec
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Security service
-builder.Services.AddScoped<ISecurityService, SecurityService>();
+builder.Services.AddSingleton<ISecurityService, SecurityService>();
 
 // User accessor
 builder.Services.AddScoped<UserAccessor>();

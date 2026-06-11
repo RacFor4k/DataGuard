@@ -4,7 +4,7 @@ option csharp_namespace = "Contracts.Protos.Client.CompanyManager";
 
 package client.company_manager;
 
-service Company {
+service CompanyManager {
     rpc CreateCompany (CreateCompanyRequest) returns (CreateCompanyResponse);
 }
 

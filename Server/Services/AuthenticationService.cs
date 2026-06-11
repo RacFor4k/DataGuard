@@ -141,7 +141,7 @@ namespace Server.Services
                 if (masterPublicKey == null)
                 {
                     _logger.LogInformation($"{context.Peer}\tMaster public key is invalid");
-                    return new RegisterResponse { Status = 400, Message = "Company is invalid", JwtAccessToken="", JwtRefreshToken = "", PublicMasterKey = ByteString.CopyFrom() };
+                    return new RegisterResponse { Status = 400, Message = "Company is invalid", PublicMasterKey = ByteString.CopyFrom() };
                 }
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation($"{context.Peer}\tUser registered");
@@ -164,17 +164,17 @@ namespace Server.Services
             if(_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterKeyResponse { Status = 401, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
+                return new SetMasterKeyResponse { Status = 401, Message = "Token is invalid" };
             }
             if (request.MasterKey.Length != 512)
             {
                 _logger.LogInformation($"{context.Peer}\tMaster key is empty");
-                return new SetMasterKeyResponse { Status = 400, Message = "Master key is empty", JwtRefreshToken = "", JwtAccessToken = "" };
+                return new SetMasterKeyResponse { Status = 400, Message = "Master key is empty" };
             }
             if (!_userAccessor.userJwt.GetGroups().Contains("system:master-key"))
             {
                 _logger.LogInformation($"{context.Peer}\tToken is invalid");
-                return new SetMasterKeyResponse { Status = 403, Message = "Token is invalid", JwtRefreshToken = "", JwtAccessToken = "" };
+                return new SetMasterKeyResponse { Status = 403, Message = "Token is invalid" };
             }
             
             string jwtRefreshToken = _jwtService.GenerateRefreshToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
@@ -230,14 +230,14 @@ namespace Server.Services
         {
             if(_userAccessor.userJwt == null)
             {
-                return new RefreshTokenResponse { Status = 401, Message = "Token is invalid", JwtAccessToken = "" };
+                return new RefreshTokenResponse { Status = 401, Message = "Token is invalid" };
             }
             if (!_userAccessor.userJwt.IsAccessToken())
             {
                 string jwtAccessToken = _jwtService.GenerateAccessToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
                 return new RefreshTokenResponse { Status = 200, Message = "OK", JwtAccessToken = jwtAccessToken };
             }
-            return new RefreshTokenResponse { Status = 401, Message = "Token is invalid", JwtAccessToken = "" };
+            return new RefreshTokenResponse { Status = 401, Message = "Token is invalid" };
         }
 
         public override async Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
