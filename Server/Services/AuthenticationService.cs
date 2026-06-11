@@ -14,6 +14,8 @@ using StackExchange.Redis.KeyspaceIsolation;
 using NanoidDotNet;
 using System.Security.Cryptography;
 using Common.Helpers;
+using Server.Options;
+using Microsoft.Extensions.Options;
 
 namespace Server.Services
 {
@@ -28,6 +30,7 @@ namespace Server.Services
         private readonly ILogger<AuthenticationService> _logger;
         private readonly IJwtService _jwtService;
         private readonly ISecurityService _securityService;
+        private readonly SecurityOptions _securityOptions;
         private readonly UserAccessor _userAccessor;
 
         public AuthenticationService(
@@ -36,6 +39,7 @@ namespace Server.Services
             ILogger<AuthenticationService> logger,
             IJwtService jwtService,
             ISecurityService securityService,
+            IOptions<SecurityOptions> securityOptions,
             UserAccessor userAccessor)
         {
             _dbContext = dbContext;
@@ -43,6 +47,7 @@ namespace Server.Services
             _logger = logger;
             _jwtService = jwtService;
             _securityService = securityService;
+            _securityOptions = securityOptions.Value;
             _userAccessor = userAccessor;
         }
 
@@ -51,33 +56,38 @@ namespace Server.Services
         /// </summary>
         public override async Task<RegisterResponse> Register(RegisterRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Registration request from {context.Peer}");
+            _logger.LogTrace($"Register called with registrationCode: {request.RegistrationCode}, peer: {context.Peer}");
 
             if (string.IsNullOrEmpty(request.RegistrationCode))
             {
-                _logger.LogInformation($"{context.Peer}\tRegistration code is empty");
+                _logger.LogWarning($"Registration code is empty, peer: {context.Peer}");
                 return new RegisterResponse { Status = 400, Message = "Registration code is empty" };
             }
             var registrationCode = request.RegistrationCode.ToUpper();
-            if (request.EncryptedPin.Length != 32)
+            if (request.EncryptedPassword.Length != 32)
             {
-                _logger.LogInformation($"{context.Peer}\tPin is invalid");
-                return new RegisterResponse { Status = 400, Message = "Pin is invalid" };
+                _logger.LogWarning($"Password is invalid (length: {request.EncryptedPassword.Length}, peer: {context.Peer})");
+                return new RegisterResponse { Status = 400, Message = "Password is invalid" };
             }
             if (request.EncryptedKey.Length != 32)
             {
-                _logger.LogInformation($"{context.Peer}\tKey is invalid");
+                _logger.LogWarning($"Key is invalid (length: {request.EncryptedKey.Length}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "Key is invalid" };
             }
-            if (request.PinHash.Length != 32)
+            if (request.PasswordHash.Length != 32)
             {
-                _logger.LogInformation($"{context.Peer}\tPin hash is invalid");
-                return new RegisterResponse { Status = 400, Message = "Pin hash is invalid" };
+                _logger.LogWarning($"Password hash is invalid (length: {request.PasswordHash.Length}, peer: {context.Peer})");
+                return new RegisterResponse { Status = 400, Message = "Password hash is invalid" };
+            }
+            if (request.ClientSalt.Length != _securityOptions.SaltLength)
+            {
+                _logger.LogWarning($"Client salt is invalid (length: {request.ClientSalt.Length}, expected: {_securityOptions.SaltLength}, peer: {context.Peer})");
+                return new RegisterResponse { Status = 400, Message = "Client salt is invalid" };
             }
             string? rawRegistrationData = await _redis.StringGetAsync(registrationCode);
             if (string.IsNullOrEmpty(rawRegistrationData))
             {
-                _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
+                _logger.LogWarning($"Registration code is invalid (code: {registrationCode}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "Registration code is invalid" };
             }
             await _redis.KeyDeleteAsync(registrationCode);
@@ -85,40 +95,42 @@ namespace Server.Services
             RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
             if (registrationData == null)
             {
-                _logger.LogInformation($"{context.Peer}\tRegistration data is invalid");
+                _logger.LogWarning($"Registration data is invalid (code: {registrationCode}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "Registration data is invalid" };
             }
 
             if (await _dbContext.Users.AnyAsync(u => u.Email == registrationData.Email))
             {
-                _logger.LogInformation($"{context.Peer}\tUser is already registered");
+                _logger.LogWarning($"User is already registered (email: {registrationData.Email}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 409, Message = "User is already registered" };
             }
             Company? company = await _dbContext.Companies.Where(c => c.CompanyId == registrationData.CompanyId).FirstOrDefaultAsync();
             if (company == null)
             {
-                _logger.LogInformation($"{context.Peer}\tCompany is invalid");
+                _logger.LogWarning($"Company is invalid (companyId: {registrationData.CompanyId}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "Company is invalid" };
             }
             byte[] clientSalt = _securityService.GenerateSalt();
             byte[] serverSalt = _securityService.GenerateSalt();
-            byte[] serverPinHash = await _securityService.HashPasswordAsync(request.EncryptedPin.ToByteArray(), serverSalt);
+            byte[] serverPasswordHash = await _securityService.HashPasswordAsync(request.EncryptedPassword.ToByteArray(), serverSalt);
             var user = new User
             {
                 Name = registrationData.Name,
                 Surname = registrationData.Surname,
                 Email = registrationData.Email,
-                EncryptedPin = request.EncryptedPin.ToByteArray(),
+                EncryptedPassword = request.EncryptedPassword.ToByteArray(),
                 EncryptedKey = request.EncryptedKey.ToByteArray(),
-                ServerPinHash = serverPinHash,
+                ServerPasswordHash = serverPasswordHash,
                 ClientSalt = clientSalt,
                 ServerSalt = serverSalt,
                 MasterKey = null,
+                CompanyId = company.CompanyId,
                 Company = company
             };
             await _dbContext.Users.AddAsync(user);
             try
             {
+                _logger.LogTrace($"Starting to add group members for user (userId: {user.UserId}, email: {registrationData.Email}, groupCount: {registrationData.Groups.Count()}, peer: {context.Peer})");
                 var groups = _dbContext.Groups.Where(g => registrationData.Groups.Contains(g.Id));
                 var groupMembers = new List<GroupMember>();
                 foreach (var group in groups)
@@ -127,7 +139,7 @@ namespace Server.Services
                     {
                         GroupId = group.Id,
                         Group = group,
-                        UserId = user.UUID,
+                        UserId = user.UserId,
                         User = user,
                         CompanyId = registrationData.CompanyId,
                         JoinDate = DateTime.UtcNow,
@@ -136,22 +148,24 @@ namespace Server.Services
                     groupMembers.Add(groupMember);
                 }
                 await _dbContext.GroupMembers.AddRangeAsync(groupMembers);
-                string refreshJwtToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
-                string accessJwtToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
-                byte[]? masterPublicKey = await _dbContext.Users.Where(u => u.UUID == user.UUID).Select(u => u.Company.PublicKey).FirstOrDefaultAsync();
+                _logger.LogTrace($"Group members added successfully (userId: {user.UserId}, groupCount: {groupMembers.Count}, peer: {context.Peer})");
+                string refreshJwtToken = _jwtService.GenerateRefreshToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+                string accessJwtToken = _jwtService.GenerateAccessToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+                _logger.LogTrace($"JWT tokens generated (userId: {user.UserId}, peer: {context.Peer})");
+                byte[]? masterPublicKey = await _dbContext.Users.Where(u => u.UserId == user.UserId).Select(u => u.Company.PublicKey).FirstOrDefaultAsync();
                 if (masterPublicKey == null)
                 {
-                    _logger.LogInformation($"{context.Peer}\tMaster public key is invalid");
+                    _logger.LogWarning($"Master public key is invalid (userId: {user.UserId}, companyId: {company.CompanyId}, peer: {context.Peer})");
                     return new RegisterResponse { Status = 400, Message = "Company is invalid", PublicMasterKey = ByteString.CopyFrom() };
                 }
                 await _dbContext.SaveChangesAsync();
-                _logger.LogInformation($"{context.Peer}\tUser registered");
+                _logger.LogInformation($"User registered successfully (userId: {user.UserId}, email: {registrationData.Email}, peer: {context.Peer})");
 
                 return new RegisterResponse { Status = 200, Message = "OK", PublicMasterKey = ByteString.CopyFrom(masterPublicKey), JwtAccessToken = accessJwtToken, JwtRefreshToken = refreshJwtToken };
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"{context.Peer}\tGroupMembers is invalid\n{ex.Message}");
+                _logger.LogError($"GroupMembers is invalid (userId: {user.UserId}, email: {registrationData.Email}, error: {ex.Message}, stackTrace: {ex.StackTrace}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "GroupMembers is invalid" };
             }
         }
@@ -161,64 +175,79 @@ namespace Server.Services
         /// </summary>
         public override async Task<SetMasterKeyResponse> SetMasterKey(SetMasterKeyRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Set master key request from {context.Peer}");
+            _logger.LogTrace($"SetMasterKey called with peer: {context.Peer}");
+
             if(_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
             {
-                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                _logger.LogWarning($"Token is invalid (userJwt is null: {_userAccessor.userJwt == null}, isAccessToken: {_userAccessor.userJwt?.IsAccessToken() ?? false}, peer: {context.Peer})");
                 return new SetMasterKeyResponse { Status = 401, Message = "Token is invalid" };
             }
             if (request.MasterKey.Length != 512)
             {
-                _logger.LogInformation($"{context.Peer}\tMaster key is empty");
+                _logger.LogWarning($"Master key is empty (length: {request.MasterKey.Length}, expected: 512, peer: {context.Peer})");
                 return new SetMasterKeyResponse { Status = 400, Message = "Master key is empty" };
             }
             if (!_userAccessor.userJwt.GetGroups().Contains("system:master-key"))
             {
-                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                _logger.LogWarning($"Token is invalid (user is not master-key, groups: {_userAccessor.userJwt.GetGroups()}, peer: {context.Peer})");
                 return new SetMasterKeyResponse { Status = 403, Message = "Token is invalid" };
             }
-            
+
+            _logger.LogTrace($"Generating JWT tokens for user (subject: {_userAccessor.userJwt.Subject}, name: {_userAccessor.userJwt.GetName()}, peer: {context.Peer})");
             string jwtRefreshToken = _jwtService.GenerateRefreshToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
             string jwtAccessToken = _jwtService.GenerateAccessToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
             await _jwtService.RevokeTokenAsync(_userAccessor.userJwt);
+            _logger.LogInformation($"Master key set successfully (userId: {_userAccessor.userJwt.Subject}, peer: {context.Peer})");
+
             return new SetMasterKeyResponse { Status = 200, Message = "OK", JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
         /// <summary>
-        /// Аутентифицирует пользователя с предоставленным email и PIN.
+        /// Аутентифицирует пользователя с предоставленным email и паролем.
         /// Генерирует Access токен (30 мин) и Refresh токен (24 ч).
         /// </summary>
         public override async Task<LoginResponse> Login(LoginRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Login request from {context.Peer}");
+            _logger.LogTrace($"Login called with userId: {request.UserId}, peer: {context.Peer}");
+
             if(string.IsNullOrEmpty(request.UserId))
             {
+                _logger.LogWarning($"UserId is empty (peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "UserId is empty" };
             }
-            if(request.PinHash.Length != 32)
+            if(request.PasswordHash.Length != 32)
             {
-                return new LoginResponse { Status = 400, Message = "Pin is invalid" };
+                _logger.LogWarning($"Password is invalid (length: {request.PasswordHash.Length}, peer: {context.Peer})");
+                return new LoginResponse { Status = 400, Message = "Password is invalid" };
             }
             if(string.IsNullOrEmpty(request.NonceToken))
             {
+                _logger.LogWarning($"NonceToken is empty (peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "NonceToken is empty" };
             }
             if(await _securityService.VerifyNonceToken(request.NonceToken))
             {
+                _logger.LogWarning($"NonceToken is invalid (peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "NonceToken is invalid" };
             }
-            User? user = await _dbContext.Users.Where(u => u.UUID == Guid.Parse(request.UserId)).FirstOrDefaultAsync();
+            _logger.LogTrace($"Fetching user by userId: {request.UserId} (peer: {context.Peer})");
+            User? user = await _dbContext.Users.Where(u => u.UserId == Guid.Parse(request.UserId)).FirstOrDefaultAsync();
             if(user == null)
             {
+                _logger.LogWarning($"User is not found (userId: {request.UserId}, peer: {context.Peer})");
                 return new LoginResponse { Status = 404, Message = "User is not found" };
             }
-            var pinHash = await _securityService.HashPasswordAsync(request.PinHash.ToByteArray(), user.ServerSalt);
-            if(!CryptographicOperations.FixedTimeEquals(user.ServerPinHash, pinHash))
+            _logger.LogTrace($"User found, verifying password (userId: {user.UserId}, email: {user.Email}, peer: {context.Peer})");
+            var passwordHash = await _securityService.HashPasswordAsync(request.PasswordHash.ToByteArray(), user.ServerSalt);
+            if(!CryptographicOperations.FixedTimeEquals(user.ServerPasswordHash, passwordHash))
             {
-                return new LoginResponse { Status = 401, Message = "Pin is invalid" };
+                _logger.LogWarning($"Password is invalid (userId: {user.UserId}, email: {user.Email}, peer: {context.Peer})");
+                return new LoginResponse { Status = 401, Message = "Password is invalid" };
             }
-            string jwtRefreshToken = _jwtService.GenerateRefreshToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
-            string jwtAccessToken = _jwtService.GenerateAccessToken(user.UUID.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+            _logger.LogTrace($"Generating JWT tokens for user (userId: {user.UserId}, name: {user.Name}, peer: {context.Peer})");
+            string jwtRefreshToken = _jwtService.GenerateRefreshToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+            string jwtAccessToken = _jwtService.GenerateAccessToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, user.GroupMembers.Select(gm => gm.Group.Name).ToArray());
+            _logger.LogInformation($"Login successful (userId: {user.UserId}, email: {user.Email}, peer: {context.Peer})");
             return new LoginResponse { Status = 200, Message = "OK", EncryptedKey = ByteString.CopyFrom(user.EncryptedKey), JwtRefreshToken = jwtRefreshToken, JwtAccessToken = jwtAccessToken };
         }
 
@@ -229,52 +258,52 @@ namespace Server.Services
         /// </summary>
         public override async Task<RefreshTokenResponse> RefreshToken(RefreshTokenRequest request, ServerCallContext context)
         {
+            _logger.LogTrace($"RefreshToken called with peer: {context.Peer}");
+
             if(_userAccessor.userJwt == null)
             {
+                _logger.LogWarning($"Token is invalid (userJwt is null, peer: {context.Peer})");
                 return new RefreshTokenResponse { Status = 401, Message = "Token is invalid" };
             }
             if (!_userAccessor.userJwt.IsAccessToken())
             {
+                _logger.LogTrace($"Refreshing token (userJwt type is refresh, peer: {context.Peer})");
                 string jwtAccessToken = _jwtService.GenerateAccessToken(_userAccessor.userJwt.Subject, _userAccessor.userJwt.GetName(), _userAccessor.userJwt.GetSurname(), _userAccessor.userJwt.GetEmail(), _userAccessor.userJwt.GetGroups().ToArray());
+                _logger.LogInformation($"Token refreshed successfully (userId: {_userAccessor.userJwt.Subject}, peer: {context.Peer})");
                 return new RefreshTokenResponse { Status = 200, Message = "OK", JwtAccessToken = jwtAccessToken };
             }
+            _logger.LogWarning($"Token is invalid (userJwt type is access, not refresh, peer: {context.Peer})");
             return new RefreshTokenResponse { Status = 401, Message = "Token is invalid" };
         }
 
         public override async Task<CreateRegistrationCodeResponse> CreateRegistrationCode(CreateRegistrationCodeRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Create registration code request from {context.Peer}");
-
             if(string.IsNullOrEmpty(request.Name))
             {
-                _logger.LogInformation($"{context.Peer}\tName is empty");
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Name is empty" };
             }
 
             if (string.IsNullOrEmpty(request.Surname))
             {
-                _logger.LogInformation($"{context.Peer}\tSurname is empty");
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Surname is empty" };
             }
 
             if (string.IsNullOrEmpty(request.Email))
             {
-                _logger.LogInformation($"{context.Peer}\tEmail is empty");
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Email is empty" };
             }
 
             if (request.Groups.Count == 0)
             {
-                _logger.LogInformation($"{context.Peer}\tGroups is empty");
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Groups is empty" };
             }
             
             if (_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
             {
-                _logger.LogInformation($"{context.Peer}\tToken is invalid");
+                _logger.LogWarning($"Token is invalid (userJwt is null: {_userAccessor.userJwt == null}, isAccessToken: {_userAccessor.userJwt?.IsAccessToken() ?? false}, peer: {context.Peer})");
                 return new CreateRegistrationCodeResponse { Status = 401, Message = "Token is invalid" };
             }
-            Guid companyId = _dbContext.Users.Where(u => u.UUID.ToString() == _userAccessor.userJwt.Subject).Select(u => u.Company.CompanyId).FirstOrDefault();
+            Guid companyId = _dbContext.Users.Where(u => u.UserId.ToString() == _userAccessor.userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
             try
             {
                 var registrationData = new RegistrationData
@@ -289,14 +318,15 @@ namespace Server.Services
                 string registrationCode = await Nanoid.GenerateAsync(Nanoid.Alphabets.UppercaseLettersAndDigits, 12);
                 if(!await _redis.StringSetAsync(registrationCode, JsonSerializer.Serialize(registrationData)))
                 {
-                    _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
+                    _logger.LogError($"Registration code is invalid (code: {registrationCode}, peer: {context.Peer})");
                     return new CreateRegistrationCodeResponse { Status = 507, Message = "Registration code is invalid" };
-                }            
+                }
+                _logger.LogInformation($"Registration code created successfully (code: {registrationCode}, name: {request.Name}, email: {request.Email}, peer: {context.Peer})");
                 return new CreateRegistrationCodeResponse { Status = 200, Message = "OK", RegistrationCode = registrationCode };
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"{context.Peer}\tRegistration data is invalid\n{ex.Message}");
+                _logger.LogError($"Registration data is invalid (name: {request.Name}, email: {request.Email}, error: {ex.Message}, stackTrace: {ex.StackTrace}, peer: {context.Peer})");
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Registration data is invalid" };
             }
 

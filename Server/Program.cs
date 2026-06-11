@@ -54,6 +54,7 @@ app.UseMiddleware<JwtMiddleware>();
 
 // gRPC endpoints
 app.MapGrpcService<AuthenticationService>();
+app.MapGrpcService<CompanyManagerService>();
 app.MapGrpcService<SecurityRequestsService>();
 
 // REST endpoints

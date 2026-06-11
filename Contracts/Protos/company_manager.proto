@@ -10,7 +10,7 @@ service CompanyManager {
 
 message CreateCompanyRequest {
     string nonce_token = 1;
-    string master_key = 2;
+    bytes master_key = 2;
     string company_name = 3;
     string company_email = 4;
 }

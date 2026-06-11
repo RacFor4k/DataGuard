@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -7,6 +8,7 @@ namespace Server.Options
 {
     public class CompanyManagerOptions
     {
-        public string? MasterKey { get; set; }
+        [Required(ErrorMessage = "Company:MasterKeyHash is empty")]
+        public required byte[] MasterKeyHash { get; set; }
     }
 }

@@ -69,11 +69,11 @@ Server/
 ### gRPC
 
 **Регистрация:** `Authentication/Register`
-- Request: `RegisterRequest { email, password }`
+- Request: `RegisterRequest { registration_code, password }`
 - Response: `RegisterResponse { success, message }`
 
 **Вход:** `Authentication/Login`
-- Request: `LoginRequest { email, password }`
+- Request: `LoginRequest { user_id, password_hash, nonce_token }`
 - Response: `LoginResponse { success, token, message }`
 
 ## ЗАПУСК ПРИЛОЖЕНИЯ

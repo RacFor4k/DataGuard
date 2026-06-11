@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Server.Services;
@@ -11,9 +12,11 @@ using Server.Services;
 namespace Server.Migrations
 {
     [DbContext(typeof(DataGuardDbContext))]
-    partial class DataGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260611194746_Alpha0.0.1")]
+    partial class Alpha001
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -181,10 +184,10 @@ namespace Server.Migrations
                         .HasColumnType("bytea")
                         .HasColumnName("encrypted_key");
 
-                    b.Property<byte[]>("EncryptedPassword")
+                    b.Property<byte[]>("EncryptedPin")
                         .IsRequired()
                         .HasColumnType("bytea")
-                        .HasColumnName("encrypted_password");
+                        .HasColumnName("encrypted_pin");
 
                     b.Property<byte[]>("MasterKey")
                         .HasColumnType("bytea")
@@ -195,10 +198,10 @@ namespace Server.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<byte[]>("ServerPasswordHash")
+                    b.Property<byte[]>("ServerPinHash")
                         .IsRequired()
                         .HasColumnType("bytea")
-                        .HasColumnName("server_password_hash");
+                        .HasColumnName("server_pin_hash");
 
                     b.Property<byte[]>("ServerSalt")
                         .IsRequired()

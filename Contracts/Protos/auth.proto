@@ -25,9 +25,10 @@ service Authentication {
 // Запрос на регистрацию пользователя
 message RegisterRequest {
   string registration_code = 1; // 12 символов nanoid (Английский алфавит и цифры)
-  bytes encrypted_pin = 2; // от 8 до 18 символов (зашифрованный)
+  bytes encrypted_password = 2; // от 8 до 18 символов (зашифрованный)
   bytes encrypted_key = 3; // зашифрованный ключ
-  bytes pin_hash = 4; // хэш ключа
+  bytes password_hash = 4; // хэш ключа
+  bytes client_salt = 5; // салон клиента
 }
 
 // Ответ на запрос регистрации пользователя
@@ -55,7 +56,7 @@ message SetMasterKeyResponse {
 // Запрос на вход пользователя
 message LoginRequest {
   string user_id = 1;
-  bytes pin_hash = 2;
+  bytes password_hash = 2;
   string nonce_token = 3;
 }
 

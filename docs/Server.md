@@ -9,9 +9,10 @@
 
 **Параметры:**
 - `registration_code` (string): Код регистрации
-- `encrypted_pin` (string): Зашифрованный PIN
+- `encrypted_password` (string): Зашифрованный пароль
 - `encrypted_key` (string): Зашифрованный ключ
-- `pin_hash` (string): Хеш PIN
+- `password_hash` (string): Хеш пароля
+- `client_salt` (string): Соль клиента
 
 **Необходимые HTTP заголовки:**
 - `User-Agent`
@@ -24,15 +25,16 @@
 - `jwt_refresh_token` (string): Refresh JWT токен
 
 **Описание:**
-Регистрация нового пользователя с предоставленным кодом регистрации, зашифрованным PIN, зашифрованным ключом и хешем PIN.
+Регистрация нового пользователя с предоставленным кодом регистрации, зашифрованным паролем, зашифрованным ключом и хешем пароля.
 
 **Примеры возвращаемых значений:**
 - Status: 400 Message: "Registration code is empty"
-- Status: 400 Message: "Pin is invalid"
+- Status: 400 Message: "Password is invalid"
 - Status: 400 Message: "Key is invalid"
-- Status: 400 Message: "Pin hash is invalid"
+- Status: 400 Message: "Password hash is invalid"
 - Status: 400 Message: "Registration code is invalid"
 - Status: 400 Message: "Registration data is invalid"
+- Status: 400, Message: "Client salt is invalid"
 - Status: 409 Message: "User is already registered"
 - Status: 400 Message: "Company is invalid"
 - Status: 400 Message: "GroupMembers is invalid"
@@ -40,7 +42,7 @@
 
 **Формат входящих данных:**
 - `registration_code` должен быть непустым.
-- `encrypted_pin`, `encrypted_key` и `pin_hash` должны содержать ровно 32 символа.
+- `encrypted_password`, `encrypted_key` и `password_hash` должны содержать ровно 32 символа.
 
 ### SetMasterKey
 
@@ -78,7 +80,7 @@
 
 **Параметры:**
 - `user_id` (string): Идентификатор пользователя
-- `pin_hash` (bytes): Хеш PIN
+- `password_hash` (bytes): Хеш пароля
 - `nonce_token` (string): Nonce токен
 
 **Необходимые HTTP заголовки:**
@@ -92,7 +94,7 @@
 - `jwt_refresh_token` (string): Refresh JWT токен
 
 **Описание:**
-Аутентификация пользователя с предоставленным email и PIN. Генерирует Access токен (30 мин) и Refresh токен (24 ч).
+Аутентификация пользователя с предоставленным email и паролем. Генерирует Access токен (30 мин) и Refresh токен (24 ч).
 
 **Примеры возвращаемых значений:**
 - Status: 400 Message: "UserId is empty"

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Contracts.Protos.CompanyManager;
@@ -20,58 +21,63 @@ namespace Server.Services
     {
         private readonly ILogger<CompanyManagerService> _logger;
         private readonly ISecurityService _securityService;
-        private readonly IOptions<CompanyManagerOptions> _companyManagerOptions;
+        private readonly SecurityOptions _securityOptions;
+        private readonly CompanyManagerOptions _companyManagerOptions;
         private readonly DataGuardDbContext _dbContext;
         private readonly IDatabase _redis;
-        public CompanyManagerService(ILogger<CompanyManagerService> logger, ISecurityService securityService, IOptions<CompanyManagerOptions> companyManagerOptions, DataGuardDbContext dbContext, IConnectionMultiplexer redis)
+        public CompanyManagerService(ILogger<CompanyManagerService> logger, ISecurityService securityService, IOptions<SecurityOptions> securityOptions, IOptions<CompanyManagerOptions> companyManagerOptions, DataGuardDbContext dbContext, IConnectionMultiplexer redis)
         {
             _logger = logger;
             _securityService = securityService;
-            _companyManagerOptions = companyManagerOptions;
-            if (string.IsNullOrWhiteSpace(_companyManagerOptions.Value.MasterKey))
-                throw new InvalidOperationException("MasterKey not found in appsettings.json");
+            _companyManagerOptions = companyManagerOptions.Value;
+            _securityOptions = securityOptions.Value;
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("auth:");
         }
 
         public override async Task<CreateCompanyResponse> CreateCompany(CreateCompanyRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Create company request from {context.Peer}");
+            _logger.LogTrace($"CreateCompany called with companyName: {request.CompanyName}, companyEmail: {request.CompanyEmail}, peer: {context.Peer}");
+
             if (string.IsNullOrEmpty(request.NonceToken))
             {
-                _logger.LogInformation($"{context.Peer}\tNonce token is empty");
+                _logger.LogWarning($"Nonce token is empty (peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Nonce token is empty" };
             }
-            if (string.IsNullOrEmpty(request.MasterKey))
+            if (request.MasterKey.Length == 0)
             {
-                _logger.LogInformation($"{context.Peer}\tMaster key is empty");
-                return new CreateCompanyResponse { Status = 400, Message = "Master key is empty" }; 
+                _logger.LogWarning($"Master key is empty (length: {request.MasterKey.Length}, peer: {context.Peer})");
+                return new CreateCompanyResponse { Status = 400, Message = "Master key is empty" };
             }
             if (string.IsNullOrEmpty(request.CompanyName))
             {
-                _logger.LogInformation($"{context.Peer}\tCompany name is empty");
+                _logger.LogWarning($"Company name is empty (peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Company name is empty" };
             }
             if (string.IsNullOrEmpty(request.CompanyEmail))
             {
-                _logger.LogInformation($"{context.Peer}\tCompany email is empty");
+                _logger.LogWarning($"Company email is empty (peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Company email is empty" };
             }
             if (!MailAddress.TryCreate(request.CompanyEmail, out _))
             {
-                _logger.LogInformation($"{context.Peer}\tCompany email is invalid");
+                _logger.LogWarning($"Company email is invalid (email: {request.CompanyEmail}, peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Company email is invalid" };
             }
-            if (await _securityService.VerifyNonceToken(request.NonceToken))
+            if (!await _securityService.VerifyNonceToken(request.NonceToken))
             {
-                _logger.LogInformation($"{context.Peer}\tNonce token is invalid");
+                _logger.LogWarning($"Nonce token is invalid (token: {request.NonceToken}, peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Nonce token is invalid" };
             }
-            if (request.MasterKey != _companyManagerOptions.Value.MasterKey)
+            byte[] masterKeyHash = new byte[request.MasterKey.Length-_securityOptions.MasterKeySalt.Length];
+            Buffer.BlockCopy(request.MasterKey.ToByteArray(), _securityOptions.MasterKeySalt.Length, masterKeyHash, 0, masterKeyHash.Length);
+            _logger.LogTrace($"Master key hash computed (hashLength: {masterKeyHash.Length}, peer: {context.Peer})");
+            if (!CryptographicOperations.FixedTimeEquals(masterKeyHash, _companyManagerOptions.MasterKeyHash))
             {
-                _logger.LogInformation($"{context.Peer}\tMaster key is invalid");
+                _logger.LogWarning($"Master key is invalid (peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Master key is invalid" };
             }
+            _logger.LogTrace($"Master key verified successfully, creating company (companyName: {request.CompanyName}, companyEmail: {request.CompanyEmail}, peer: {context.Peer})");
             Company company = new Company
             {
                 Name = request.CompanyName
@@ -81,7 +87,8 @@ namespace Server.Services
                 Name = "system:owner",
                 Description = "Owner group",
                 IsActive = true,
-                Company = company
+                Company = company,
+                CompanyId = company.CompanyId
             });
             RegistrationData registrationData = new RegistrationData
             {
@@ -93,9 +100,12 @@ namespace Server.Services
                 AdminGroups = company.Groups.Select(g => g.Id)
             };
             string registrationCode = await Nanoid.GenerateAsync(Nanoid.Alphabets.UppercaseLettersAndDigits, 12);
+            _logger.LogTrace($"Registration code generated (code: {registrationCode}, peer: {context.Peer})");
             await _redis.StringSetAsync(registrationCode, JsonSerializer.Serialize(registrationData), TimeSpan.FromDays(30));
+            _logger.LogTrace($"Registration data saved in Redis (code: {registrationCode}, peer: {context.Peer})");
             await _dbContext.Companies.AddAsync(company);
             await _dbContext.SaveChangesAsync();
+            _logger.LogInformation($"Company created successfully (companyId: {company.CompanyId}, companyName: {request.CompanyName}, email: {request.CompanyEmail}, peer: {context.Peer})");
             return new CreateCompanyResponse { Status = 200, Message = "OK", RegistrationCode = registrationCode };
         }
 

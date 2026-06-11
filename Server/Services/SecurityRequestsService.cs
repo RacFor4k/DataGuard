@@ -23,24 +23,27 @@ namespace Server.Services
         }
         public override async Task<NonceResponse> GetNonce(NonceRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Get nonce request from {context.Peer}");
+            _logger.LogTrace($"GetNonce called (peer: {context.Peer})");
             string token = await _securityService.GetNonceToken();
+            _logger.LogInformation($"Nonce token generated (token: {token}, peer: {context.Peer})");
             return new NonceResponse { Status = 200, Message = "OK", NonceToken = token };
         }
         public override async Task<SaltResponse> GetSalt(SaltRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Get salt request from {context.Peer}");
+            _logger.LogTrace($"GetSalt called (email: {request.Email}, peer: {context.Peer})");
             if(string.IsNullOrEmpty(request.Email))
             {
-                _logger.LogInformation($"{context.Peer}\tEmail is empty");
+                _logger.LogWarning($"GetSalt failed - email is empty (peer: {context.Peer})");
                 return new SaltResponse { Status = 400, Message = "Email is empty" };
             }
+            _logger.LogTrace($"Fetching user by email: {request.Email} (peer: {context.Peer})");
             var clientSalt = _dbContext.Users.Where(u => u.Email == request.Email).Select(u => u.ClientSalt).FirstOrDefault();
             if(clientSalt == null)
             {
-                _logger.LogInformation($"{context.Peer}\tClient salt is invalid");
+                _logger.LogWarning($"GetSalt failed - user not found (email: {request.Email}, peer: {context.Peer})");
                 return new SaltResponse { Status = 400, Message = "Client salt is invalid" };
             }
+            _logger.LogInformation($"Salt retrieved successfully (email: {request.Email}, saltLength: {clientSalt.Length}, peer: {context.Peer})");
             return new SaltResponse { Status = 200, Message = "OK", Salt = ByteString.CopyFrom(clientSalt) };
         }
     }

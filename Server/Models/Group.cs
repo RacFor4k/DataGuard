@@ -19,6 +19,7 @@ namespace Server.Models
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
         public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
+        public required Guid CompanyId { get; set; }
         public required Company Company { get; set; }
     }
 

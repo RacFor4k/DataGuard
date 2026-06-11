@@ -1,0 +1,9 @@
+{
+  "Security": {
+    "Argon2": {
+      "DegreeOfParallelism": 1,
+      "Iterations": 3,
+      "MemorySize": 19456
+    }
+  }
+}

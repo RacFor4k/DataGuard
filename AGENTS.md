@@ -6,6 +6,7 @@
 - Ensure security best practices are followed, especially regarding password handling and token generation.
 - Maintain compatibility between REST and gRPC responses (Base64-encoded protobuf).
 - Don't do more than you've been asked to do.
+- Always provide minimal output at the end of your response. If the task is completed and there's nothing more to say, output "Задача выполнена" (singular) or "Задачи выполнены" (plural). Never leave empty output.
 
 ## Code Style
 
