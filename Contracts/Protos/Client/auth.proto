@@ -11,7 +11,7 @@ service Authentication {
 
 message RegisterRequest {
     string registration_code = 1;
-    bytes pin = 2;
+    string pin = 2;
 }
 
 message RegisterResponse {

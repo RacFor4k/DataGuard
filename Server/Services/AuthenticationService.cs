@@ -58,6 +58,7 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tRegistration code is empty");
                 return new RegisterResponse { Status = 400, Message = "Registration code is empty" };
             }
+            var registrationCode = request.RegistrationCode.ToUpper();
             if (request.EncryptedPin.Length != 32)
             {
                 _logger.LogInformation($"{context.Peer}\tPin is invalid");
@@ -73,13 +74,13 @@ namespace Server.Services
                 _logger.LogInformation($"{context.Peer}\tPin hash is invalid");
                 return new RegisterResponse { Status = 400, Message = "Pin hash is invalid" };
             }
-            string? rawRegistrationData = await _redis.StringGetAsync(request.RegistrationCode);
+            string? rawRegistrationData = await _redis.StringGetAsync(registrationCode);
             if (string.IsNullOrEmpty(rawRegistrationData))
             {
                 _logger.LogInformation($"{context.Peer}\tRegistration code is invalid");
                 return new RegisterResponse { Status = 400, Message = "Registration code is invalid" };
             }
-            await _redis.KeyDeleteAsync(request.RegistrationCode);
+            await _redis.KeyDeleteAsync(registrationCode);
 
             RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
             if (registrationData == null)
