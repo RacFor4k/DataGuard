@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Contracts.Protos.CompanyManager;
 using Grpc.Core;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NanoidDotNet;
 using Server.Interfaces;
@@ -109,7 +110,70 @@ namespace Server.Services
             return new CreateCompanyResponse { Status = 200, Message = "OK", RegistrationCode = registrationCode };
         }
 
-
-        
+        public override async Task<GetCompanyPublicKeyResponse> GetCompanyPublicKey(GetCompanyPublicKeyRequest request, ServerCallContext context)
+        {
+            _logger.LogTrace($"GetCompanyPublicKey called with registrationCode: {request.RegistrationCode}, peer: {context.Peer}");
+            if (string.IsNullOrEmpty(request.RegistrationCode))
+            {
+                _logger.LogWarning($"Registration code is empty (peer: {context.Peer})");
+                return new GetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is empty" };
+            }
+            string? rawRegistrationData = await _redis.StringGetAsync(request.RegistrationCode);
+            if (string.IsNullOrEmpty(rawRegistrationData))
+            {
+                _logger.LogWarning($"Registration code is invalid (code: {request.RegistrationCode}, peer: {context.Peer})");
+                return new GetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is invalid" };
+            }
+            RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
+            if (registrationData == null)
+            {
+                _logger.LogWarning($"Registration code is invalid (code: {request.RegistrationCode}, peer: {context.Peer})");
+                return new GetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is invalid" };
+            }
+            _logger.LogTrace($"Registration data loaded from Redis");
+            string? companyPublicKeyPem = await _dbContext.Companies.Where(c => c.CompanyId == registrationData.CompanyId).Select(c => c.PublicKeyPem).FirstOrDefaultAsync();
+            if (companyPublicKeyPem == null)
+            {
+                _logger.LogWarning($"Company public key is invalid (code: {request.RegistrationCode}, peer: {context.Peer})");
+                return new GetCompanyPublicKeyResponse { Status = 400, Message = "Company is invalid" };
+            }
+            return new GetCompanyPublicKeyResponse { Status = 200, Message = "OK", CompanyPublicKeyPem = companyPublicKeyPem };
+        }
+        public override async Task<SetCompanyPublicKeyResponse> SetCompanyPublicKey(SetCompanyPublicKeyRequest request, ServerCallContext context)
+        {
+            _logger.LogTrace($"SetCompanyPublicKey called with registrationCode: {request.RegistrationCode}, companyPublicKeyPem: {request.CompanyPublicKeyPem}, peer: {context.Peer}");
+            if (string.IsNullOrEmpty(request.RegistrationCode))
+            {
+                _logger.LogWarning($"Registration code is empty (peer: {context.Peer})");
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is empty" };
+            }
+            if (string.IsNullOrEmpty(request.CompanyPublicKeyPem))
+            {
+                _logger.LogWarning($"Company public key is empty (peer: {context.Peer})");
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Company public key is empty" };
+            }
+            string? rawRegistrationData = await _redis.StringGetAsync(request.RegistrationCode);
+            if (string.IsNullOrEmpty(rawRegistrationData))
+            {
+                _logger.LogWarning($"Registration code is invalid (code: {request.RegistrationCode}, peer: {context.Peer})");
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is invalid" };
+            }
+            RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
+            if (registrationData == null)
+            {
+                _logger.LogWarning($"Registration code is invalid (code: {request.RegistrationCode}, peer: {context.Peer})");
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is invalid" };
+            }
+            _logger.LogTrace($"Registration data loaded from Redis");
+            Company? company = await _dbContext.Companies.FindAsync(registrationData.CompanyId);
+            if (company == null)
+            {
+                _logger.LogWarning($"Company is invalid (code: {request.RegistrationCode}, peer: {context.Peer})");
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Company is invalid" };
+            }
+            company.PublicKeyPem = request.CompanyPublicKeyPem;
+            await _dbContext.SaveChangesAsync();
+            return new SetCompanyPublicKeyResponse { Status = 200, Message = "OK" };
+        }
     }
 }

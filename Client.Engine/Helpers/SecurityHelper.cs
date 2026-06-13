@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,15 +10,16 @@ namespace Client.Engine.Helpers
 {
     public static class SecurityHelper
     {
-        public static byte[] EncryptPassword(string password, byte[] key, int nonceLength = 12, int tagLength = 16)
+        public static byte[] EncryptPassword(string password, byte[] key, int nonceLength, int tagLength, int encryptedLength)
         {
             using (var encryptor = new AesGcm(key, tagLength))
             {
                 byte[] nonce = RandomNumberGenerator.GetBytes(nonceLength);
-                byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
+                byte[] passwordBytesPadded = new byte[encryptedLength];
+                System.Text.Encoding.UTF8.GetBytes(password, passwordBytesPadded);
                 byte[] tag = new byte[tagLength];
-                byte[] encryptedPassword = new byte[password.Length];
-                encryptor.Encrypt(nonce, passwordBytes, encryptedPassword, tag);
+                byte[] encryptedPassword = new byte[encryptedLength];
+                encryptor.Encrypt(nonce, passwordBytesPadded, encryptedPassword, tag);
                 byte[] result = new byte[nonceLength + tagLength + encryptedPassword.Length];
                 Buffer.BlockCopy(nonce, 0, result, 0, nonceLength);
                 Buffer.BlockCopy(tag, 0, result, nonceLength, tagLength);
@@ -25,7 +27,7 @@ namespace Client.Engine.Helpers
                 return result;
             }
         }
-        public static byte[] EncryptKey(string password, byte[] key, byte[] salt, int nonceLength = 12, int tagLength = 16, int iterations = 600_000, int derivedKeyLength = 32)
+        public static byte[] EncryptKey(string password, byte[] key, byte[] salt, int nonceLength, int tagLength, int iterations, int derivedKeyLength)
         {
             
             byte[] nonce = RandomNumberGenerator.GetBytes(nonceLength);
@@ -47,7 +49,7 @@ namespace Client.Engine.Helpers
             }
         }
 
-        public static byte[] DecryptKey(byte[] encryptedToken, string password, byte[] salt, int nonceLength = 12, int tagLength = 16, int iterations = 600_000, int derivedKeyLength = 32)
+        public static byte[] DecryptKey(byte[] encryptedToken, string password, byte[] salt, int nonceLength, int tagLength, int iterations, int derivedKeyLength)
         {
             byte[] nonce = new byte[nonceLength];
             byte[] tag = new byte[tagLength];
@@ -86,6 +88,26 @@ namespace Client.Engine.Helpers
         {
             byte[] dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
             return GetSecurityHash(dataBytes, salt, degreesOfParallelism, iterations, memorySize, hashLength);
+        }
+        /// <summary>
+        /// Генерирует пару ключей RSA с заданным размером ключа.
+        /// </summary>
+        /// <param name="keySize">Размер ключа в битах.</param>
+        /// <returns>Кортеж с публичным и приватным ключами RSA.</returns>
+        public static (string, string) GenerateRsaKeyPair(int keySize)
+        {
+            using (RSA rsa = RSA.Create(keySize))
+            {
+                return (rsa.ExportSubjectPublicKeyInfoPem(), rsa.ExportPkcs8PrivateKeyPem());
+            }
+        }
+        public static byte[] EncryptBackupKey(string publicKeyPem, byte[] key)
+        {
+            using (RSA rsa = RSA.Create())
+            {
+                rsa.ImportFromPem(publicKeyPem);
+                return rsa.Encrypt(key, RSAEncryptionPadding.OaepSHA256);
+            }
         }
     }
 }

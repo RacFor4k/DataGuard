@@ -19,7 +19,7 @@ namespace Server.Models
         public required byte[] ServerPasswordHash { get; set; }
         public required byte[] ClientSalt { get; set; }
         public required byte[] ServerSalt { get; set; }
-        public byte[]? MasterKey { get; set; }
+        public required byte[]? BackupEncryptedKey { get; set; }
         public required Guid CompanyId { get; set; }
         public required Company Company { get; set; }
     }

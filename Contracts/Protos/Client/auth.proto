@@ -12,6 +12,7 @@ service Authentication {
 message RegisterRequest {
     string registration_code = 1;
     string password = 2;
+    optional string company_public_key_pem = 3;
 }
 
 message RegisterResponse {
@@ -20,7 +21,8 @@ message RegisterResponse {
 }
 
 message LoginRequest {
-    string password = 1;
+    string account_id = 1;
+    string password = 2;
 }
 
 message LoginResponse {

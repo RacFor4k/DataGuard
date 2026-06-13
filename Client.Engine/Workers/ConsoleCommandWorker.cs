@@ -77,7 +77,7 @@ namespace Client.Engine.Workers
                                 break;
                             }
                             var registrationCode = args[1];
-                            var pin = args[2];
+                            var password = args[2];
                             using (var scope = _serviceScopeFactory.CreateScope())
                             {
                                 var authenticationService = scope.ServiceProvider.GetRequiredService<AuthenticationService>();
@@ -85,7 +85,7 @@ namespace Client.Engine.Workers
                                 var response = authenticationService.Register(new Contracts.Protos.Client.Auth.RegisterRequest
                                 {
                                     RegistrationCode = registrationCode,
-                                    Password = pin
+                                    Password = password
                                 }, context).Result;
                                 Console.WriteLine($"Регистрация пользователя завершена.\n{JsonSerializer.Serialize(response)}");
                             }

@@ -9,9 +9,6 @@ service Authentication {
   // Регистрирует нового пользователя
   rpc Register (RegisterRequest) returns (RegisterResponse);
 
-  // Установка зашифрованного ключа пользователя мастер-ключом
-  rpc SetMasterKey (SetMasterKeyRequest) returns (SetMasterKeyResponse);
-
   // Вход существующего пользователя
   rpc Login (LoginRequest) returns (LoginResponse);
 
@@ -27,30 +24,20 @@ message RegisterRequest {
   string registration_code = 1; // 12 символов nanoid (Английский алфавит и цифры)
   bytes encrypted_password = 2; // от 8 до 18 символов (зашифрованный)
   bytes encrypted_key = 3; // зашифрованный ключ
-  bytes password_hash = 4; // хэш ключа
-  bytes client_salt = 5; // салон клиента
+  bytes backup_encrypted_key = 4; // зашифрованный ключ публичным ключом компании
+  bytes password_hash = 5; // хэш ключа
+  bytes client_salt = 6; // cоль клиента
 }
 
 // Ответ на запрос регистрации пользователя
 message RegisterResponse {
   int32 status = 1;
   string message = 2;
-  bytes public_master_key = 3; // публичный мастер-ключ
-  string jwt_refresh_token = 4;
-  string jwt_access_token = 5;
-}
-
-// Запрос на установку зашифрованного ключа пользователя мастер-ключом
-message SetMasterKeyRequest {
-  bytes master_key = 1; // мастер-ключ
-}
-
-// Ответ на запрос установки зашифрованного ключа пользователя мастер-ключом
-message SetMasterKeyResponse {
-  int32 status = 1;
-  string message = 2;
-  string jwt_refresh_token = 3;
-  string jwt_access_token = 4;
+  string user_id = 3; // публичный RSA ключ компании
+  string email = 4; // публичный RSA ключ компании
+  string company_public_key_pem = 5; // публичный RSA ключ компании
+  string jwt_refresh_token = 6;
+  string jwt_access_token = 7;
 }
 
 // Запрос на вход пользователя
@@ -78,6 +65,7 @@ message RefreshTokenResponse {
   int32 status = 1;
   string message = 2;
   string jwt_access_token = 3;
+  string jwt_refresh_token = 4;
 }
 
 // Запрос на создание кода регистрации

@@ -27,8 +27,10 @@ namespace Client.Engine.Options
         {
             public int MinimumLength { get; set; } = 8;
             public int MaximumLength { get; set; } = 16;
+            public int EncryptedLength { get; set; } = 64;
         }
-
+        public int RsaKeySize { get; set; } = 4096;
+        public int KeyLength { get; set; } = 32;
 
     }
 }

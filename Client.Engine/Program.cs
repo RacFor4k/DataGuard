@@ -1,5 +1,4 @@
 using Client.Engine;
-using Client.Engine.Http.Providers;
 using Client.Engine.Interfaces;
 using Client.Engine.Models;
 using Client.Engine.Options;
@@ -8,6 +7,7 @@ using Client.Engine.Workers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.IO;
@@ -15,11 +15,16 @@ using System.Threading.Channels;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Sqlite
+builder.Services.AddDbContext<AgentDbContext>(options => options.UseSqlite(Path.Combine(Environment.SpecialFolder.LocalApplicationData.ToString(), "DataGuard", "Agent", "Agent.db")));
+
 // Options
 builder.Services.AddOptions<SecurityOptions>().Bind(builder.Configuration.GetSection("Security")).ValidateDataAnnotations();
 
-// Добавляем сервис получения User-Agent
+// Providers
 builder.Services.AddSingleton<IUserAgentProvider, UserAgentProvider>();
+builder.Services.AddSingleton<IJwtTokenProvider, JwtTokenProvider>();
+builder.Services.AddSingleton<IKeyProvider, KeyProvider>();
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -32,7 +37,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddGrpc();
 
 // gRPC клиенты
-builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.AuthenticationClient>((serviceProvider, options) =>
+builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.AuthenticationClient>(options =>
 {
     options.Address = new Uri(builder.Configuration["Grpc:AuthUrl"] ?? throw new InvalidOperationException("Missing Grpc:AuthUrl configuration"));
 });
@@ -45,12 +50,28 @@ builder.Services.AddGrpcClient<Contracts.Protos.Security.SecurityService.Securit
     options.Address = new Uri(builder.Configuration["Grpc:SecurityUrl"] ?? throw new InvalidOperationException("Missing Grpc:SecurityUrl configuration"));
 });
 
+// .AddCallCredentials(async (context, metadata, serviceProvider) =>
+// {
+//     var tokenProvider = serviceProvider.GetRequiredService<IJwtTokenProvider>();
+//
+//     try
+//     {
+//         var token = await tokenProvider.GetOrRefreshTokenAsync();
+//         metadata.Add("Authorization", $"Bearer {token}");
+//     }
+//     catch (Exception ex)
+//     {
+//         var logger = serviceProvider.GetRequiredService<ILogger<JwtTokenProvider>>();
+//         logger.LogError(ex, "Failed to inject call credentials.");
+//     }
+// });
+
 // Регистрация сервисов в DI (для консоли)
 builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddScoped<CompanyManagerService>();
 
 // Консольные команды
-if(Environment.UserInteractive)
+if (Environment.UserInteractive)
     builder.Services.AddHostedService<ConsoleCommandWorker>();
 
 var app = builder.Build();

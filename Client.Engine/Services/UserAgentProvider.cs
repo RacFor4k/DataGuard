@@ -14,7 +14,7 @@ using System.IO;
 #endif
 
 
-namespace Client.Engine.Http.Providers
+namespace Client.Engine.Services
 {
     public class UserAgentProvider : IUserAgentProvider
     {
