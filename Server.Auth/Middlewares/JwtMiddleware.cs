@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 using Server.Auth.Interfaces;
-using Server.Auth.Models;
+using Common.Server.Models;
 using Server.Auth.Services;
 
 namespace Server.Auth.Middlewares

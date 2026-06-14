@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Server.Auth.Models
+namespace Common.Server.Models
 {
     [Table("groups", Schema = "identity")]
     public class Group
@@ -44,15 +44,16 @@ namespace Server.Auth.Models
         /// <summary>
         /// Read-write
         /// </summary>
-        User, 
+        User,
         /// <summary>
         /// Read-write and can add/remove users
         /// </summary>
-        Admin, 
+        Admin,
         /// <summary>
         /// Read-write and can add/remove users and change settings
         /// </summary>
-        Owner 
+        Owner
     }
+
 
 }

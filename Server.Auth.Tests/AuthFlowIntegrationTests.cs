@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Server.Auth.Interfaces;
-using Server.Auth.Models;
+using Common.Server.Models;
 using Server.Auth.Services;
 using StackExchange.Redis;
 

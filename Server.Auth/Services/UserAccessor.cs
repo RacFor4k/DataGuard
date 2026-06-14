@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
-using Server.Auth.Models;
+using Common.Server.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Server.Auth.Services

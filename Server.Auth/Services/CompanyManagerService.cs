@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NanoidDotNet;
 using Server.Auth.Interfaces;
+using Common.Server.Models;
 using Server.Auth.Models;
 using Server.Auth.Options;
 using StackExchange.Redis;

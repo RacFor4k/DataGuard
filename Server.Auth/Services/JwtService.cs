@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Server.Auth.Models;
+using Common.Server.Models;
 using Server.Auth.Options;
 using StackExchange.Redis;
 using StackExchange.Redis.KeyspaceIsolation;

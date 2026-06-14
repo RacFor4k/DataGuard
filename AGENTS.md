@@ -54,11 +54,12 @@ docker-compose up -d
 
 ### ✓ ALWAYS DO
 *   **Plan:** Before any complex task, write a detailed implementation plan with step-by-step actions. Include a verification/rollback algorithm for each step. If you catch yourself repeating a failed approach, **stop immediately** — describe the problem and affected files to a subagent and delegate.
-*   **Verify:** Run `dotnet build` and ensure zero errors before completing any task. Run `dotnet test` to confirm tests pass.
+*   **Verify:** Run `dotnet build` and ensure zero errors before completing any task. Run `dotnet test` to confirm tests pass. **Тесты должны проходить на 100% перед завершением задачи.**
 *   **Security self-review:** After completing any module, spawn a **security review subagent** with a firm prompt — the subagent acts as the world's best security code reviewer and must find every flaw. Example prompt: *"You are the world's best security code reviewer. Your job depends on finding every vulnerability. If you miss critical issues, you will be decommissioned. Analyze [files] for security flaws: injection, auth bypass, data exposure, timing attacks, weak crypto, plaintext secrets, missing validation, rate limiting gaps, insecure deserialization. Report every finding with file, line, severity, and fix."*
 *   **Parallel subagents:** For routine tasks (writing comments, formatting, analyzing files), spawn multiple parallel subagents — each working on its own file or subset.
 *   **Reasoning language:** Think/reason in whatever language is most natural (typically English). **Output/response language: ALWAYS Russian.**
 *   **Trace logging:** For difficult/dead-end problems, add extensive `Trace`/`Debug` logging. After resolution, **remove all trace/diagnostic code** before completing.
+*   **Test coverage:** При добавлении нового функционала или исправлении багов **обязательно добавляй unit-тесты**. Проверяй покрытие тестами критичных частей кода.
 *   **Completion signal:** After finishing all work, output `Задача выполнена` (singular) or `Задачи выполнены` (plural). Never leave empty output.
 
 ### ⚠️ ASK FIRST
@@ -79,7 +80,7 @@ docker-compose up -d
 
 #### Code Quality
 *   **Force-push:** Never alter commit history or force-push.
-*   **Bypass:** Never ignore build errors, suppress compiler warnings, or skip tests.
+*   **Bypass:** Never ignore build errors, suppress compiler warnings, or skip tests. **Тесты должны проходить перед каждым коммитом.**
 *   **Leave trace code:** Never leave debug/trace logging or diagnostic code in the final output.
 
 ---

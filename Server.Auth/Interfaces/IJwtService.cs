@@ -1,6 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Server.Auth.Models;
+using Common.Server.Models;
 
 namespace Server.Auth.Interfaces;
 

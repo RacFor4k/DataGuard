@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Server.Auth.Models;
+using Common.Server.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Server.Auth.Services
@@ -17,7 +17,7 @@ namespace Server.Auth.Services
         {
             _logger = logger;
         }
-        
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             _logger.LogTrace($"OnModelCreating called (peer: unknown)");
@@ -27,7 +27,7 @@ namespace Server.Auth.Services
             modelBuilder.Entity<GroupMember>(entity =>
             {
                 _logger.LogTrace($"Configuring GroupMember entity (peer: unknown)");
-                entity.HasKey(e => new { e.GroupId, e.UserId,});
+                entity.HasKey(e => new { e.GroupId, e.UserId, });
 
                 entity.HasOne(e => e.Group)
                     .WithMany(g => g.Members)

@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
-namespace Server.Auth.Models
+namespace Common.Server.Models
 {
     [Table("users", Schema = "identity")]
     [Index(nameof(Email), IsUnique = true)]

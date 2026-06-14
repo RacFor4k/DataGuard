@@ -3,6 +3,7 @@ using Contracts.Protos.Auth;
 using Microsoft.Extensions.Caching.Distributed;
 using StackExchange.Redis;
 using System.Text.Json;
+using Common.Server.Models;
 using Server.Auth.Models;
 using Microsoft.EntityFrameworkCore;
 using Google.Protobuf;
