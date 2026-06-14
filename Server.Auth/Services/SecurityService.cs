@@ -25,6 +25,12 @@ namespace Server.Auth.Services
             _logger = logger;
             _securityOptions = securityOptions.Value;
         }
+        public SecurityService(IDatabase redis, ILogger<SecurityService> logger, IOptions<SecurityOptions> securityOptions)
+        {
+            _redis = redis;
+            _logger = logger;
+            _securityOptions = securityOptions.Value;
+        }
         public async Task<string> GetNonceToken()
         {
             _logger.LogTrace($"GetNonceToken called");
@@ -40,13 +46,13 @@ namespace Server.Auth.Services
         public async Task<bool> VerifyNonceToken(string token)
         {
             _logger.LogTrace($"VerifyNonceToken called (token: {token})");
-            if(string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token))
             {
                 _logger.LogWarning($"VerifyNonceToken failed - token is empty");
                 return false;
             }
             string[] parts = token.Split('.');
-            if(parts.Length != 3)
+            if (parts.Length != 3)
             {
                 _logger.LogWarning($"VerifyNonceToken failed - token format is invalid (parts: {parts.Length}, expected: 3, token: {token})");
                 return false;
@@ -62,13 +68,13 @@ namespace Server.Auth.Services
             _logger.LogTrace($"Parsing nonce token (nonce: {nonce}, signature: {signature})");
             byte[] expectedHash = HMACSHA256.HashData(_securityOptions.NonceSecretKey, Encoding.UTF8.GetBytes($"{expiration}.{nonce}"));
             byte[] providedHash = Convert.FromBase64String(signature);
-            if(!CryptographicOperations.FixedTimeEquals(expectedHash,providedHash))
+            if (!CryptographicOperations.FixedTimeEquals(expectedHash, providedHash))
             {
                 _logger.LogWarning($"VerifyNonceToken failed - signature is invalid (nonce: {nonce})");
                 return false;
             }
             bool deleted = await _redis.KeyDeleteAsync($"nonce:{nonce}");
-            if(deleted)
+            if (deleted)
             {
                 _logger.LogTrace($"Nonce token verified successfully and deleted (nonce: {nonce})");
             }
@@ -95,10 +101,10 @@ namespace Server.Auth.Services
             _logger.LogTrace($"HashPasswordAsync called (passwordLength: {password.Length}, saltLength: {salt.Length}, argon2Parallelism: {_securityOptions.Argon2.DegreeOfParallelism}, argon2Iterations: {_securityOptions.Argon2.Iterations}, argon2Memory: {_securityOptions.Argon2.MemorySize})");
             using var argon2 = new Argon2id(password)
             {
-              Salt = salt,
-              DegreeOfParallelism = _securityOptions.Argon2.DegreeOfParallelism,
-              Iterations = _securityOptions.Argon2.Iterations,
-              MemorySize = _securityOptions.Argon2.MemorySize,
+                Salt = salt,
+                DegreeOfParallelism = _securityOptions.Argon2.DegreeOfParallelism,
+                Iterations = _securityOptions.Argon2.Iterations,
+                MemorySize = _securityOptions.Argon2.MemorySize,
             };
 
             byte[] hash = await argon2.GetBytesAsync(_securityOptions.PasswordHashLength);

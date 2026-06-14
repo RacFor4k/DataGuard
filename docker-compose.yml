@@ -6,15 +6,13 @@ services:
     container_name: dg_postgres18_db
     restart: always
     environment:
-      # Задайте ваши логин, пароль и имя базы данных здесь:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
-      # Важно: для Postgres 18+ путь внутри контейнера должен быть строго /var/lib/postgresql
-      - pg_data_v18:/var/lib/postgresql
+      - pg_data_v18:/var/lib/postgresql/data # Добавил /data, так как это стандарт для образа
 
   redis:
     image: redis:latest
@@ -26,6 +24,21 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio_storage
+    restart: always
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Консоль управления
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
 volumes:
   pg_data_v18:
   redis_data:
+  minio_data:

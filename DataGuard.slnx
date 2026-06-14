@@ -4,4 +4,8 @@
   <Project Path="Contracts/Contracts.csproj" />
   <Project Path="Server.Storage/Server.Storage.csproj" Id="31669661-25c6-48a7-b44d-bf454b2b0516" />
   <Project Path="Server.Auth/Server.Auth.csproj" Id="d0a1c0b0-c4e7-4f8b-b8d1-a0e8c8f1e1d7" />
+  <Project Path="Common.Tests/Common.Tests.csproj" />
+  <Project Path="Client.Engine.Tests/Client.Engine.Tests.csproj" />
+  <Project Path="Server.Auth.Tests/Server.Auth.Tests.csproj" />
+  <Project Path="Server.Storage.Tests/Server.Storage.Tests.csproj" />
 </Solution>

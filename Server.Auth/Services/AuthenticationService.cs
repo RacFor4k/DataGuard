@@ -50,6 +50,23 @@ namespace Server.Auth.Services
             _securityOptions = securityOptions.Value;
             _userAccessor = userAccessor;
         }
+        public AuthenticationService(
+            DataGuardDbContext dbContext,
+            IDatabase redis,
+            ILogger<AuthenticationService> logger,
+            IJwtService jwtService,
+            ISecurityService securityService,
+            IOptions<SecurityOptions> securityOptions,
+            UserAccessor userAccessor)
+        {
+            _dbContext = dbContext;
+            _redis = redis;
+            _logger = logger;
+            _jwtService = jwtService;
+            _securityService = securityService;
+            _securityOptions = securityOptions.Value;
+            _userAccessor = userAccessor;
+        }
 
         /// <summary>
         /// Регистрирует нового пользователя с предоставленным кодом регистрации и PIN.
@@ -202,7 +219,12 @@ namespace Server.Auth.Services
                 return new LoginResponse { Status = 400, Message = "NonceToken is invalid" };
             }
             _logger.LogTrace($"Fetching user by userId: {request.UserId} (peer: {context.Peer})");
-            User? user = await _dbContext.Users.Where(u => u.UserId == Guid.Parse(request.UserId)).FirstOrDefaultAsync();
+            if (!Guid.TryParse(request.UserId, out Guid userId))
+            {
+                _logger.LogWarning($"UserId is invalid (peer: {context.Peer})");
+                return new LoginResponse { Status = 400, Message = "UserId is invalid" };
+            }
+            User? user = await _dbContext.Users.Where(u => u.UserId == userId).FirstOrDefaultAsync();
             if (user == null)
             {
                 _logger.LogWarning($"User is not found (userId: {request.UserId}, peer: {context.Peer})");

@@ -35,6 +35,15 @@ namespace Server.Auth.Services
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("auth:");
         }
+        public CompanyManagerService(ILogger<CompanyManagerService> logger, ISecurityService securityService, IOptions<SecurityOptions> securityOptions, IOptions<CompanyManagerOptions> companyManagerOptions, DataGuardDbContext dbContext, IDatabase redis)
+        {
+            _logger = logger;
+            _securityService = securityService;
+            _companyManagerOptions = companyManagerOptions.Value;
+            _securityOptions = securityOptions.Value;
+            _dbContext = dbContext;
+            _redis = redis;
+        }
 
         public override async Task<CreateCompanyResponse> CreateCompany(CreateCompanyRequest request, ServerCallContext context)
         {
@@ -70,7 +79,7 @@ namespace Server.Auth.Services
                 _logger.LogWarning($"Nonce token is invalid (token: {request.NonceToken}, peer: {context.Peer})");
                 return new CreateCompanyResponse { Status = 400, Message = "Nonce token is invalid" };
             }
-            byte[] masterKeyHash = new byte[request.MasterKey.Length-_securityOptions.MasterKeySalt.Length];
+            byte[] masterKeyHash = new byte[request.MasterKey.Length - _securityOptions.MasterKeySalt.Length];
             Buffer.BlockCopy(request.MasterKey.ToByteArray(), _securityOptions.MasterKeySalt.Length, masterKeyHash, 0, masterKeyHash.Length);
             _logger.LogTrace($"Master key hash computed (hashLength: {masterKeyHash.Length}, peer: {context.Peer})");
             if (!CryptographicOperations.FixedTimeEquals(masterKeyHash, _companyManagerOptions.MasterKeyHash))

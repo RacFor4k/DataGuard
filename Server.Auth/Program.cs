@@ -61,3 +61,5 @@ app.MapGrpcService<SecurityRequestsService>();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

@@ -16,7 +16,7 @@ namespace Server.Auth.Services
     public class JwtService : Interfaces.IJwtService
     {
         private readonly DataGuardDbContext _dbContext;
-        private readonly IDatabase  _redis;
+        private readonly IDatabase _redis;
         private readonly IOptions<JwtOptions> _jwtOptions;
         public ILogger<JwtService> _logger { get; set; }
         private static readonly JwtSecurityTokenHandler _jwtHandler = new JwtSecurityTokenHandler();
@@ -26,11 +26,24 @@ namespace Server.Auth.Services
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("jwt:");
             _jwtOptions = jwtOptions;
-            if(string.IsNullOrWhiteSpace(_jwtOptions.Value.Issuer))
+            if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Issuer))
                 throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
-            if(string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
+            if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
                 throw new InvalidOperationException("JWT Audience not found in appsettings.json");
-            if(_jwtOptions.Value.Key == null || _jwtOptions.Value.Key.Length == 0)
+            if (_jwtOptions.Value.Key == null || _jwtOptions.Value.Key.Length == 0)
+                throw new InvalidOperationException("JWT Key not found in appsettings.json");
+            _logger = logger;
+        }
+        public JwtService(DataGuardDbContext dbContext, IDatabase redis, IOptions<JwtOptions> jwtOptions, ILogger<JwtService> logger)
+        {
+            _dbContext = dbContext;
+            _redis = redis;
+            _jwtOptions = jwtOptions;
+            if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Issuer))
+                throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
+            if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
+                throw new InvalidOperationException("JWT Audience not found in appsettings.json");
+            if (_jwtOptions.Value.Key == null || _jwtOptions.Value.Key.Length == 0)
                 throw new InvalidOperationException("JWT Key not found in appsettings.json");
             _logger = logger;
         }
@@ -40,11 +53,11 @@ namespace Server.Auth.Services
         /// </summary>
         /// <param name="userJwt">UserJwt объект.</param>
         /// <returns>Access токен.</returns>
-        public string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups) 
+        public string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups)
         {
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            
+
             Claim[] claims =
             {
                 new Claim(JwtRegisteredClaimNames.Sub, subject),
@@ -66,7 +79,7 @@ namespace Server.Auth.Services
             );
             return _jwtHandler.WriteToken(token);
         }
-        
+
         public string GenerateRefreshToken(string subject, string name, string surname, string email, string[] groups)
         {
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
@@ -163,19 +176,14 @@ namespace Server.Auth.Services
             _logger.LogTrace($"RevokeTokenAsync called (tokenId: {jwtToken.Id}, subject: {jwtToken.Subject}, type: {jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value}, peer: unknown)");
             try
             {
-                if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
+                if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
                 {
                     _logger.LogError($"RevokeTokenAsync failed - token type claim not found (tokenId: {jwtToken.Id}, peer: unknown)");
                     throw new InvalidOperationException("Token type claim not found");
                 }
-                if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
+                if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
                 {
-                    if (!DateTime.TryParse(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Exp)?.Value, out DateTime expirationTime))
-                    {
-                        _logger.LogError($"RevokeTokenAsync failed - token expiration not found (tokenId: {jwtToken.Id}, peer: unknown)");
-                        return true;
-                    }
-                    TimeSpan ttl = expirationTime - DateTime.UtcNow;
+                    TimeSpan ttl = jwtToken.ValidTo - DateTime.UtcNow;
                     if (ttl < TimeSpan.Zero)
                     {
                         _logger.LogTrace($"RevokeTokenAsync - token is expired (tokenId: {jwtToken.Id}, ttl: {ttl.TotalSeconds}s, peer: unknown)");
@@ -206,16 +214,16 @@ namespace Server.Auth.Services
                 _logger.LogError($"RevokeTokenAsync failed (tokenId: {jwtToken.Id}, error: {e.Message}, peer: unknown)");
                 return false;
             }
-        }        
+        }
         public async Task<bool> IsTokenRevokedAsync(JwtSecurityToken jwtToken)
         {
             _logger.LogTrace($"IsTokenRevokedAsync called (tokenId: {jwtToken.Id}, subject: {jwtToken.Subject}, type: {jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value}, peer: unknown)");
-            if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
+            if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
             {
                 _logger.LogError($"IsTokenRevokedAsync failed - token type claim not found (tokenId: {jwtToken.Id}, peer: unknown)");
                 throw new InvalidOperationException("Token type claim not found");
             }
-            if(jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
+            if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
             {
                 _logger.LogTrace($"IsTokenRevokedAsync - checking access token (tokenId: {jwtToken.Id}, peer: unknown)");
                 bool isRevoked = await _redis.KeyExistsAsync($"blacklist:{jwtToken.Id}");
@@ -230,7 +238,7 @@ namespace Server.Auth.Services
                 _logger.LogTrace($"IsTokenRevokedAsync - refresh token revoked: {isRevoked} (tokenId: {jwtToken.Id}, peer: unknown)");
                 return isRevoked;
             }
-        }        
+        }
         public JwtSecurityToken ParseToken(string token)
         {
             return _jwtHandler.ReadJwtToken(token);
