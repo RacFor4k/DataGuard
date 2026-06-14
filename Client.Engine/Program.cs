@@ -39,6 +39,8 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddGrpc();
 
+builder.Services.AddHttpClient();
+
 // gRPC клиенты
 builder.Services.AddGrpcClient<Contracts.Protos.Auth.Authentication.AuthenticationClient>(options =>
 {
@@ -51,6 +53,10 @@ builder.Services.AddGrpcClient<Contracts.Protos.CompanyManager.CompanyManager.Co
 builder.Services.AddGrpcClient<Contracts.Protos.Security.SecurityService.SecurityServiceClient>((serviceProvider, options) =>
 {
     options.Address = new Uri(builder.Configuration["Grpc:SecurityUrl"] ?? throw new InvalidOperationException("Missing Grpc:SecurityUrl configuration"));
+});
+builder.Services.AddGrpcClient<Contracts.Protos.Storage.StorageService.StorageServiceClient>((serviceProvider, options) =>
+{
+    options.Address = new Uri(builder.Configuration["Grpc:StorageUrl"] ?? throw new InvalidOperationException("Missing Grpc:StorageUrl configuration"));
 });
 
 // .AddCallCredentials(async (context, metadata, serviceProvider) =>
@@ -72,6 +78,7 @@ builder.Services.AddGrpcClient<Contracts.Protos.Security.SecurityService.Securit
 // Регистрация сервисов в DI (для консоли)
 builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddScoped<CompanyManagerService>();
+builder.Services.AddScoped<StorageClientService>();
 
 // Консольные команды
 if (Environment.UserInteractive)
@@ -89,7 +96,4 @@ var app = builder.Build();
 // gRPC сервисы
 app.MapGrpcService<AuthenticationService>();
 app.MapGrpcService<CompanyManagerService>();
-
-
-
-app.Run();
+app.MapGrpcService<StorageClientService>();app.Run();

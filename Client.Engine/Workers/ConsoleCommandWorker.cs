@@ -239,6 +239,22 @@ namespace Client.Engine.Workers
                             Console.WriteLine("register <registration_code> <password> [company_public_key_pem] - зарегистрировать пользователя");
                             Console.WriteLine("login <account_id> <password> - войти в аккаунт");
                             Console.WriteLine("list_accounts - показать сохранённые аккаунты");
+                            Console.WriteLine("storage_upload <file_path> <storage_path> <file_name> - загрузить файл");
+                            Console.WriteLine("storage_download <file_id> <output_path> - скачать файл");
+                            Console.WriteLine("storage_delete <file_id> - удалить файл");
+                            Console.WriteLine("storage_move <file_id> <new_path> - переместить файл");
+                            Console.WriteLine("storage_copy <file_id> <new_path> - скопировать файл");
+                            Console.WriteLine("storage_rename <file_id> <new_name> - переименовать файл");
+                            Console.WriteLine("storage_get_metadata <file_id> - получить метаданные");
+                            Console.WriteLine("storage_update_metadata <file_id> <key=value,...> - обновить метаданные");
+                            Console.WriteLine("storage_new_dir <directory_path> - создать директорию");
+                            Console.WriteLine("storage_rename_dir <directory_id> <new_name> - переименовать директорию");
+                            Console.WriteLine("storage_delete_dir <directory_id> <recursive> - удалить директорию");
+                            Console.WriteLine("storage_move_dir <directory_id> <new_path> - переместить директорию");
+                            Console.WriteLine("storage_copy_dir <directory_id> <new_path> <recursive> - скопировать директорию");
+                            Console.WriteLine("storage_list <directory_id> <recursive> - список файлов");
+                            Console.WriteLine("storage_generate_link <file_id> <ttl_seconds> - создать ссылку");
+                            Console.WriteLine("storage_generate_direct_link <file_id> <ttl_seconds> - создать прямую ссылку");
                             Console.WriteLine("help - показать список доступных команд");
                             Console.WriteLine("exit - выйти из консоли");
                             break;
@@ -246,6 +262,446 @@ namespace Client.Engine.Workers
                             cancellationToken.ThrowIfCancellationRequested();
                             Console.WriteLine("Выход из консоли");
                             return;
+                        case "storage_upload":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_upload <file_path> <storage_path> <file_name> - загрузить файл");
+                                break;
+                            }
+                            if (args.Length != 4)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            var uploadFilePath = args[1];
+                            var uploadStoragePath = args[2];
+                            var uploadFileName = args[3];
+                            if (!File.Exists(uploadFilePath))
+                            {
+                                Console.WriteLine($"Файл не найден: {uploadFilePath}");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                using var fileStream = File.OpenRead(uploadFilePath);
+                                var response = storageService.UploadFileAsync(fileStream, uploadFileName, uploadStoragePath).Result;
+                                Console.WriteLine($"Загрузка файла завершена.\nSuccess: {response.Success}\nMessage: {response.Message}\nFileId: {response.FileId}");
+                            }
+                            break;
+                        case "storage_download":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_download <file_id> <output_path> - скачать файл");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var downloadFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            var downloadOutputPath = args[2];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.GetFileAsync(downloadFileId).Result;
+                                if (response.Success && response.Content != null)
+                                {
+                                    using var outputFile = File.Create(downloadOutputPath);
+                                    response.Content.CopyTo(outputFile);
+                                    Console.WriteLine($"Файл скачан: {downloadOutputPath}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Ошибка: {response.Message}");
+                                }
+                            }
+                            break;
+                        case "storage_delete":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_delete <file_id> - удалить файл");
+                                break;
+                            }
+                            if (args.Length != 2)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var deleteFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.DeleteFileAsync(deleteFileId).Result;
+                                Console.WriteLine($"Удаление файла завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_move":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_move <file_id> <new_path> - переместить файл");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var moveFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            var moveNewPath = args[2];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.MoveFileAsync(moveFileId, moveNewPath).Result;
+                                Console.WriteLine($"Перемещение файла завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_copy":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_copy <file_id> <new_path> - скопировать файл");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var copyFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            var copyNewPath = args[2];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.CopyFileAsync(copyFileId, copyNewPath).Result;
+                                Console.WriteLine($"Копирование файла завершено.\nSuccess: {response.Success}\nMessage: {response.Message}\nNewFileId: {response.NewFileId}");
+                            }
+                            break;
+                        case "storage_rename":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_rename <file_id> <new_name> - переименовать файл");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var renameFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            var renameNewName = args[2];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.RenameFileAsync(renameFileId, renameNewName).Result;
+                                Console.WriteLine($"Переименование файла завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_get_metadata":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_get_metadata <file_id> - получить метаданные");
+                                break;
+                            }
+                            if (args.Length != 2)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var metadataFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.GetMetadataAsync(metadataFileId).Result;
+                                Console.WriteLine($"Получение метаданных завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                                if (response.Success)
+                                {
+                                    Console.WriteLine($"FileId: {response.FileId}");
+                                    Console.WriteLine($"FileName: {response.FileName}");
+                                    Console.WriteLine($"FilePath: {response.FilePath}");
+                                    Console.WriteLine($"Size: {response.Size}");
+                                    if (response.Metadata != null)
+                                    {
+                                        foreach (var kvp in response.Metadata)
+                                        {
+                                            Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        case "storage_update_metadata":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_update_metadata <file_id> <key=value,key2=value2,...> - обновить метаданные");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var updateMetadataFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            var metadataPairs = args[2].Split(',');
+                            var metadataDict = new Dictionary<string, string>();
+                            foreach (var pair in metadataPairs)
+                            {
+                                var kv = pair.Split('=', 2);
+                                if (kv.Length == 2)
+                                {
+                                    metadataDict[kv[0]] = kv[1];
+                                }
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.UpdateMetadataAsync(updateMetadataFileId, metadataDict).Result;
+                                Console.WriteLine($"Обновление метаданных завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_new_dir":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_new_dir <directory_path> - создать директорию");
+                                break;
+                            }
+                            if (args.Length != 2)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            var newDirPath = args[1];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.NewDirectoryAsync(newDirPath).Result;
+                                Console.WriteLine($"Создание директории завершено.\nSuccess: {response.Success}\nMessage: {response.Message}\nDirectoryId: {response.DirectoryId}");
+                            }
+                            break;
+                        case "storage_rename_dir":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_rename_dir <directory_id> <new_name> - переименовать директорию");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var renameDirId))
+                            {
+                                Console.WriteLine("Некорректный directory_id");
+                                break;
+                            }
+                            var renameDirNewName = args[2];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.RenameDirectoryAsync(renameDirId, renameDirNewName).Result;
+                                Console.WriteLine($"Переименование директории завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_delete_dir":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_delete_dir <directory_id> <recursive> - удалить директорию");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var deleteDirId))
+                            {
+                                Console.WriteLine("Некорректный directory_id");
+                                break;
+                            }
+                            if (!bool.TryParse(args[2], out var deleteRecursive))
+                            {
+                                Console.WriteLine("Некорректный параметр recursive (true/false)");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.DeleteDirectoryAsync(deleteDirId, deleteRecursive).Result;
+                                Console.WriteLine($"Удаление директории завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_move_dir":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_move_dir <directory_id> <new_path> - переместить директорию");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var moveDirId))
+                            {
+                                Console.WriteLine("Некорректный directory_id");
+                                break;
+                            }
+                            var moveDirNewPath = args[2];
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.MoveDirectoryAsync(moveDirId, moveDirNewPath).Result;
+                                Console.WriteLine($"Перемещение директории завершено.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                            }
+                            break;
+                        case "storage_copy_dir":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_copy_dir <directory_id> <new_path> <recursive> - скопировать директорию");
+                                break;
+                            }
+                            if (args.Length != 4)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var copyDirId))
+                            {
+                                Console.WriteLine("Некорректный directory_id");
+                                break;
+                            }
+                            var copyDirNewPath = args[2];
+                            if (!bool.TryParse(args[3], out var copyRecursive))
+                            {
+                                Console.WriteLine("Некорректный параметр recursive (true/false)");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.CopyDirectoryAsync(copyDirId, copyDirNewPath, copyRecursive).Result;
+                                Console.WriteLine($"Копирование директории завершено.\nSuccess: {response.Success}\nMessage: {response.Message}\nNewDirectoryId: {response.NewDirectoryId}");
+                            }
+                            break;
+                        case "storage_list":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_list <directory_id> <recursive> - список файлов");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var listDirId))
+                            {
+                                Console.WriteLine("Некорректный directory_id");
+                                break;
+                            }
+                            if (!bool.TryParse(args[2], out var listRecursive))
+                            {
+                                Console.WriteLine("Некорректный параметр recursive (true/false)");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.ListDirectoryAsync(listDirId, listRecursive).Result;
+                                Console.WriteLine($"Список файлов.\nSuccess: {response.Success}\nMessage: {response.Message}");
+                                if (response.Success)
+                                {
+                                    foreach (var item in response.Items)
+                                    {
+                                        Console.WriteLine($"  FileId: {item.FileId}, Name: {item.FileName}, Path: {item.FilePath}, Size: {item.Size}");
+                                    }
+                                }
+                            }
+                            break;
+                        case "storage_generate_link":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_generate_link <file_id> <ttl_seconds> - создать ссылку");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var linkFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            if (!int.TryParse(args[2], out var linkTtl))
+                            {
+                                Console.WriteLine("Некорректный ttl_seconds");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.GenerateLinkAsync(linkFileId, ttlSeconds: linkTtl).Result;
+                                Console.WriteLine($"Создание ссылки завершено.\nSuccess: {response.Success}\nMessage: {response.Message}\nLink: {response.Link}");
+                            }
+                            break;
+                        case "storage_generate_direct_link":
+                            if (args.Length > 1 && args[1] == "help")
+                            {
+                                Console.WriteLine("storage_generate_direct_link <file_id> <ttl_seconds> - создать прямую ссылку");
+                                break;
+                            }
+                            if (args.Length != 3)
+                            {
+                                Console.WriteLine("Неверное количество аргументов");
+                                break;
+                            }
+                            if (!Guid.TryParse(args[1], out var directLinkFileId))
+                            {
+                                Console.WriteLine("Некорректный file_id");
+                                break;
+                            }
+                            if (!int.TryParse(args[2], out var directLinkTtl))
+                            {
+                                Console.WriteLine("Некорректный ttl_seconds");
+                                break;
+                            }
+                            using (var scope = _serviceScopeFactory.CreateScope())
+                            {
+                                var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
+                                var response = storageService.GenerateDirectLinkAsync(directLinkFileId, ttlSeconds: directLinkTtl).Result;
+                                Console.WriteLine($"Создание прямой ссылки завершено.\nSuccess: {response.Success}\nMessage: {response.Message}\nLink: {response.Link}");
+                            }
+                            break;
                         default:
                             Console.WriteLine("Неизвестная команда");
                             break;
