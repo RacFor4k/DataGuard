@@ -209,33 +209,69 @@ public async Task<JwtSecurityToken?> VerifyTokenAsync(string token)
 
 ```
 DataGuard/
-├── Server/                          # Main ASP.NET Core Web API
-│   ├── Controllers/                 # REST API controllers
+├── Server.Auth/                     # Main authentication server
+│   ├── Controllers/                 # REST API controllers (not present in current structure)
 │   ├── Middlewares/                 # Custom middleware (JWT, Base64)
 │   ├── Migrations/                  # EF Core migrations
 │   ├── Models/                      # Domain models & DTOs
-│   │   ├── User.cs, Group.cs, Company.cs, Icon.cs
-│   │   └── UserJWT.cs, RegistrationData.cs
 │   ├── Options/                     # Configuration options classes
-│   │   ├── JwtOptions.cs, SecurityOptions.cs, CompanyManagerOptions.cs
 │   ├── Services/                    # Business logic implementations
 │   │   ├── AuthenticationService.cs, JwtService.cs, SecurityService.cs
 │   │   ├── CompanyManagerService.cs, DataBaseService.cs
-│   │   └── SecurityRequestsService.cs, UserAccessor.cs
+│   │   ├── SecurityRequestsService.cs, UserAccessor.cs
 │   ├── Interfaces/                  # Service interfaces
 │   │   ├── IJwtService.cs, ISecurityService.cs
-│   ├── Protos/                      # gRPC proto definitions
-│   ├── Server.csproj
+│   ├── Server.Auth.csproj
 │   ├── Program.cs
+│   ├── Properties/                   # Launch settings
 │   └── appsettings.json
-├── Contracts/Contracts.csproj       # Shared contracts
-├── Common/Common.csproj             # Shared utilities
+├── Server.Storage/                   # Storage server (new project)
+│   ├── Controllers/                 # REST API controllers
+│   ├── Properties/                   # Launch settings
+│   ├── Server.Storage.csproj
+│   ├── Program.cs
+│   ├── WeatherForecast.cs           # Template controller
+│   └── appsettings.json
+├── Contracts/                        # Shared contracts
+│   ├── Protos/                      # gRPC proto definitions
+│   │   ├── auth.proto
+│   │   ├── security.proto
+│   │   ├── company_manager.proto
+│   │   └── Client/
+│   │       ├── auth.proto
+│   │       ├── company_manager.proto
+│   │       └── security.proto
+│   └── Contracts.csproj
+├── Common/                          # Shared utilities
+│   ├── Helpers/                     # Helper classes
+│   ├── Server/                     # Server-related utilities
+│   └── Common.csproj
 ├── Client.Engine/                   # Client engine
+│   ├── Helpers/                     # Helper classes
+│   ├── Interfaces/                  # Service interfaces
+│   ├── Models/                      # Client models
+│   ├── Options/                     # Configuration options
+│   ├── Properties/                   # Project properties
+│   ├── Services/                    # Client services
+│   ├── Workers/                     # Worker implementations
 │   └── Client.Engine.csproj
+├── docs/                            # Documentation
+│   ├── Client.Engine.md
+│   ├── Server.md
+│   └── DOCS.AGENTS.md
+├── utils/                           # Utility scripts and tools
+│   ├── hash_tool.py
+│   └── settings.json
+├── .github/                         # GitHub workflows
+├── .kilo/                           # Kilo configuration
+├── .qwen/                           # Qwen configuration
+├── .vscode/                         # VS Code configuration
 ├── docker-compose.yml               # PostgreSQL 18 + Redis
+├── .env                             # Environment variables
 ├── DataGuard.slnx                   # Solution file (custom format)
 ├── SECURITY.md                     # Threat model & mitigations
 ├── TODO.md                         # Tracked TODOs
+├── .gitignore                      # Git ignore file
 └── AGENTS.md                       # This file
 ```
 
