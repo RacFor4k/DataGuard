@@ -23,8 +23,9 @@ API documentation should include:
 7. **Versioning**: Document any changes in the API or system architecture that might affect existing implementations.
 
 ## File Structure
-- **docs/client-engine-api.md**: Documentation for Client.Engine API
-- **docs/server-api.md**: Documentation for Server API
+- **docs/Client.Engine.md**: Documentation for Client.Engine API
+- **docs/Server.md**: Documentation for Server.Auth API
+- **docs/Server.Storage.md**: Documentation for Server.Storage API (gRPC + REST)
 
 ## Best Practices
 - **Regular Updates**: Keep documentation updated with the latest changes in the codebase.
