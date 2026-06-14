@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+package storage;
+
+option csharp_namespace = "Contracts.Protos.Storage";
+
+service StorageService {
+    // File operations
+  rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse);
+  rpc GetFile (GetFileRequest) returns (stream GetFileResponse);
+  rpc GetFileChanges (GetFileRequest) returns (stream GetFileResponse);
+  rpc UpdateFile (UpdateFileRequest) returns (UpdateFileResponse);
+  rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse);
+  rpc MoveFile (MoveFileRequest) returns (MoveFileResponse);
+  rpc CopyFile (CopyFileRequest) returns (CopyFileResponse);
+  rpc RenameFile (RenameFileRequest) returns (RenameFileResponse);
+
+    // Directory operations
+  rpc NewDirectory (NewDirectoryRequest) returns (NewDirectoryResponse);
+  rpc RenameDirectory (RenameDirectoryRequest) returns (RenameDirectoryResponse);
+  rpc DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse);
+  rpc MoveDirectory (MoveDirectoryRequest) returns (MoveDirectoryResponse);
+  rpc CopyDirectory (CopyDirectoryRequest) returns (CopyDirectoryResponse);
+
+    // Attribute operations
+  rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse);
+  rpc UpdateMetadata (UpdateMetadataRequest) returns (UpdateMetadataResponse);
+
+    // Listing operations
+  rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse);
+
+    // Link operations
+  rpc GenerateLink (GenerateLinkRequest) returns (GenerateLinkResponse);
+  rpc GenerateDirectLink (GenerateLinkRequest) returns (GenerateLinkResponse);
+
+}
+
+message FileMetadata {
+  optional string file_id = 1;
+  string file_name = 2;
+  string file_path = 3;
+  int64 size = 4;
+  map<string, string> Metadata = 5;
+}
+
+message UploadFileRequest {
+  oneof data {
+    FileMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+
+message UploadFileResponse {
+  bool success = 1;
+  string message = 2;
+  string file_id = 3;
+}
+
+message GetFileRequest {
+  string file_id = 1;
+}
+
+message GetFileResponse {
+  oneof data{
+    FileMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+
+message UpdateOperation {
+  int64 offset = 1;
+  bytes data = 2;
+}
+
+message ErraseOperation {
+  int64 offset = 1;
+  int64 size = 2;
+}
+
+message GetFileChangesRequest {
+  string file_id = 1;
+}
+
+message GetFileChangesResponse {
+  oneof data{
+    UpdateOperation update = 1;
+    ErraseOperation erase = 2;
+  }
+}
+
+message UpdateFileRequest {
+  oneof data {
+    int64 file_id = 1;
+    UpdateOperation update = 2;
+    ErraseOperation erase = 3;
+  }
+  string nonce_token = 4; // Уникальное значение для защиты от повторных атак
+}
+
+message UpdateFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// File operations
+message DeleteFileRequest {
+  string file_id = 1;
+  string nonce_token = 2; // Уникальное значение для защиты от повторных атак
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message MoveFileRequest {
+  string file_id = 1;
+  string new_path = 2;
+  string nonce_token = 3; // Уникальное значение для защиты от повторных атак
+}
+
+message MoveFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CopyFileRequest {
+  string file_id = 1;
+  string new_path = 2;
+  string nonce_token = 3; // Уникальное значение для защиты от повторных атак
+}
+
+message CopyFileResponse {
+  bool success = 1;
+  string message = 2;
+  string new_file_id = 3;
+}
+
+message RenameFileRequest {
+  string file_id = 1;
+  string new_name = 2;
+  string nonce_token = 3; // Уникальное значение для защиты от повторных атак
+}
+
+message RenameFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GenerateLinkRequest {
+  string file_id = 1;
+  repeated string groups = 2;
+  repeated string users = 3;
+  int32 ttl_seconds = 4; // Время жизни ссылки в секундах
+  string nonce_token = 5; // Уникальное значение для защиты от повторных атак
+}
+
+message GenerateLinkResponse {
+  bool success = 1;
+  string message = 2;
+  string link = 3;
+}
+
+// Directory operations
+message NewDirectoryRequest {
+  string directory_path = 1;
+}
+
+message NewDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+  string directory_id = 3;
+}
+
+message RenameDirectoryRequest {
+  string directory_id = 1;
+  string new_name = 2;
+  string nonce_token = 3; // Уникальное значение для защиты от повторных атак
+}
+
+message RenameDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteDirectoryRequest {
+  string directory_id = 1;
+  bool recursive = 2; // Удалять ли вложенные файлы и папки
+  string nonce_token = 3; // Уникальное значение для защиты от повторных атак
+}
+
+message DeleteDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message MoveDirectoryRequest {
+  string directory_id = 1;
+  string new_path = 2;
+  string nonce_token = 3; // Уникальное значение для защиты от повторных атак
+}
+
+message MoveDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CopyDirectoryRequest {
+  string directory_id = 1;
+  string new_path = 2;
+  bool recursive = 3; // Копировать ли вложенные файлы и папки
+  string nonce_token = 4; // Уникальное значение для защиты от повторных атак
+}
+
+message CopyDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+  string new_directory_id = 3;
+}
+
+// Attribute operations
+message GetMetadataRequest {
+  string file_id = 1;
+}
+
+message GetMetadataResponse {
+  bool success = 1;
+  string message = 2;
+  FileMetadata metadata = 3;
+}
+
+message UpdateMetadataRequest {
+  string file_id = 1;
+  map<string, string> metadata = 2;
+}
+
+message UpdateMetadataResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Listing operations
+message ListDirectoryRequest {
+  string directory_id = 1;
+  bool recursive = 2; // Включать ли вложенные папки
+}
+
+message ListDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+  repeated FileMetadata items = 3;
+}

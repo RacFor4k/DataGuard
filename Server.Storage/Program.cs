@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Minio;
 
 var builder = WebApplication.CreateBuilder(args);
 

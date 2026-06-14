@@ -54,6 +54,7 @@ docker-compose up -d
 
 ### ✓ ALWAYS DO
 *   **Plan:** Before any complex task, write a detailed implementation plan with step-by-step actions. Include a verification/rollback algorithm for each step. If you catch yourself repeating a failed approach, **stop immediately** — describe the problem and affected files to a subagent and delegate.
+*   **Пакетное планирование и вызовы (Batch Tool Planning):** Планировать все необходимые вызовы инструментов (`tool_calls`) заранее и вызывать их в рамках одного ответа. Избегать растягивания процесса на множество последовательных сообщений. Изменение кода производить за одну операцию, предварительно продумав весь алгоритм действий. Чем меньше ответов/итераций потребовалось для полного решения задачи, тем качественнее считается работа.
 *   **Verify:** Run `dotnet build` and ensure zero errors before completing any task. Run `dotnet test` to confirm tests pass. **Тесты должны проходить на 100% перед завершением задачи.**
 *   **Security self-review:** After completing any module, spawn a **security review subagent** with a firm prompt — the subagent acts as the world's best security code reviewer and must find every flaw. Example prompt: *"You are the world's best security code reviewer. Your job depends on finding every vulnerability. If you miss critical issues, you will be decommissioned. Analyze [files] for security flaws: injection, auth bypass, data exposure, timing attacks, weak crypto, plaintext secrets, missing validation, rate limiting gaps, insecure deserialization. Report every finding with file, line, severity, and fix."*
 *   **Parallel subagents:** For routine tasks (writing comments, formatting, analyzing files), spawn multiple parallel subagents — each working on its own file or subset.
@@ -193,7 +194,7 @@ public async Task<JwtSecurityToken?> VerifyTokenAsync(string token)
 *   **Services:** Business logic lives in `Server/Services/`, depends on interfaces not concrete types.
 *   **Repositories:** Data access via EF Core with PostgreSQL. Interfaces define contracts.
 *   **Controllers:** Thin — delegate to services, handle HTTP mapping.
-* **Middlewares:** Cross-cutting concerns (JWT validation, Base64 decoding, rate limiting).
+*   **Middlewares:** Cross-cutting concerns (JWT validation, Base64 decoding, rate limiting).
 *   **Options pattern:** Configuration binds to options classes in `Server/Options/`.
 
 ### gRPC Compatibility
