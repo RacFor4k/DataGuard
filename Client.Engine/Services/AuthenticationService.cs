@@ -47,7 +47,7 @@ namespace Client.Engine.Services
 
         public override async Task<RegisterResponse> Register(RegisterRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Register request\n\tRegistration code: {request.RegistrationCode}\n\t From: {context.RequestHeaders.GetValue("User-Agent")}");
+            _logger.LogInformation($"Register request from: {context.RequestHeaders.GetValue("User-Agent")}");
             if (request.RegistrationCode.Length != 12
                 || !request.RegistrationCode.All(char.IsLetterOrDigit))
             {
@@ -68,13 +68,8 @@ namespace Client.Engine.Services
             if (!request.Password.Any(ch => !char.IsLetterOrDigit(ch)))
                 return new RegisterResponse { Status = 400, Message = "Password must contain at least one special character" };
             string? companyPublicKeyPem = null;
-            if (request.CompanyPublicKeyPem != null)
+            if (!string.IsNullOrEmpty(request.CompanyPublicKeyPem))
             {
-                if (string.IsNullOrEmpty(request.CompanyPublicKeyPem))
-                {
-                    _logger.LogWarning($"Company public key is empty (peer: {context.Peer})");
-                    return new RegisterResponse { Status = 400, Message = "Company public key is empty" };
-                }
                 companyPublicKeyPem = request.CompanyPublicKeyPem;
                 var setCompanyPublicKeyResponse = await _companyManagerClient.SetCompanyPublicKeyAsync(new Contracts.Protos.CompanyManager.SetCompanyPublicKeyRequest
                 {
@@ -89,7 +84,7 @@ namespace Client.Engine.Services
             }
             else
             {
-                _logger.LogWarning($"Company public key is empty (peer: {context.Peer})");
+                _logger.LogTrace($"Company public key not provided, fetching from server (peer: {context.Peer})");
                 var getCompanyPublicKeyResponse = await _companyManagerClient.GetCompanyPublicKeyAsync(new Contracts.Protos.CompanyManager.GetCompanyPublicKeyRequest
                 {
                     RegistrationCode = request.RegistrationCode
@@ -114,6 +109,7 @@ namespace Client.Engine.Services
                 EncryptedPassword = ByteString.CopyFrom(encryptedPassword),
                 ClientSalt = ByteString.CopyFrom(salt),
                 PasswordHash = ByteString.CopyFrom(passwordHash),
+                BackupEncryptedKey = ByteString.CopyFrom(backupEncryptedKey),
             });
             if (registerResponse.Status != 200)
             {
@@ -145,6 +141,7 @@ namespace Client.Engine.Services
             _dbContext.Accounts.Add(account);
             await _dbContext.SaveChangesAsync();
             await _keyProvider.SetKeyAsync(key);
+            CryptographicOperations.ZeroMemory(key);
             return new RegisterResponse { Status = 200, Message = "OK" };
         }
 
@@ -206,12 +203,14 @@ namespace Client.Engine.Services
             }
             if (loginResponse.EncryptedKey.Length != _securityOptions.KeyLength + _securityOptions.NonceLength + _securityOptions.TagLength)
             {
-                _logger.LogWarning($"Encrypted key is invalid (length: {loginResponse.EncryptedKey.Length}, peer: {context.Peer})");
+                _logger.LogWarning($"Encrypted key is invalid (length: {loginResponse.EncryptedKey.Length}, expected: {_securityOptions.KeyLength + _securityOptions.NonceLength + _securityOptions.TagLength}, peer: {context.Peer})");
                 return new LoginResponse { Status = 500, Message = "Encrypted key is invalid" };
             }
             byte[] encryptedKey = loginResponse.EncryptedKey.ToByteArray();
             byte[] key = SecurityHelper.DecryptKey(encryptedKey, request.Password, salt, _securityOptions.NonceLength, _securityOptions.TagLength, _securityOptions.HashIterations, _securityOptions.HashLength);
+            CryptographicOperations.ZeroMemory(encryptedKey);
             await _keyProvider.SetKeyAsync(key);
+            CryptographicOperations.ZeroMemory(key);
             return new LoginResponse { Status = 200, Message = "OK" };
         }
     }

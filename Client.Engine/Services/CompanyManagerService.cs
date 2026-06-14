@@ -56,7 +56,6 @@ namespace Client.Engine.Services
                 return new CreateCompanyResponse { Status = nonceResponce.Status, Message = nonceResponce.Message };
             }
             string nonce = nonceResponce.NonceToken;
-            Console.WriteLine($"Nonce token: {nonce}");
             // Соль статическая из-за того что MasterKey явялется случайным массивом байтов и не может быть взломан радужными таблицами
             byte[] masterKeyHash = SecurityHelper.GetSecurityHash(Convert.FromBase64String(request.MasterKey), _securityOptions.MasterKeySalt, _securityOptions.Argon2.DegreeOfParallelism, _securityOptions.Argon2.Iterations, _securityOptions.Argon2.MemorySize, _securityOptions.HashLength);
             _logger.LogTrace($"Master key hash computed (hashLength: {masterKeyHash.Length}, peer: {context.Peer})");
@@ -74,6 +73,24 @@ namespace Client.Engine.Services
             }
             return new CreateCompanyResponse { Status = 200, Message = "OK", RegistrationCode = createCompanyResponse.RegistrationCode };
 
+        }
+        public new async Task<SetCompanyPublicKeyResponse> SetCompanyPublicKey(SetCompanyPublicKeyRequest request, ServerCallContext context)
+        {
+            _logger.LogInformation("SetCompanyPublicKey");
+            if (string.IsNullOrEmpty(request.RegistrationCode))
+            {
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Registration code is empty" };
+            }
+            if (string.IsNullOrEmpty(request.CompanyPublicKeyPem))
+            {
+                return new SetCompanyPublicKeyResponse { Status = 400, Message = "Company public key is empty" };
+            }
+            var response = await _companyManagerClient.SetCompanyPublicKeyAsync(new Contracts.Protos.CompanyManager.SetCompanyPublicKeyRequest
+            {
+                RegistrationCode = request.RegistrationCode,
+                CompanyPublicKeyPem = request.CompanyPublicKeyPem
+            });
+            return new SetCompanyPublicKeyResponse { Status = response.Status, Message = response.Message };
         }
     }
 }

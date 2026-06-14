@@ -12,6 +12,6 @@ namespace Server.Options
         public string Audience { get; set; } = string.Empty;
         public TimeSpan AccessTokenExpiration { get; set; }
         public TimeSpan RefreshTokenExpiration { get; set; }
-        public string HexKey { get; set; } = string.Empty;
+        public byte[] Key { get; set; } = [];
     }
 }

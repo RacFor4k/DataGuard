@@ -56,7 +56,7 @@ namespace Server.Services
         /// </summary>
         public override async Task<RegisterResponse> Register(RegisterRequest request, ServerCallContext context)
         {
-            _logger.LogTrace($"Register called with registrationCode: {request.RegistrationCode}, peer: {context.Peer}");
+            _logger.LogTrace($"Register called, peer: {context.Peer}");
 
             if (string.IsNullOrEmpty(request.RegistrationCode))
             {
@@ -92,13 +92,13 @@ namespace Server.Services
             string? rawRegistrationData = await _redis.StringGetAsync(registrationCode);
             if (string.IsNullOrEmpty(rawRegistrationData))
             {
-                _logger.LogWarning($"Registration code is invalid (code: {registrationCode}, peer: {context.Peer})");
+                _logger.LogWarning($"Registration code is invalid, peer: {context.Peer}");
                 return new RegisterResponse { Status = 400, Message = "Registration code is invalid" };
             }
             RegistrationData? registrationData = JsonSerializer.Deserialize<RegistrationData>(rawRegistrationData);
             if (registrationData == null)
             {
-                _logger.LogWarning($"Registration data is invalid (code: {registrationCode}, peer: {context.Peer})");
+                _logger.LogWarning($"Registration data is invalid, peer: {context.Peer}");
                 return new RegisterResponse { Status = 400, Message = "Registration data is invalid" };
             }
 
@@ -113,9 +113,9 @@ namespace Server.Services
                 _logger.LogWarning($"Company is invalid (companyId: {registrationData.CompanyId}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "Company is invalid" };
             }
-            byte[] clientSalt = _securityService.GenerateSalt();
-            byte[] serverSalt = _securityService.GenerateSalt();
-            byte[] serverPasswordHash = await _securityService.HashPasswordAsync(request.EncryptedPassword.ToByteArray(), serverSalt);
+            byte[] clientSalt = request.ClientSalt.ToByteArray();
+            byte[] passwordHash = new byte[_securityOptions.PasswordHashLength];
+            Buffer.BlockCopy(request.PasswordHash.ToByteArray(), _securityOptions.SaltLength, passwordHash, 0, _securityOptions.PasswordHashLength);
             var user = new User
             {
                 Name = registrationData.Name,
@@ -123,9 +123,9 @@ namespace Server.Services
                 Email = registrationData.Email,
                 EncryptedPassword = request.EncryptedPassword.ToByteArray(),
                 EncryptedKey = request.EncryptedKey.ToByteArray(),
-                ServerPasswordHash = serverPasswordHash,
+                ServerPasswordHash = passwordHash,
                 ClientSalt = clientSalt,
-                ServerSalt = serverSalt,
+                ServerSalt = _securityService.GenerateSalt(),
                 BackupEncryptedKey = request.BackupEncryptedKey.ToByteArray(),
                 CompanyId = company.CompanyId,
                 Company = company
@@ -164,11 +164,11 @@ namespace Server.Services
                 string accessJwtToken = _jwtService.GenerateAccessToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, groupMembers.Select(gm => gm.Group.Name).ToArray());
                 _logger.LogTrace($"JWT tokens generated (userId: {user.UserId}, peer: {context.Peer})");
 
-                return new RegisterResponse { Status = 200, Message = "OK", CompanyPublicKeyPem = company.PublicKeyPem, JwtAccessToken = accessJwtToken, JwtRefreshToken = refreshJwtToken };
+                return new RegisterResponse { Status = 200, Message = "OK", UserId = user.UserId.ToString(), Email = registrationData.Email, CompanyPublicKeyPem = company.PublicKeyPem, JwtAccessToken = accessJwtToken, JwtRefreshToken = refreshJwtToken };
             }
             catch (Exception ex)
             {
-                _logger.LogError($"GroupMembers is invalid (userId: {user.UserId}, email: {registrationData.Email}, error: {ex.Message}, stackTrace: {ex.StackTrace}, peer: {context.Peer})");
+                _logger.LogError($"GroupMembers is invalid (userId: {user.UserId}, email: {registrationData.Email}, error: {ex.Message}, peer: {context.Peer})");
                 return new RegisterResponse { Status = 400, Message = "GroupMembers is invalid" };
             }
         }
@@ -186,7 +186,7 @@ namespace Server.Services
                 _logger.LogWarning($"UserId is empty (peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "UserId is empty" };
             }
-            if (request.PasswordHash.Length != 32)
+            if (request.PasswordHash.Length != _securityOptions.SaltLength + _securityOptions.PasswordHashLength)
             {
                 _logger.LogWarning($"Password is invalid (length: {request.PasswordHash.Length}, peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "Password is invalid" };
@@ -196,7 +196,7 @@ namespace Server.Services
                 _logger.LogWarning($"NonceToken is empty (peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "NonceToken is empty" };
             }
-            if (await _securityService.VerifyNonceToken(request.NonceToken))
+            if (!await _securityService.VerifyNonceToken(request.NonceToken))
             {
                 _logger.LogWarning($"NonceToken is invalid (peer: {context.Peer})");
                 return new LoginResponse { Status = 400, Message = "NonceToken is invalid" };
@@ -209,8 +209,9 @@ namespace Server.Services
                 return new LoginResponse { Status = 404, Message = "User is not found" };
             }
             _logger.LogTrace($"User found, verifying password (userId: {user.UserId}, email: {user.Email}, peer: {context.Peer})");
-            var passwordHash = await _securityService.HashPasswordAsync(request.PasswordHash.ToByteArray(), user.ServerSalt);
-            if (!CryptographicOperations.FixedTimeEquals(user.ServerPasswordHash, passwordHash))
+            byte[] clientHash = new byte[_securityOptions.PasswordHashLength];
+            Buffer.BlockCopy(request.PasswordHash.ToByteArray(), _securityOptions.SaltLength, clientHash, 0, _securityOptions.PasswordHashLength);
+            if (!CryptographicOperations.FixedTimeEquals(user.ServerPasswordHash, clientHash))
             {
                 _logger.LogWarning($"Password is invalid (userId: {user.UserId}, email: {user.Email}, peer: {context.Peer})");
                 return new LoginResponse { Status = 401, Message = "Password is invalid" };
@@ -305,15 +306,15 @@ namespace Server.Services
                 string registrationCode = await Nanoid.GenerateAsync(Nanoid.Alphabets.UppercaseLettersAndDigits, 12);
                 if (!await _redis.StringSetAsync(registrationCode, JsonSerializer.Serialize(registrationData)))
                 {
-                    _logger.LogError($"Registration code is invalid (code: {registrationCode}, peer: {context.Peer})");
+                    _logger.LogError($"Registration code generation failed, peer: {context.Peer}");
                     return new CreateRegistrationCodeResponse { Status = 507, Message = "Registration code is invalid" };
                 }
-                _logger.LogInformation($"Registration code created successfully (code: {registrationCode}, name: {request.Name}, email: {request.Email}, peer: {context.Peer})");
+                _logger.LogInformation($"Registration code created successfully (name: {request.Name}, email: {request.Email}, peer: {context.Peer})");
                 return new CreateRegistrationCodeResponse { Status = 200, Message = "OK", RegistrationCode = registrationCode };
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Registration data is invalid (name: {request.Name}, email: {request.Email}, error: {ex.Message}, stackTrace: {ex.StackTrace}, peer: {context.Peer})");
+                _logger.LogError($"Registration data is invalid (name: {request.Name}, email: {request.Email}, error: {ex.Message}, peer: {context.Peer})");
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Registration data is invalid" };
             }
 

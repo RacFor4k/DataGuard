@@ -12,6 +12,11 @@ namespace Client.Engine.Helpers
     {
         public static byte[] EncryptPassword(string password, byte[] key, int nonceLength, int tagLength, int encryptedLength)
         {
+            if (password == null) throw new ArgumentNullException(nameof(password));
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (nonceLength <= 0) throw new ArgumentOutOfRangeException(nameof(nonceLength));
+            if (tagLength <= 0) throw new ArgumentOutOfRangeException(nameof(tagLength));
+            if (encryptedLength <= 0) throw new ArgumentOutOfRangeException(nameof(encryptedLength));
             using (var encryptor = new AesGcm(key, tagLength))
             {
                 byte[] nonce = RandomNumberGenerator.GetBytes(nonceLength);
@@ -29,7 +34,9 @@ namespace Client.Engine.Helpers
         }
         public static byte[] EncryptKey(string password, byte[] key, byte[] salt, int nonceLength, int tagLength, int iterations, int derivedKeyLength)
         {
-            
+            if (password == null) throw new ArgumentNullException(nameof(password));
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (salt == null) throw new ArgumentNullException(nameof(salt));
             byte[] nonce = RandomNumberGenerator.GetBytes(nonceLength);
             byte[] tag = new byte[tagLength];
             byte[] encryptedKey = new byte[key.Length];
@@ -51,6 +58,10 @@ namespace Client.Engine.Helpers
 
         public static byte[] DecryptKey(byte[] encryptedToken, string password, byte[] salt, int nonceLength, int tagLength, int iterations, int derivedKeyLength)
         {
+            if (encryptedToken == null) throw new ArgumentNullException(nameof(encryptedToken));
+            if (password == null) throw new ArgumentNullException(nameof(password));
+            if (salt == null) throw new ArgumentNullException(nameof(salt));
+            if (encryptedToken.Length < nonceLength + tagLength) throw new ArgumentException("Encrypted token is too short.", nameof(encryptedToken));
             byte[] nonce = new byte[nonceLength];
             byte[] tag = new byte[tagLength];
             byte[] encryptedKey = new byte[encryptedToken.Length - nonceLength - tagLength];
@@ -62,7 +73,7 @@ namespace Client.Engine.Helpers
                 Buffer.BlockCopy(encryptedToken, nonceLength, tag, 0, tagLength);
                 Buffer.BlockCopy(encryptedToken, nonceLength + tagLength, encryptedKey, 0, encryptedKey.Length);
                 byte[] decryptedKey = new byte[encryptedKey.Length];
-                encryptor.Decrypt(nonce, encryptedKey, decryptedKey, tag);
+                encryptor.Decrypt(nonce, encryptedKey, tag, decryptedKey);
                 CryptographicOperations.ZeroMemory(passwordBytes);
                 CryptographicOperations.ZeroMemory(passwordHash);
                 return decryptedKey;
@@ -70,7 +81,11 @@ namespace Client.Engine.Helpers
         }
         public static byte[] GetSecurityHash(byte[] data, byte[] salt, int degreesOfParallelism, int iterations, int memorySize, int hashLength)
         {
-            using var argon2 = new Argon2id(data)
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (salt == null) throw new ArgumentNullException(nameof(salt));
+            byte[] localData = new byte[data.Length];
+            Buffer.BlockCopy(data, 0, localData, 0, data.Length);
+            using var argon2 = new Argon2id(localData)
             {
                 Salt = salt,
                 DegreeOfParallelism = degreesOfParallelism,
@@ -81,11 +96,13 @@ namespace Client.Engine.Helpers
             byte[] result = new byte[salt.Length + hashLength];
             Buffer.BlockCopy(salt, 0, result, 0, salt.Length);
             Buffer.BlockCopy(dataHash, 0, result, salt.Length, hashLength);
-            CryptographicOperations.ZeroMemory(data);
+            CryptographicOperations.ZeroMemory(localData);
             return result;
         }
         public static byte[] GetSecurityHash(string data, byte[] salt, int degreesOfParallelism, int iterations, int memorySize, int hashLength)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (salt == null) throw new ArgumentNullException(nameof(salt));
             byte[] dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
             return GetSecurityHash(dataBytes, salt, degreesOfParallelism, iterations, memorySize, hashLength);
         }
@@ -96,6 +113,7 @@ namespace Client.Engine.Helpers
         /// <returns>Кортеж с публичным и приватным ключами RSA.</returns>
         public static (string, string) GenerateRsaKeyPair(int keySize)
         {
+            if (keySize < 2048) throw new ArgumentOutOfRangeException(nameof(keySize), "Key size must be at least 2048 bits.");
             using (RSA rsa = RSA.Create(keySize))
             {
                 return (rsa.ExportSubjectPublicKeyInfoPem(), rsa.ExportPkcs8PrivateKeyPem());
@@ -103,6 +121,9 @@ namespace Client.Engine.Helpers
         }
         public static byte[] EncryptBackupKey(string publicKeyPem, byte[] key)
         {
+            if (publicKeyPem == null) throw new ArgumentNullException(nameof(publicKeyPem));
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (publicKeyPem.Length == 0) throw new ArgumentException("Public key PEM cannot be empty.", nameof(publicKeyPem));
             using (RSA rsa = RSA.Create())
             {
                 rsa.ImportFromPem(publicKeyPem);

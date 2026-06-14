@@ -30,8 +30,8 @@ namespace Server.Services
                 throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
             if(string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
                 throw new InvalidOperationException("JWT Audience not found in appsettings.json");
-            if(string.IsNullOrWhiteSpace(_jwtOptions.Value.HexKey))
-                throw new InvalidOperationException("JWT HexKey not found in appsettings.json");
+            if(_jwtOptions.Value.Key == null || _jwtOptions.Value.Key.Length == 0)
+                throw new InvalidOperationException("JWT Key not found in appsettings.json");
             _logger = logger;
         }
         /// <summary>
@@ -42,7 +42,7 @@ namespace Server.Services
         /// <returns>Access токен.</returns>
         public string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups) 
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtOptions.Value.HexKey));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             
             Claim[] claims =
@@ -55,8 +55,8 @@ namespace Server.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Typ, "access"),
             };
-            claims.Concat(groups.Select(g => new Claim("role", g)));
-            
+            claims = claims.Concat(groups.Select(g => new Claim("role", g))).ToArray();
+
             JwtSecurityToken token = new JwtSecurityToken(
                 issuer: _jwtOptions.Value.Issuer,
                 audience: _jwtOptions.Value.Audience,
@@ -69,7 +69,7 @@ namespace Server.Services
         
         public string GenerateRefreshToken(string subject, string name, string surname, string email, string[] groups)
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtOptions.Value.HexKey));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             Claim[] claims =
@@ -82,8 +82,8 @@ namespace Server.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Typ, "refresh"),
             };
-            claims.Concat(groups.Select(g => new Claim("role", g)));
-            
+            claims = claims.Concat(groups.Select(g => new Claim("role", g))).ToArray();
+
             JwtSecurityToken token = new JwtSecurityToken(
                 issuer: _jwtOptions.Value.Issuer,
                 audience: _jwtOptions.Value.Audience,
@@ -105,7 +105,7 @@ namespace Server.Services
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var securityKey = new SymmetricSecurityKey(Convert.FromHexString(_jwtOptions.Value.HexKey));
+            var securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
 
             var validationParameters = new TokenValidationParameters
             {
@@ -144,17 +144,17 @@ namespace Server.Services
             }
             catch (SecurityTokenExpiredException ex)
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token is expired (tokenId: {token.Substring(0, Math.Min(20, token.Length))}..., error: {ex.Message}, peer: unknown)");
+                _logger.LogWarning($"VerifyTokenAsync failed - token is expired (tokenId: redacted, error: {ex.Message}, peer: unknown)");
                 return null;
             }
             catch (SecurityTokenInvalidSignatureException ex)
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token signature is invalid (tokenId: {token.Substring(0, Math.Min(20, token.Length))}..., error: {ex.Message}, peer: unknown)");
+                _logger.LogWarning($"VerifyTokenAsync failed - token signature is invalid (tokenId: redacted, error: {ex.Message}, peer: unknown)");
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token validation failed (tokenId: {token.Substring(0, Math.Min(20, token.Length))}..., error: {ex.Message}, peer: unknown)");
+                _logger.LogWarning($"VerifyTokenAsync failed - token validation failed (tokenId: redacted, error: {ex.Message}, peer: unknown)");
                 return null;
             }
         }
@@ -203,7 +203,7 @@ namespace Server.Services
             }
             catch (Exception e)
             {
-                _logger.LogError($"RevokeTokenAsync failed (tokenId: {jwtToken.Id}, error: {e.Message}, stackTrace: {e.StackTrace}, peer: unknown)");
+                _logger.LogError($"RevokeTokenAsync failed (tokenId: {jwtToken.Id}, error: {e.Message}, peer: unknown)");
                 return false;
             }
         }        

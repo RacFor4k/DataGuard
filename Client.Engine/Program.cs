@@ -16,7 +16,10 @@ using System.Threading.Channels;
 var builder = WebApplication.CreateBuilder(args);
 
 // Sqlite
-builder.Services.AddDbContext<AgentDbContext>(options => options.UseSqlite(Path.Combine(Environment.SpecialFolder.LocalApplicationData.ToString(), "DataGuard", "Agent", "Agent.db")));
+var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DataGuard", "Agent", "Agent.db");
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+            var connectionString = $"Data Source={dbPath}";
+            builder.Services.AddDbContext<AgentDbContext>(options => options.UseSqlite(connectionString));
 
 // Options
 builder.Services.AddOptions<SecurityOptions>().Bind(builder.Configuration.GetSection("Security")).ValidateDataAnnotations();
@@ -75,6 +78,13 @@ if (Environment.UserInteractive)
     builder.Services.AddHostedService<ConsoleCommandWorker>();
 
 var app = builder.Build();
+
+            // Ensure SQLite database is created
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AgentDbContext>();
+                db.Database.EnsureCreated();
+            }
 
 // gRPC сервисы
 app.MapGrpcService<AuthenticationService>();
