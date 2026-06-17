@@ -1,6 +1,6 @@
 <Solution>
   <Project Path="Client.Engine/Client.Engine.csproj" />
-  <Project Path="Common/Common.csproj" Id="a157c165-06ed-491c-b7a7-0245160a5160" />
+  <Project Path="Common/Common.csproj"/>
   <Project Path="Contracts/Contracts.csproj" />
-  <Project Path="Server/Server.csproj" Id="654e3243-5e8b-45b1-a2ed-24f398a273bb" />
+  <Project Path="Server.Auth/Server.Auth.csproj" />
 </Solution>
