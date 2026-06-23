@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.UI.ViewModels"
+             x:Class="Client.UI.Views.SetupCompanyView"
+             x:DataType="vm:SetupCompanyViewModel"
+             Background="#0F1117">
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
+        <Border Classes="card" Padding="36">
+            <StackPanel Spacing="20">
+                <StackPanel HorizontalAlignment="Center" Spacing="4">
+                    <TextBlock Text="🏢" FontSize="36" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Создание компании" Classes="h2" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <Border IsVisible="{Binding HasError}" Background="#7F1D1D" CornerRadius="8" Padding="12,8">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#FCA5A5" FontSize="13" TextWrapping="Wrap"/>
+                </Border>
+
+                <Border IsVisible="{Binding ShowResult}" Background="#0D2B0D"
+                        BorderBrush="#22C55E" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Компания создана!" Foreground="#86EFAC" FontWeight="SemiBold"/>
+                        <TextBlock Text="Код регистрации:" Classes="muted" FontSize="12"/>
+                        <Border Background="#0F1117" CornerRadius="6" Padding="12,8">
+                            <TextBlock Text="{Binding RegistrationCode}" FontSize="20" FontWeight="Bold"
+                                       Foreground="#3B82F6" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Button Classes="primary" Content="Перейти к входу"
+                                Command="{Binding DoneCommand}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel IsVisible="{Binding !ShowResult}" Spacing="16">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Мастер-ключ" Classes="muted"/>
+                        <TextBox Watermark="Мастер-ключ администратора..." PasswordChar="●" Text="{Binding MasterKey}"/>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Название компании" Classes="muted"/>
+                        <TextBox Watermark="ООО «Моя Компания»" Text="{Binding CompanyName}"/>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Email компании" Classes="muted"/>
+                        <TextBox Watermark="admin@company.com" Text="{Binding CompanyEmail}"/>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Button Grid.Column="0" Classes="secondary" Content="← Назад"
+                                Command="{Binding BackCommand}" Padding="16,10" Margin="0,0,12,0"/>
+                        <Button Grid.Column="1" Classes="primary" Content="Создать компанию"
+                                Command="{Binding CreateCompanyCommand}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Height="44"/>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

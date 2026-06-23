@@ -8,4 +8,5 @@
   <Project Path="Client.Engine.Tests/Client.Engine.Tests.csproj" />
   <Project Path="Server.Auth.Tests/Server.Auth.Tests.csproj" />
   <Project Path="Server.Storage.Tests/Server.Storage.Tests.csproj" />
+  <Project Path="Client.UI/Client.UI.csproj" />
 </Solution>

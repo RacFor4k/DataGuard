@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.UI.ViewModels"
+             xmlns:models="using:Client.UI.Models"
+             x:Class="Client.UI.Views.AuditView"
+             x:DataType="vm:AuditViewModel"
+             Background="#0F1117">
+
+    <Grid ColumnDefinitions="*,Auto">
+        <DockPanel Grid.Column="0">
+            <Border DockPanel.Dock="Top" Padding="24,20"
+                    BorderBrush="#2D3748" BorderThickness="0,0,0,1" Background="#161B27">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Аудит" Classes="h2"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Classes="secondary" Content="📥 Экспорт" FontSize="12" Padding="12,6"/>
+                            <Button Classes="secondary" Content="🔄 Обновить" FontSize="12" Padding="12,6"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*,150,120">
+                        <TextBox Grid.Column="0" Watermark="Пользователь..."
+                                 Text="{Binding FilterUser}" Height="36" FontSize="12" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1" Watermark="Документ..."
+                                 Text="{Binding FilterDocument}" Height="36" FontSize="12" Margin="0,0,8,0"/>
+                        <ComboBox Grid.Column="2" SelectedIndex="0" Height="36" Margin="0,0,8,0">
+                            <ComboBoxItem>Все действия</ComboBoxItem>
+                            <ComboBoxItem>Скачивания</ComboBoxItem>
+                            <ComboBoxItem>Просмотры</ComboBoxItem>
+                            <ComboBoxItem>Блокировки</ComboBoxItem>
+                        </ComboBox>
+                        <ComboBox Grid.Column="3" SelectedIndex="0" Height="36">
+                            <ComboBoxItem>Сегодня</ComboBoxItem>
+                            <ComboBoxItem>Неделя</ComboBoxItem>
+                            <ComboBoxItem>Месяц</ComboBoxItem>
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border DockPanel.Dock="Top" Padding="24,10"
+                    BorderBrush="#2D3748" BorderThickness="0,0,0,1">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Быстрые отчёты:" Classes="muted" FontSize="12" VerticalAlignment="Center"/>
+                    <Button Classes="secondary" Content="📊 Кто скачивал чаще" FontSize="12" Padding="10,5"/>
+                    <Button Classes="secondary" Content="🔗 Кто делился наружу" FontSize="12" Padding="10,5"/>
+                    <Button Classes="secondary" Content="⚠ Часто утекавшие файлы" FontSize="12" Padding="10,5"/>
+                </StackPanel>
+            </Border>
+
+            <Border DockPanel.Dock="Top" Padding="24,8"
+                    BorderBrush="#2D3748" BorderThickness="0,0,0,1" Background="#161B27">
+                <Grid ColumnDefinitions="60,120,*,150,130,100">
+                    <TextBlock Grid.Column="0" Text="Время" Classes="muted" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Grid.Column="1" Text="Пользователь" Classes="muted" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Grid.Column="2" Text="Файл / Ресурс" Classes="muted" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Grid.Column="3" Text="Действие" Classes="muted" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Grid.Column="4" Text="IP-адрес" Classes="muted" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Grid.Column="5" Text="Результат" Classes="muted" FontSize="11" FontWeight="Bold"/>
+                </Grid>
+            </Border>
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Filtered}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:AuditEntry">
+                            <Button Background="Transparent" BorderThickness="0"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                    Padding="24,10" Cursor="Hand"
+                                    Command="{Binding $parent[UserControl].((vm:AuditViewModel)DataContext).SelectEntryCommand}"
+                                    CommandParameter="{Binding}">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#1E2535"/>
+                                    </Style>
+                                </Button.Styles>
+                                <Grid ColumnDefinitions="60,120,*,150,130,100">
+                                    <TextBlock Grid.Column="0" Text="{Binding Time}" Classes="muted" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding User}" FontSize="12" Foreground="#F1F5F9" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Target}" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding Action}" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="4" Text="{Binding Ip}" FontSize="11" Foreground="#475569" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="5" Text="{Binding Result}" FontSize="11" Foreground="#86EFAC" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Detail panel -->
+        <Border Grid.Column="1" Width="280" Background="#161B27"
+                BorderBrush="#2D3748" BorderThickness="1,0,0,0"
+                IsVisible="{Binding ShowDetail}">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Padding="14,12"
+                        BorderBrush="#2D3748" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Детали события" Classes="h3" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Classes="ghost" Content="✕" Width="28" Height="28"
+                                HorizontalContentAlignment="Center" Command="{Binding CloseDetailCommand}"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer Padding="14">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="80,*">
+                            <TextBlock Grid.Column="0" Text="Время" Classes="muted" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedEntry.Time}" FontSize="12" Foreground="#F1F5F9"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="80,*">
+                            <TextBlock Grid.Column="0" Text="Пользователь" Classes="muted" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedEntry.User}" FontSize="12" Foreground="#F1F5F9"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="80,*">
+                            <TextBlock Grid.Column="0" Text="Действие" Classes="muted" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedEntry.Action}" FontSize="12" Foreground="#F1F5F9"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="80,*">
+                            <TextBlock Grid.Column="0" Text="Объект" Classes="muted" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedEntry.Target}" FontSize="12" Foreground="#F1F5F9" TextWrapping="Wrap"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="80,*">
+                            <TextBlock Grid.Column="0" Text="IP" Classes="muted" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedEntry.Ip}" FontSize="12" Foreground="#F1F5F9"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="80,*">
+                            <TextBlock Grid.Column="0" Text="Результат" Classes="muted" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedEntry.Result}" FontSize="12" Foreground="#86EFAC"/>
+                        </Grid>
+                        <Rectangle Classes="divider" Margin="0,4"/>
+                        <Button Classes="secondary" Content="📋 К файлу"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12"/>
+                        <Button Classes="secondary" Content="👤 История пользователя"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

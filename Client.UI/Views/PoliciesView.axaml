@@ -1,0 +1,138 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.UI.ViewModels"
+             xmlns:models="using:Client.UI.Models"
+             x:Class="Client.UI.Views.PoliciesView"
+             x:DataType="vm:PoliciesViewModel"
+             Background="#0F1117">
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Padding="24,20"
+                BorderBrush="#2D3748" BorderThickness="0,0,0,1" Background="#161B27">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Политики безопасности" Classes="h2"/>
+                    <TextBlock Text="Управление группами, шаблонами и правилами доступа" Classes="body"/>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="primary" Content="+ Создать группу" FontSize="12" Padding="14,8"/>
+            </Grid>
+        </Border>
+
+        <Border DockPanel.Dock="Top" Padding="24,0" BorderBrush="#2D3748" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="0">
+                <Button Classes="ghost" Content="Группы и роли" Padding="16,12" Foreground="#3B82F6" FontWeight="SemiBold" FontSize="13"/>
+                <Button Classes="ghost" Content="Шаблоны политик" Padding="16,12" FontSize="13"/>
+                <Button Classes="ghost" Content="Запреты файлов" Padding="16,12" FontSize="13"/>
+                <Button Classes="ghost" Content="Наследование" Padding="16,12" FontSize="13"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Padding="24,20">
+            <StackPanel Spacing="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Группы доступа" Classes="h3"/>
+                    <ItemsControl ItemsSource="{Binding Groups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:PolicyGroup">
+                                <Border Classes="card-sm" Margin="0,4" Padding="16,12" Cursor="Hand">
+                                    <Border.Styles>
+                                        <Style Selector="Border:pointerover">
+                                            <Setter Property="Background" Value="#252D3F"/>
+                                        </Style>
+                                    </Border.Styles>
+                                    <Grid ColumnDefinitions="*,100,130,Auto">
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                                            <Border Width="32" Height="32" CornerRadius="16" Background="#1E3A5F">
+                                                <TextBlock Text="👥" FontSize="14"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#F1F5F9"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{Binding Type}" Classes="muted" FontSize="11"/>
+                                                    <TextBlock Text="·" Classes="muted" FontSize="11"/>
+                                                    <TextBlock Classes="muted" FontSize="11">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding StringFormat="{}{0} участников">
+                                                                <Binding Path="Members"/>
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding Template}" Classes="muted" FontSize="12" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="2" Classes="badge-blue" IsVisible="{Binding Inherited}"
+                                                VerticalAlignment="Center" HorizontalAlignment="Left">
+                                            <TextBlock Text="Наследование" FontSize="10" Foreground="#93C5FD"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <Button Classes="secondary" Content="✏" Width="30" Height="28" HorizontalContentAlignment="Center" FontSize="12"/>
+                                            <Button Classes="danger" Content="✕" Width="30" Height="28" HorizontalContentAlignment="Center" FontSize="12"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Templates -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Шаблоны политик" Classes="h3"/>
+                    <Grid ColumnDefinitions="*,*,*">
+                        <Border Grid.Column="0" Classes="card" Background="#0D1B3E" Margin="0,0,8,0">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="🏦 Финансы" FontSize="14" FontWeight="SemiBold" Foreground="#93C5FD"/>
+                                <TextBlock Text="Запрет .exe, макросов. Аудит 90 дней." Classes="muted" FontSize="12" TextWrapping="Wrap"/>
+                                <Button Classes="secondary" Content="Применить" FontSize="12" Padding="10,5"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Classes="card" Background="#0D2B0D" Margin="0,0,8,0">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="💻 IT-стандарт" FontSize="14" FontWeight="SemiBold" Foreground="#86EFAC"/>
+                                <TextBlock Text="Полный доступ к коду. Версионность." Classes="muted" FontSize="12" TextWrapping="Wrap"/>
+                                <Button Classes="secondary" Content="Применить" FontSize="12" Padding="10,5"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Classes="card" Background="#1A1408">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="🚪 Гостевой" FontSize="14" FontWeight="SemiBold" Foreground="#FDE68A"/>
+                                <TextBlock Text="Только просмотр. Срок 24ч. Водяной знак." Classes="muted" FontSize="12" TextWrapping="Wrap"/>
+                                <Button Classes="secondary" Content="Применить" FontSize="12" Padding="10,5"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <!-- File restrictions -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Запреты по типам файлов" Classes="h3"/>
+                    <Border Classes="card">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Classes="badge-red">
+                                    <TextBlock Text=".exe" FontSize="12" Foreground="#FCA5A5"/>
+                                </Border>
+                                <Border Classes="badge-red">
+                                    <TextBlock Text=".bat" FontSize="12" Foreground="#FCA5A5"/>
+                                </Border>
+                                <Border Classes="badge-red">
+                                    <TextBlock Text=".ps1" FontSize="12" Foreground="#FCA5A5"/>
+                                </Border>
+                                <Border Classes="badge-yellow">
+                                    <TextBlock Text=".xlsm" FontSize="12" Foreground="#FDE68A"/>
+                                </Border>
+                                <Border Classes="badge-yellow">
+                                    <TextBlock Text=".docm" FontSize="12" Foreground="#FDE68A"/>
+                                </Border>
+                                <Button Classes="secondary" Content="+ Добавить" FontSize="12" Padding="8,4"/>
+                            </StackPanel>
+                            <TextBlock Text="Красный = запрещено · Жёлтый = предупреждение" Classes="muted" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

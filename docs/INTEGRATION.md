@@ -1,14 +1,14 @@
-# DataGuard.UI ↔ Client.Engine — План интеграции
+# Client.UI ↔ Client.Engine — План интеграции
 
 ## 1. Обзор текущего состояния
 
-На данный момент **DataGuard.UI** и **Client.Engine** — два полностью независимых проекта без прямой связи друг с другом:
+На данный момент **Client.UI** и **Client.Engine** — два полностью независимых проекта без прямой связи друг с другом:
 
-- **DataGuard.UI** — десктопное Avalonia-приложение. Все ViewModels работают с **демо-данными** (хардкод). Вызовы к серверу помечены `// TODO: call gRPC ...`. Собственный `GrpcClientService` подключается напрямую к `https://localhost:7777` (Server.Auth).
+- **Client.UI** — десктопное Avalonia-приложение. Все ViewModels работают с **демо-данными** (хардкод). Вызовы к серверу помечены `// TODO: call gRPC ...`. Собственный `GrpcClientService` подключается напрямую к `https://localhost:7777` (Server.Auth).
 
 - **Client.Engine** — gRPC-сервис (Background Worker), который сам является **промежуточным слоем** между GUI и серверами. Он принимает gRPC-вызовы от GUI, выполняет клиентскую криптографию (хеширование паролей, шифрование ключей, Argon2), и проксирует запросы к Server.Auth, Server.Storage, CompanyManager серверам. Работает через **named pipe** (`DataGuardPipe`, HTTP/2).
 
-**Ключевая проблема**: DataGuard.UI пытается общаться напрямую с Server.Auth (минуя Client.Engine), но при этом:
+**Ключевая проблема**: Client.UI пытается общаться напрямую с Server.Auth (минуя Client.Engine), но при этом:
 1. Не выполняет клиентскую криптографию (хеширование, шифрование ключей).
 2. Использует **упрощённые proto-контракты** (пароль как `string`, нет `encrypted_key`, `password_hash`, `nonce_token`).
 3. Client.Engine уже содержит **полную реализацию** всех криптографических операций и 21 метода хранилища.
@@ -19,7 +19,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  DataGuard.UI (Avalonia)                │
+│                  Client.UI (Avalonia)                │
 │                                                         │
 │  ViewModels → GrpcClientService ──→ https://localhost:  │
 │  .Login()        (Auth + Company)    7777 (Server.Auth) │
@@ -72,7 +72,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  DataGuard.UI (Avalonia)                │
+│                  Client.UI (Avalonia)                │
 │                                                         │
 │  ViewModels → ClientEngineGrpcClient                   │
 │  .Login()        (Named Pipe "DataGuardPipe")           │
@@ -251,7 +251,7 @@ message LoginResponse {
 
 **Задача**: Настроить gRPC-канал от UI к Client.Engine через Named Pipe.
 
-#### 1.1. Добавить NuGet-пакеты в DataGuard.UI.csproj
+#### 1.1. Добавить NuGet-пакеты в Client.UI.csproj
 
 ```xml
 <!-- Уже есть: Grpc.Net.Client, Google.Protobuf, Grpc.Tools -->
@@ -270,7 +270,7 @@ using Grpc.Net.Client;
 using Contracts.Protos.Client.Auth;
 using Contracts.Protos.Client.CompanyManager;
 
-namespace DataGuard.UI.Services;
+namespace Client.UI.Services;
 
 public class ClientEngineGrpcClient : IDisposable
 {
@@ -317,9 +317,9 @@ public class ClientEngineGrpcClient : IDisposable
 
 | # | Действие | Файл |
 |---|---|---|
-| 1.2.1 | Добавить `<ProjectReference Include="..\Contracts\Contracts.csproj" />` | `DataGuard.UI.csproj` |
+| 1.2.1 | Добавить `<ProjectReference Include="..\Contracts\Contracts.csproj" />` | `Client.UI.csproj` |
 | 1.2.2 | Скопировать proto-файлы из `Contracts/Protos/Client/` в проект UI | `Protos/Client/auth.proto`, `Protos/Client/company_manager.proto` |
-| 1.2.3 | Обновить `.csproj` — заменить `Protobuf` references на клиентские | `DataGuard.UI.csproj` |
+| 1.2.3 | Обновить `.csproj` — заменить `Protobuf` references на клиентские | `Client.UI.csproj` |
 | 1.2.4 | Создать `ClientEngineGrpcClient.cs` с Named Pipe | `Services/ClientEngineGrpcClient.cs` |
 | 1.2.5 | Зарегистрировать в DI / передать в ViewModels | `App.axaml.cs` или `MainWindowViewModel` |
 
@@ -377,8 +377,8 @@ app.MapGrpcService<StorageGrpcService>();
 | 2.2 | Сгенерировать C# классы из proto | `Contracts.csproj` |
 | 2.3 | Создать `StorageGrpcService.cs` в Engine | `Client.Engine/Services/StorageGrpcService.cs` |
 | 2.4 | Зарегистрировать в `Program.cs` | `Client.Engine/Program.cs` |
-| 2.5 | Добавить gRPC клиент в `ClientEngineGrpcClient.cs` | `DataGuard.UI/Services/ClientEngineGrpcClient.cs` |
-| 2.6 | Скопировать `StorageModels.cs` из Engine в UI | `DataGuard.UI/Models/StorageModels.cs` |
+| 2.5 | Добавить gRPC клиент в `ClientEngineGrpcClient.cs` | `Client.UI/Services/ClientEngineGrpcClient.cs` |
+| 2.6 | Скопировать `StorageModels.cs` из Engine в UI | `Client.UI/Models/StorageModels.cs` |
 
 ---
 
@@ -632,7 +632,7 @@ private async Task GenerateLink()
 #### 5.1. Вариант A: ProjectReference на Contracts (рекомендуемый)
 
 ```
-DataGuard.UI
+Client.UI
   └── ProjectReference → Contracts
         └── Получает:
             • Все proto-контракты (Client + Server)
@@ -651,9 +651,9 @@ DataGuard.UI
 
 | # | Действие | Файл |
 |---|---|---|
-| 5.1 | Добавить `<ProjectReference Include="..\Contracts\Contracts.csproj" />` | `DataGuard.UI.csproj` |
-| 5.2 | Удалить дублирующие proto из `DataGuard.UI/Protos/` | `Protos/auth.proto`, `Protos/company_manager.proto` |
-| 5.3 | Добавить `Link` на Client proto из Contracts в `.csproj` | `DataGuard.UI.csproj` |
+| 5.1 | Добавить `<ProjectReference Include="..\Contracts\Contracts.csproj" />` | `Client.UI.csproj` |
+| 5.2 | Удалить дублирующие proto из `Client.UI/Protos/` | `Protos/auth.proto`, `Protos/company_manager.proto` |
+| 5.3 | Добавить `Link` на Client proto из Contracts в `.csproj` | `Client.UI.csproj` |
 | 5.4 | Обновить `using` в `ClientEngineGrpcClient.cs` на namespace из Contracts | `Services/ClientEngineGrpcClient.cs` |
 
 ---
@@ -753,11 +753,11 @@ DataGuard.UI
 
 ## 7. Сводная таблица файлов для изменения
 
-### DataGuard.UI — что нужно изменить:
+### Client.UI — что нужно изменить:
 
 | Файл | Действие | Приоритет |
 |---|---|---|
-| `DataGuard.UI.csproj` | Добавить `ProjectReference` на `Contracts`, обновить `Protobuf` references | Высокий |
+| `Client.UI.csproj` | Добавить `ProjectReference` на `Contracts`, обновить `Protobuf` references | Высокий |
 | `Views/LoginView.axaml` | Добавить поле `AccountId` (или `UserId`) | Высокий |
 | `ViewModels/AuthViewModels.cs` | Заменить `Login()`, `Register()`, `CreateCompany()` на gRPC-вызовы | Высокий |
 | `ViewModels/FilesViewModel.cs` | Заменить `LoadDemoData()` на gRPC, добавить 21 метод хранилища | Высокий |
@@ -783,7 +783,7 @@ DataGuard.UI
 
 ### Фаза 1: Критический путь (1–2 дня)
 
-1. ✅ Добавить `ProjectReference` на `Contracts` в `DataGuard.UI.csproj`
+1. ✅ Добавить `ProjectReference` на `Contracts` в `Client.UI.csproj`
 2. ✅ Заменить proto-файлы в UI на клиентские из `Contracts/Protos/Client/`
 3. ✅ Переписать `GrpcClientService` → `ClientEngineGrpcClient` с Named Pipe
 4. ✅ Добавить `AccountId` в `LoginViewModel` и `LoginView`
@@ -822,7 +822,7 @@ DataGuard.UI
 
 ```
      ┌───────────────────────────────────────────────────────────────┐
-     │                     DataGuard.UI                              │
+     │                     Client.UI                              │
      │                                                               │
      │  LoginView ──────────┐                                        │
      │  RegisterView ───────┤   ClientEngineGrpcClient               │
