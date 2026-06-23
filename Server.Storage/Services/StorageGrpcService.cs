@@ -269,8 +269,8 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
         if (ownerId == null)
             return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Ошибка аутентификации." };
 
-        if (request.DataCase != Contracts.Protos.Storage.UpdateFileRequest.DataOneofCase.FileId || request.FileId == 0)
-            return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Некорректный идентификатор файла." };
+        if (request.DataCase != Contracts.Protos.Storage.UpdateFileRequest.DataOneofCase.FileId)
+            return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Некорректный запрос." };
 
         if (string.IsNullOrEmpty(request.NonceToken))
             return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Требуется nonce_token." };
@@ -279,7 +279,8 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
         if (!nonceValid)
             return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Невалидный или повторный nonce." };
 
-        Guid fileId = new Guid((int)request.FileId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (!Guid.TryParse(request.FileId, out Guid fileId))
+            return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Некорректный идентификатор файла." };
 
         var file = await _fileRepo.GetFileAsync(fileId, ownerId.Value, context.CancellationToken);
         if (file == null)

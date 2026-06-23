@@ -32,7 +32,7 @@ namespace Server.Auth.Middlewares
                 return;
             }
             string token = authHeader.Substring(7);
-            userAccessor.userJwt = await jwtService.VerifyTokenAsync(token);
+            userAccessor.UserJwt = await jwtService.VerifyTokenAsync(token);
             await _next(context);
         }
     }

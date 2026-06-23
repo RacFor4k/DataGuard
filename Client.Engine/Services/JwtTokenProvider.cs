@@ -28,7 +28,7 @@ namespace Client.Engine.Services
             _semaphore.Wait();
             try
             {
-                var scope = _scopeFactory.CreateScope();
+                using var scope = _scopeFactory.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AgentDbContext>();
                 var jwtToken = await dbContext.JwtTokens.FirstOrDefaultAsync(t => t.AccountId == accountId);
                 if (jwtToken != null)
@@ -81,17 +81,17 @@ namespace Client.Engine.Services
                     _logger.LogWarning("Token is null");
                     throw new InvalidOperationException("Token is not valid");
                 }
-                if (currentToken.DecodedRefreshToken.ValidTo > DateTime.UtcNow)
+                if (currentToken.DecodedAccessToken.ValidTo > DateTime.UtcNow)
                 {
-                    _logger.LogTrace("Token already refreshed");
+                    _logger.LogTrace("Token already refreshed by another thread");
                     return currentToken;
                 }
-                _logger.LogInformation("Refreshing token");
                 if (currentToken.DecodedRefreshToken.ValidTo < DateTime.UtcNow)
                 {
                     _logger.LogWarning("Refresh token is expired");
-                    throw new InvalidOperationException("Token is not valid");
+                    throw new InvalidOperationException("Refresh token expired");
                 }
+                _logger.LogInformation("Refreshing token");
                 var requestHeader = new Metadata
                 {
                     { "Authorization", $"Bearer {currentToken.RefreshToken}" }

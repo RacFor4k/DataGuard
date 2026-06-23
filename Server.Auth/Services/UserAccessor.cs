@@ -11,7 +11,7 @@ namespace Server.Auth.Services
     public class UserAccessor
     {
         private readonly ILogger<UserAccessor> _logger;
-        public JwtSecurityToken? userJwt { get; set; }
+        public JwtSecurityToken? UserJwt { get; internal set; }
         public UserAccessor(ILogger<UserAccessor> logger)
         {
             _logger = logger;

@@ -255,17 +255,17 @@ namespace Server.Auth.Services
         {
             _logger.LogTrace($"RefreshToken called with peer: {context.Peer}");
 
-            if (_userAccessor.userJwt == null)
+            if (_userAccessor.UserJwt == null)
             {
                 _logger.LogWarning($"Token is invalid (userJwt is null, peer: {context.Peer})");
                 return new RefreshTokenResponse { Status = 401, Message = "Token is invalid" };
             }
-            if (!_userAccessor.userJwt.IsAccessToken())
+            if (!_userAccessor.UserJwt.IsAccessToken())
             {
                 _logger.LogTrace($"Refreshing token (userJwt type is refresh, peer: {context.Peer})");
-                if (!Guid.TryParse(_userAccessor.userJwt.Subject, out Guid requestUserId))
+                if (!Guid.TryParse(_userAccessor.UserJwt.Subject, out Guid requestUserId))
                 {
-                    _logger.LogWarning($"Token is invalid (userId: {_userAccessor.userJwt.Subject}, peer: {context.Peer})");
+                    _logger.LogWarning($"Token is invalid (userId: {_userAccessor.UserJwt.Subject}, peer: {context.Peer})");
                     return new RefreshTokenResponse { Status = 400, Message = "Token is invalid" };
                 }
                 User? user = _dbContext.Users
@@ -280,7 +280,7 @@ namespace Server.Auth.Services
                 string[] groups = user.GroupMembers.Select(gm => gm.Group.Name).ToArray();
                 string jwtAccessToken = _jwtService.GenerateAccessToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, groups);
                 string jwtRefreshToken = _jwtService.GenerateRefreshToken(user.UserId.ToString(), user.Name, user.Surname, user.Email, groups);
-                _logger.LogInformation($"Token refreshed successfully (userId: {_userAccessor.userJwt.Subject}, peer: {context.Peer})");
+                _logger.LogInformation($"Token refreshed successfully (userId: {_userAccessor.UserJwt.Subject}, peer: {context.Peer})");
                 return new RefreshTokenResponse { Status = 200, Message = "OK", JwtAccessToken = jwtAccessToken, JwtRefreshToken = jwtRefreshToken };
             }
             _logger.LogWarning($"Token is invalid (userJwt type is access, not refresh, peer: {context.Peer})");
@@ -309,12 +309,12 @@ namespace Server.Auth.Services
                 return new CreateRegistrationCodeResponse { Status = 400, Message = "Groups is empty" };
             }
 
-            if (_userAccessor.userJwt == null || !_userAccessor.userJwt.IsAccessToken())
+            if (_userAccessor.UserJwt == null || !_userAccessor.UserJwt.IsAccessToken())
             {
-                _logger.LogWarning($"Token is invalid (userJwt is null: {_userAccessor.userJwt == null}, isAccessToken: {_userAccessor.userJwt?.IsAccessToken() ?? false}, peer: {context.Peer})");
+                _logger.LogWarning($"Token is invalid (userJwt is null: {_userAccessor.UserJwt == null}, isAccessToken: {_userAccessor.UserJwt?.IsAccessToken() ?? false}, peer: {context.Peer})");
                 return new CreateRegistrationCodeResponse { Status = 401, Message = "Token is invalid" };
             }
-            Guid companyId = _dbContext.Users.Where(u => u.UserId.ToString() == _userAccessor.userJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
+            Guid companyId = _dbContext.Users.Where(u => u.UserId.ToString() == _userAccessor.UserJwt.Subject).Select(u => u.CompanyId).FirstOrDefault();
             try
             {
                 var registrationData = new RegistrationData

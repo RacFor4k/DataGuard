@@ -29,7 +29,7 @@
                 <ScrollViewer Padding="8,8">
                     <ItemsControl ItemsSource="{Binding FolderTree}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:FileItem">
+                            <DataTemplate x:DataType="models:FolderNode">
                                 <Button Classes="nav-btn" Margin="0,1">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <TextBlock Text="{Binding Icon}" FontSize="14"/>

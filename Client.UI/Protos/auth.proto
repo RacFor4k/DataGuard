@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option csharp_namespace = "DataGuard.UI.Grpc.Auth";
+option csharp_namespace = "Client.UI.Grpc.Auth";
 
 package client.auth;
 

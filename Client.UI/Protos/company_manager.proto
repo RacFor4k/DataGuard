@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option csharp_namespace = "DataGuard.UI.Grpc.CompanyManager";
+option csharp_namespace = "Client.UI.Grpc.CompanyManager";
 
 package client.company_manager;
 
