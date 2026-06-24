@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Server.Auth.Services;
@@ -11,9 +12,11 @@ using Server.Auth.Services;
 namespace Server.Auth.Migrations
 {
     [DbContext(typeof(DataGuardDbContext))]
-    partial class DataGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624190532_Auto_20260624_220524")]
+    partial class Auto_20260624_220524
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg_data_v18:/var/lib/postgresql/data # Добавил /data, так как это стандарт для образа
+      - pg_data_v18:/var/lib/postgresql
 
   redis:
     image: redis:latest
