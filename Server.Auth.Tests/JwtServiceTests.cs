@@ -14,9 +14,9 @@ public class JwtServiceTests
     {
         using var db = TestSupport.CreateDbContext(out var connection);
         await using var _ = connection.ConfigureAwait(false);
-        var (_, database) = TestSupport.CreateRedisMock();
+        var (multiplexer, database) = TestSupport.CreateRedisMock();
         database.Setup(d => d.KeyExistsAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>())).ReturnsAsync(false);
-        var service = new JwtService(db, database.Object, TestSupport.CreateJwtOptions(), NullLogger<JwtService>.Instance);
+        var service = new JwtService(db, multiplexer.Object, TestSupport.CreateJwtOptions(), NullLogger<JwtService>.Instance);
 
         string token = service.GenerateAccessToken(Guid.NewGuid().ToString(), "Иван", "Иванов", "ivan@example.com", ["system:owner"]);
         JwtSecurityToken? verified = await service.VerifyTokenAsync(token);
@@ -32,7 +32,7 @@ public class JwtServiceTests
     {
         using var db = TestSupport.CreateDbContext(out var connection);
         await using var _ = connection.ConfigureAwait(false);
-        var (_, database) = TestSupport.CreateRedisMock();
+        var (multiplexer, database) = TestSupport.CreateRedisMock();
         RedisKey storedKey = default;
         TimeSpan? storedTtl = null;
         database
@@ -59,7 +59,7 @@ public class JwtServiceTests
                 storedTtl = TimeSpan.FromSeconds(1);
             })
             .ReturnsAsync(true);
-        var service = new JwtService(db, database.Object, TestSupport.CreateJwtOptions(), NullLogger<JwtService>.Instance);
+        var service = new JwtService(db, multiplexer.Object, TestSupport.CreateJwtOptions(), NullLogger<JwtService>.Instance);
         var token = service.ParseToken(service.GenerateAccessToken(Guid.NewGuid().ToString(), "Иван", "Иванов", "ivan@example.com", []));
 
         bool revoked = await service.RevokeTokenAsync(token);

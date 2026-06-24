@@ -16,7 +16,8 @@
     <Grid RowDefinitions="Auto,*">
 
         <!-- Title Bar -->
-        <Grid Grid.Row="0" Height="38" Background="#0F1117" IsVisible="{Binding IsAuthenticated}">
+        <Grid x:Name="TitleBar" Grid.Row="0" Height="38" Background="#0F1117" IsVisible="{Binding IsAuthenticated}"
+              PointerPressed="TitleBar_PointerPressed">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                     <TextBlock Text="🛡" FontSize="15" VerticalAlignment="Center" Margin="0,0,6,0"/>

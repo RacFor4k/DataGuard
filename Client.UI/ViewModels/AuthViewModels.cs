@@ -32,17 +32,10 @@ public partial class LoginViewModel : ObservableObject
         IsLoading = true;
         try
         {
-            // TODO: replace with real gRPC call
+            // TODO: заменить на реальный gRPC вызов аутентификации
             await Task.Delay(800); // simulate network
-            if (Password == "demo")
-            {
-                LoginSucceeded?.Invoke("Александр И.", "ООО DataGuard");
-            }
-            else
-            {
-                ErrorMessage = "Неверный пароль. Попробуйте ещё раз.";
-                HasError = true;
-            }
+            ErrorMessage = "Подключение к фоновой службе недоступно. Запустите Client.Engine.";
+            HasError = true;
         }
         catch (Exception ex)
         {

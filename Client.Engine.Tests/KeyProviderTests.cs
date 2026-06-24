@@ -5,11 +5,13 @@ namespace Client.Engine.Tests;
 public class KeyProviderTests
 {
     [Fact]
-    public async Task GetKeyAsync_WhenKeyMissing_Throws()
+    public async Task GetKeyAsync_WhenKeyMissing_ReturnsNull()
     {
         var provider = new KeyProvider();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetKeyAsync());
+        byte[]? result = await provider.GetKeyAsync();
+
+        Assert.Null(result);
         Assert.False(provider.HasKey);
     }
 
@@ -22,13 +24,15 @@ public class KeyProviderTests
         await provider.SetKeyAsync(source);
         source[0] = 99;
 
-        byte[] stored = await provider.GetKeyAsync();
+        byte[]? stored = await provider.GetKeyAsync();
+        Assert.NotNull(stored);
         Assert.Equal([1, 2, 3, 4], stored);
         Assert.True(provider.HasKey);
 
         await provider.ClearKeyAsync();
 
         Assert.False(provider.HasKey);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetKeyAsync());
+        byte[]? afterClear = await provider.GetKeyAsync();
+        Assert.Null(afterClear);
     }
 }

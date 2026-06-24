@@ -11,9 +11,8 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    private void TitleBar_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        base.OnPointerPressed(e);
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             BeginMoveDrag(e);
     }

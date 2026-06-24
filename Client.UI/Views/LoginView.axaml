@@ -35,13 +35,6 @@
                      Text="{Binding Password}" Height="42" FontSize="14"/>
           </StackPanel>
 
-          <Border Background="#0A0E1A" CornerRadius="8" Padding="12,8">
-            <TextBlock FontSize="12" Foreground="#334155">
-              Демо: введите пароль <Run Text="demo" FontFamily="Cascadia Code, Consolas, Monospace"
-                                        Foreground="#3B82F6"/>
-            </TextBlock>
-          </Border>
-
           <Button Classes="primary" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" Height="44"
                   Command="{Binding LoginCommand}">

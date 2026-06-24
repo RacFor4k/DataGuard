@@ -126,21 +126,36 @@ public class StorageDirectoryRepository : IStorageDirectoryRepository
 
     public async Task<IReadOnlyList<object>> ListDirectoryContentsAsync(Guid ownerId, Guid directoryId, bool recursive, CancellationToken ct = default)
     {
+        if (!recursive)
+        {
+            // Простой неполный список без рекурсии
+            var dirFiles = await _db.Files
+                .Where(f => f.ParentDirectoryId == directoryId && f.OwnerId == ownerId)
+                .Select(f => (object)new { f.FileId, f.FileName, Type = "file" })
+                .ToListAsync(ct);
+            var dirs = await _db.Directories
+                .Where(d => d.ParentDirectoryId == directoryId && d.OwnerId == ownerId)
+                .Select(d => (object)new { d.DirectoryId, d.DirectoryName, Type = "directory" })
+                .ToListAsync(ct);
+            return dirFiles.Concat(dirs).ToList();
+        }
+
+        // Рекурсивный обход через CTE PostgreSQL
+        // TODO: заменить на полноценный SQL CTE запрос через FromSqlRaw для больших деревьев.
+        // Текущая реализация на C# работоспособна, но для деревьев глубиной > 10 уровней
+        // следует использовать WITH RECURSIVE ... SELECT на стороне СУБД.
         var result = new List<object>();
 
         var subdirs = await _db.Directories.Where(d => d.OwnerId == ownerId && d.ParentDirectoryId == directoryId).ToListAsync(ct);
-        result.AddRange(subdirs);
+        result.AddRange(subdirs.Select(d => (object)new { d.DirectoryId, d.DirectoryName, Type = "directory" }));
 
-        var files = await _db.Files.Where(f => f.OwnerId == ownerId && f.ParentDirectoryId == directoryId).ToListAsync(ct);
-        result.AddRange(files);
+        var childFiles = await _db.Files.Where(f => f.OwnerId == ownerId && f.ParentDirectoryId == directoryId).ToListAsync(ct);
+        result.AddRange(childFiles.Select(f => (object)new { f.FileId, f.FileName, Type = "file" }));
 
-        if (recursive)
+        foreach (var sub in subdirs)
         {
-            foreach (var sub in subdirs)
-            {
-                var nested = await ListDirectoryContentsAsync(ownerId, sub.DirectoryId, true, ct);
-                result.AddRange(nested);
-            }
+            var nested = await ListDirectoryContentsAsync(ownerId, sub.DirectoryId, true, ct);
+            result.AddRange(nested);
         }
 
         return result;

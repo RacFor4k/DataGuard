@@ -1,5 +1,8 @@
+using System.Reflection;
+using System.Security.Claims;
 using Grpc.Core;
 using Grpc.Core.Testing;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,6 +29,58 @@ internal static class TestSupport
         () => new WriteOptions(),
         _ => { });
 
+    public static ServerCallContext CreateServerCallContextWithClaims(params Claim[] claims)
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+
+        // Use reflection to create HttpContextServerCallContext (internal class in Grpc.AspNetCore.Server)
+        var assembly = AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(a => a.GetName().Name == "Grpc.AspNetCore.Server")
+            ?? Assembly.Load("Grpc.AspNetCore.Server");
+
+        var type = assembly.GetType("Grpc.AspNetCore.Server.Internal.HttpContextServerCallContext");
+        if (type == null)
+            throw new InvalidOperationException("Cannot find Grpc.AspNetCore.Server.Internal.HttpContextServerCallContext type");
+
+        var ctors = type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
+        var ctor = ctors.FirstOrDefault(c => c.GetParameters().Length > 0
+            && c.GetParameters()[0].ParameterType == typeof(HttpContext));
+        if (ctor == null)
+            throw new InvalidOperationException("Cannot find HttpContextServerCallContext constructor with HttpContext parameter");
+
+        var parameters = ctor.GetParameters();
+        var args = new object[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            args[i] = ResolveParameter(parameters[i].ParameterType, parameters[i].Name, httpContext);
+        }
+
+        return (ServerCallContext)ctor.Invoke(args)!;
+    }
+
+    private static object ResolveParameter(Type type, string? name, HttpContext httpContext)
+    {
+        if (type == typeof(HttpContext)) return httpContext;
+        if (type == typeof(string)) return name switch
+        {
+            "method" => "/test/TestMethod",
+            "host" => "localhost",
+            "peer" => "127.0.0.1",
+            _ => string.Empty
+        };
+        if (type == typeof(DateTime)) return DateTime.UtcNow.AddMinutes(1);
+        if (type == typeof(Metadata)) return new Metadata();
+        if (type == typeof(CancellationToken)) return CancellationToken.None;
+        if (type == typeof(AuthContext)) return new AuthContext(null, new Dictionary<string, List<AuthProperty>>());
+        if (type == typeof(ContextPropagationToken)) return null!;
+        if (type == typeof(Func<Task>)) return (Func<Task>)(() => Task.CompletedTask);
+        if (type == typeof(Func<WriteOptions, WriteOptions>)) return (Func<WriteOptions, WriteOptions>)(w => w);
+        if (type == typeof(Action<Metadata>)) return (Action<Metadata>)(_ => { });
+        if (type == typeof(bool)) return false;
+        return type.IsValueType ? Activator.CreateInstance(type)! : null!;
+    }
+
     public static DataGuardDbContext CreateDbContext(out SqliteConnection connection)
     {
         connection = new SqliteConnection("DataSource=:memory:");
@@ -33,7 +88,7 @@ internal static class TestSupport
         var options = new DbContextOptionsBuilder<DataGuardDbContext>()
             .UseSqlite(connection)
             .Options;
-        var dbContext = new DataGuardDbContext(options, NullLogger<DataGuardDbContext>.Instance);
+        var dbContext = new DataGuardDbContext(options);
         dbContext.Database.EnsureCreated();
         return dbContext;
     }

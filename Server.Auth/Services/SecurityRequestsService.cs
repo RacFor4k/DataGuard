@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Contracts.Protos.Security;
 using Google.Protobuf;
 using Grpc.Core;
+using Microsoft.EntityFrameworkCore;
 using Server.Auth.Interfaces;
 
 namespace Server.Auth.Services
@@ -20,34 +21,32 @@ namespace Server.Auth.Services
             _logger = logger;
             _dbContext = dbContext;
         }
+
         public override async Task<NonceResponse> GetNonce(NonceRequest request, ServerCallContext context)
         {
-            _logger.LogTrace($"GetNonce called (peer: {context.Peer})");
             string token = await _securityService.GetNonceToken();
-            _logger.LogInformation($"Nonce token generated, peer: {context.Peer}");
             return new NonceResponse { Status = 200, Message = "OK", NonceToken = token };
         }
+
         public override async Task<SaltResponse> GetSalt(SaltRequest request, ServerCallContext context)
         {
-            _logger.LogTrace($"GetSalt called (userId: {request.UserId}, peer: {context.Peer})");
-            if(string.IsNullOrEmpty(request.UserId))
+            if (string.IsNullOrEmpty(request.UserId))
             {
-                _logger.LogWarning($"GetSalt failed - userId is empty (peer: {context.Peer})");
+                _logger.LogWarning("GetSalt: пустой userId, peer: {Peer}", context.Peer);
                 return new SaltResponse { Status = 400, Message = "UserId is empty" };
             }
-            if(!Guid.TryParse(request.UserId, out Guid userId))
+            if (!Guid.TryParse(request.UserId, out Guid userId))
             {
-                _logger.LogWarning($"GetSalt failed - userId is invalid (userId: {request.UserId}, peer: {context.Peer})");
+                _logger.LogWarning("GetSalt: невалидный userId, peer: {Peer}", context.Peer);
                 return new SaltResponse { Status = 400, Message = "UserId is invalid" };
             }
-            _logger.LogTrace($"Fetching user by userId: {userId} (peer: {context.Peer})");
-            var clientSalt = _dbContext.Users.Where(u => u.UserId == userId).Select(u => u.ClientSalt).FirstOrDefault();
-            if(clientSalt == null)
+            var clientSaltEntry = await _dbContext.Users.Where(u => u.UserId == userId).Select(u => new { u.ClientSalt }).FirstOrDefaultAsync();
+            byte[]? clientSalt = clientSaltEntry?.ClientSalt;
+            if (clientSalt == null)
             {
-                _logger.LogWarning($"GetSalt failed - user not found (userId: {userId}, peer: {context.Peer})");
+                _logger.LogWarning("GetSalt: пользователь не найден, peer: {Peer}", context.Peer);
                 return new SaltResponse { Status = 400, Message = "Client salt is invalid" };
             }
-            _logger.LogInformation($"Salt retrieved successfully, peer: {context.Peer}");
             return new SaltResponse { Status = 200, Message = "OK", Salt = ByteString.CopyFrom(clientSalt) };
         }
     }

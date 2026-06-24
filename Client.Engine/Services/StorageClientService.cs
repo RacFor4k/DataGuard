@@ -44,13 +44,24 @@ namespace Client.Engine.Services
             _httpClient = httpClientFactory.CreateClient();
         }
 
+        /// <summary>
+        /// Проверяет, что URL использует HTTPS. HTTP запрещён.
+        /// </summary>
+        private static void ValidateHttpsUrl(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                throw new InvalidOperationException("Некорректный формат URL.");
+            if (uri.Scheme != Uri.UriSchemeHttps)
+                throw new InvalidOperationException("Использование HTTP-протокола запрещено. Только HTTPS.");
+        }
+
         private async Task<string> GetNonceAsync()
         {
-            _logger.LogTrace("Getting nonce for storage operation");
+            _logger.LogTrace("Получение nonce для операции с хранилищем");
             var response = await _securityClient.GetNonceAsync(new NonceRequest());
             if (response.Status != 200)
             {
-                _logger.LogError("Failed to get nonce: {Message}", response.Message);
+                _logger.LogError("Не удалось получить nonce: {Message}", response.Message);
                 throw new InvalidOperationException($"Не удалось получить nonce: {response.Message}");
             }
             return response.NonceToken;
@@ -69,7 +80,7 @@ namespace Client.Engine.Services
                 StorageValidationHelper.ValidateFileName(fileName);
                 StorageValidationHelper.ValidatePath(filePath);
 
-                _logger.LogInformation("Uploading file {FileName} to {FilePath}", fileName, filePath);
+                _logger.LogInformation("Загрузка файла {FileName} в {FilePath}", fileName, filePath);
 
                 var headers = await GetAuthHeadersAsync();
                 using var call = _storageClient.UploadFile(headers);
@@ -122,38 +133,41 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file upload");
+                _logger.LogError(ex, "gRPC ошибка при загрузке файла");
                 return new StorageUploadResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during file upload");
+                _logger.LogWarning(ex, "Ошибка валидации при загрузке файла");
                 return new StorageUploadResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file upload");
+                _logger.LogError(ex, "Неожиданная ошибка при загрузке файла");
                 return new StorageUploadResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
 
-        public async Task<StorageDownloadResult> GetFileAsync(Guid fileId)
+        public async Task<StorageDownloadResult> GetFileAsync(Guid fileId, string localFilePath, CancellationToken ct = default)
         {
             try
             {
-                _logger.LogInformation("Downloading file {FileId}", fileId);
+                _logger.LogInformation("Загрузка файла {FileId} в {LocalPath}", fileId, localFilePath);
 
                 var headers = await GetAuthHeadersAsync();
                 var request = new GetFileRequest { FileId = fileId.ToString() };
-                using var call = _storageClient.GetFile(request, headers);
+                var call = _storageClient.GetFile(request, headers: headers, cancellationToken: ct);
 
-                var memoryStream = new MemoryStream();
+                // Пишем напрямую во временный файл
+                var tempPath = localFilePath + ".tmp";
+                await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920);
+
                 string? fileName = null;
                 string? filePath = null;
                 long size = 0;
                 var metadata = new Dictionary<string, string>();
 
-                await foreach (var response in call.ResponseStream.ReadAllAsync())
+                await foreach (var response in call.ResponseStream.ReadAllAsync(ct))
                 {
                     switch (response.DataCase)
                     {
@@ -167,17 +181,21 @@ namespace Client.Engine.Services
                             }
                             break;
                         case GetFileResponse.DataOneofCase.Chunk:
-                            await memoryStream.WriteAsync(response.Chunk.Memory);
+                            await fileStream.WriteAsync(response.Chunk.ToByteArray(), ct);
                             break;
                     }
                 }
 
-                memoryStream.Position = 0;
+                await fileStream.FlushAsync(ct);
+
+                // Атомарная замена временного файла на целевой
+                File.Move(tempPath, localFilePath, overwrite: true);
+
                 return new StorageDownloadResult
                 {
                     Success = true,
                     Message = "OK",
-                    Content = memoryStream,
+                    LocalPath = localFilePath,
                     FileName = fileName,
                     FilePath = filePath,
                     Size = size,
@@ -186,12 +204,12 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file download");
+                _logger.LogError(ex, "gRPC ошибка при загрузке файла {FileId}", fileId);
                 return new StorageDownloadResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file download");
+                _logger.LogError(ex, "Неожиданная ошибка при загрузке файла {FileId}", fileId);
                 return new StorageDownloadResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -209,7 +227,7 @@ namespace Client.Engine.Services
                 if (eraseSize.HasValue && eraseSize.Value < 0)
                     throw new ArgumentException("Некорректный offset для стирания.");
 
-                _logger.LogInformation("Updating file {FileId} at offset {Offset}", fileId, offset);
+                _logger.LogInformation("Обновление файла {FileId} по смещению {Offset}", fileId, offset);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -226,7 +244,7 @@ namespace Client.Engine.Services
                 }
                 else if (eraseSize.HasValue)
                 {
-                    request.Erase = new ErraseOperation
+                    request.Erase = new EraseOperation
                     {
                         Offset = offset,
                         Size = eraseSize.Value
@@ -243,17 +261,17 @@ namespace Client.Engine.Services
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during file update");
+                _logger.LogWarning(ex, "Ошибка валидации при обновлении файла");
                 return new StorageOperationResult { Success = false, Message = ex.Message };
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file update");
+                _logger.LogError(ex, "gRPC ошибка при обновлении файла");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file update. Exception type: {ExceptionType}", ex.GetType().FullName);
+                _logger.LogError(ex, "Неожиданная ошибка при обновлении файла. Тип: {ExceptionType}", ex.GetType().FullName);
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -262,7 +280,7 @@ namespace Client.Engine.Services
         {
             try
             {
-                _logger.LogInformation("Deleting file {FileId}", fileId);
+                _logger.LogInformation("Удаление файла {FileId}", fileId);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -283,12 +301,12 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file delete");
+                _logger.LogError(ex, "gRPC ошибка при удалении файла");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file delete");
+                _logger.LogError(ex, "Неожиданная ошибка при удалении файла");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -299,7 +317,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidatePath(newPath);
 
-                _logger.LogInformation("Moving file {FileId} to {NewPath}", fileId, newPath);
+                _logger.LogInformation("Перемещение файла {FileId} в {NewPath}", fileId, newPath);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -321,17 +339,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file move");
+                _logger.LogError(ex, "gRPC ошибка при перемещении файла");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during file move");
+                _logger.LogWarning(ex, "Ошибка валидации при перемещении файла");
                 return new StorageOperationResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file move");
+                _logger.LogError(ex, "Неожиданная ошибка при перемещении файла");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -342,7 +360,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidatePath(newPath);
 
-                _logger.LogInformation("Copying file {FileId} to {NewPath}", fileId, newPath);
+                _logger.LogInformation("Копирование файла {FileId} в {NewPath}", fileId, newPath);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -365,17 +383,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file copy");
+                _logger.LogError(ex, "gRPC ошибка при копировании файла");
                 return new StorageCopyResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during file copy");
+                _logger.LogWarning(ex, "Ошибка валидации при копировании файла");
                 return new StorageCopyResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file copy");
+                _logger.LogError(ex, "Неожиданная ошибка при копировании файла");
                 return new StorageCopyResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -386,7 +404,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidateFileName(newName);
 
-                _logger.LogInformation("Renaming file {FileId} to {NewName}", fileId, newName);
+                _logger.LogInformation("Переименование файла {FileId} в {NewName}", fileId, newName);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -408,17 +426,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during file rename");
+                _logger.LogError(ex, "gRPC ошибка при переименовании файла");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during file rename");
+                _logger.LogWarning(ex, "Ошибка валидации при переименовании файла");
                 return new StorageOperationResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file rename");
+                _logger.LogError(ex, "Неожиданная ошибка при переименовании файла");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -429,7 +447,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidateDirectoryPath(directoryPath);
 
-                _logger.LogInformation("Creating directory {DirectoryPath}", directoryPath);
+                _logger.LogInformation("Создание директории {DirectoryPath}", directoryPath);
 
                 var headers = await GetAuthHeadersAsync();
 
@@ -449,17 +467,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during directory creation");
+                _logger.LogError(ex, "gRPC ошибка при создании директории");
                 return new StorageDirectoryResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during directory creation");
+                _logger.LogWarning(ex, "Ошибка валидации при создании директории");
                 return new StorageDirectoryResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during directory creation");
+                _logger.LogError(ex, "Неожиданная ошибка при создании директории");
                 return new StorageDirectoryResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -470,7 +488,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidateDirectoryName(newName);
 
-                _logger.LogInformation("Renaming directory {DirectoryId} to {NewName}", directoryId, newName);
+                _logger.LogInformation("Переименование директории {DirectoryId} в {NewName}", directoryId, newName);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -492,17 +510,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during directory rename");
+                _logger.LogError(ex, "gRPC ошибка при переименовании директории");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during directory rename");
+                _logger.LogWarning(ex, "Ошибка валидации при переименовании директории");
                 return new StorageOperationResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during directory rename");
+                _logger.LogError(ex, "Неожиданная ошибка при переименовании директории");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -511,7 +529,7 @@ namespace Client.Engine.Services
         {
             try
             {
-                _logger.LogInformation("Deleting directory {DirectoryId}, recursive={Recursive}", directoryId, recursive);
+                _logger.LogInformation("Удаление директории {DirectoryId}, recursive={Recursive}", directoryId, recursive);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -533,12 +551,12 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during directory delete");
+                _logger.LogError(ex, "gRPC ошибка при удалении директории");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during directory delete");
+                _logger.LogError(ex, "Неожиданная ошибка при удалении директории");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -549,7 +567,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidatePath(newPath);
 
-                _logger.LogInformation("Moving directory {DirectoryId} to {NewPath}", directoryId, newPath);
+                _logger.LogInformation("Перемещение директории {DirectoryId} в {NewPath}", directoryId, newPath);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -571,17 +589,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during directory move");
+                _logger.LogError(ex, "gRPC ошибка при перемещении директории");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during directory move");
+                _logger.LogWarning(ex, "Ошибка валидации при перемещении директории");
                 return new StorageOperationResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during directory move");
+                _logger.LogError(ex, "Неожиданная ошибка при перемещении директории");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -592,7 +610,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidatePath(newPath);
 
-                _logger.LogInformation("Copying directory {DirectoryId} to {NewPath}, recursive={Recursive}", directoryId, newPath, recursive);
+                _logger.LogInformation("Копирование директории {DirectoryId} в {NewPath}, recursive={Recursive}", directoryId, newPath, recursive);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -616,17 +634,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during directory copy");
+                _logger.LogError(ex, "gRPC ошибка при копировании директории");
                 return new StorageDirectoryCopyResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during directory copy");
+                _logger.LogWarning(ex, "Ошибка валидации при копировании директории");
                 return new StorageDirectoryCopyResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during directory copy");
+                _logger.LogError(ex, "Неожиданная ошибка при копировании директории");
                 return new StorageDirectoryCopyResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -635,7 +653,7 @@ namespace Client.Engine.Services
         {
             try
             {
-                _logger.LogInformation("Getting metadata for file {FileId}", fileId);
+                _logger.LogInformation("Получение метаданных файла {FileId}", fileId);
 
                 var headers = await GetAuthHeadersAsync();
 
@@ -668,12 +686,12 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during metadata get");
+                _logger.LogError(ex, "gRPC ошибка при получении метаданных");
                 return new StorageMetadataResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during metadata get");
+                _logger.LogError(ex, "Неожиданная ошибка при получении метаданных");
                 return new StorageMetadataResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -684,7 +702,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidateMetadata(metadata);
 
-                _logger.LogInformation("Updating metadata for file {FileId}", fileId);
+                _logger.LogInformation("Обновление метаданных файла {FileId}", fileId);
 
                 var headers = await GetAuthHeadersAsync();
 
@@ -708,17 +726,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during metadata update");
+                _logger.LogError(ex, "gRPC ошибка при обновлении метаданных");
                 return new StorageOperationResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during metadata update");
+                _logger.LogWarning(ex, "Ошибка валидации при обновлении метаданных");
                 return new StorageOperationResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during metadata update");
+                _logger.LogError(ex, "Неожиданная ошибка при обновлении метаданных");
                 return new StorageOperationResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -727,7 +745,7 @@ namespace Client.Engine.Services
         {
             try
             {
-                _logger.LogInformation("Listing directory {DirectoryId}, recursive={Recursive}", directoryId, recursive);
+                _logger.LogInformation("Список файлов директории {DirectoryId}, recursive={Recursive}", directoryId, recursive);
 
                 var headers = await GetAuthHeadersAsync();
 
@@ -767,12 +785,12 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during directory listing");
+                _logger.LogError(ex, "gRPC ошибка при получении списка файлов");
                 return new StorageListResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during directory listing");
+                _logger.LogError(ex, "Неожиданная ошибка при получении списка файлов");
                 return new StorageListResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -783,7 +801,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidateTtl(ttlSeconds);
 
-                _logger.LogInformation("Generating link for file {FileId}", fileId);
+                _logger.LogInformation("Генерация ссылки для файла {FileId}", fileId);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -816,17 +834,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during link generation");
+                _logger.LogError(ex, "gRPC ошибка при генерации ссылки");
                 return new StorageLinkResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during link generation");
+                _logger.LogWarning(ex, "Ошибка валидации при генерации ссылки");
                 return new StorageLinkResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during link generation");
+                _logger.LogError(ex, "Неожиданная ошибка при генерации ссылки");
                 return new StorageLinkResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -837,7 +855,7 @@ namespace Client.Engine.Services
             {
                 StorageValidationHelper.ValidateTtl(ttlSeconds);
 
-                _logger.LogInformation("Generating direct link for file {FileId}", fileId);
+                _logger.LogInformation("Генерация прямой ссылки для файла {FileId}", fileId);
 
                 var nonce = await GetNonceAsync();
                 var headers = await GetAuthHeadersAsync();
@@ -870,17 +888,17 @@ namespace Client.Engine.Services
             }
             catch (RpcException ex)
             {
-                _logger.LogError(ex, "gRPC error during direct link generation");
+                _logger.LogError(ex, "gRPC ошибка при генерации прямой ссылки");
                 return new StorageLinkResult { Success = false, Message = $"Ошибка сервера: {ex.Status.Detail}" };
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation error during direct link generation");
+                _logger.LogWarning(ex, "Ошибка валидации при генерации прямой ссылки");
                 return new StorageLinkResult { Success = false, Message = ex.Message };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during direct link generation");
+                _logger.LogError(ex, "Неожиданная ошибка при генерации прямой ссылки");
                 return new StorageLinkResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -889,12 +907,12 @@ namespace Client.Engine.Services
         {
             try
             {
-                _logger.LogInformation("Downloading file via link token");
+                _logger.LogInformation("Загрузка файла по ссылке");
 
                 var storageUrl = _configuration["Grpc:StorageUrl"] ?? throw new InvalidOperationException("Storage URL not configured");
-                var baseUrl = storageUrl.Replace("https://", "http://");
+                ValidateHttpsUrl(storageUrl);
 
-                var response = await _httpClient.GetAsync($"{baseUrl}/storage/links/{token}", HttpCompletionOption.ResponseHeadersRead);
+                var response = await _httpClient.GetAsync($"{storageUrl}/storage/links/{token}", HttpCompletionOption.ResponseHeadersRead);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Gone)
                 {
@@ -922,12 +940,12 @@ namespace Client.Engine.Services
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "HTTP error during file download via link");
+                _logger.LogError(ex, "HTTP ошибка при загрузке файла по ссылке");
                 return new StorageDownloadResult { Success = false, Message = $"Ошибка сервера: {ex.Message}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file download via link");
+                _logger.LogError(ex, "Неожиданная ошибка при загрузке файла по ссылке");
                 return new StorageDownloadResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }
@@ -936,12 +954,12 @@ namespace Client.Engine.Services
         {
             try
             {
-                _logger.LogInformation("Downloading file via direct link token");
+                _logger.LogInformation("Загрузка файла по прямой ссылке");
 
                 var storageUrl = _configuration["Grpc:StorageUrl"] ?? throw new InvalidOperationException("Storage URL not configured");
-                var baseUrl = storageUrl.Replace("https://", "http://");
+                ValidateHttpsUrl(storageUrl);
 
-                var response = await _httpClient.GetAsync($"{baseUrl}/storage/direct/{token}", HttpCompletionOption.ResponseHeadersRead);
+                var response = await _httpClient.GetAsync($"{storageUrl}/storage/direct/{token}", HttpCompletionOption.ResponseHeadersRead);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Gone)
                 {
@@ -969,12 +987,12 @@ namespace Client.Engine.Services
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "HTTP error during file download via direct link");
+                _logger.LogError(ex, "HTTP ошибка при загрузке файла по прямой ссылке");
                 return new StorageDownloadResult { Success = false, Message = $"Ошибка сервера: {ex.Message}" };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during file download via direct link");
+                _logger.LogError(ex, "Неожиданная ошибка при загрузке файла по прямой ссылке");
                 return new StorageDownloadResult { Success = false, Message = "Внутренняя ошибка сервера." };
             }
         }

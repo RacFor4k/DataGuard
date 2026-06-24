@@ -1,6 +1,6 @@
 using Grpc.Net.Client;
-using Client.UI.Grpc.Auth;
-using Client.UI.Grpc.CompanyManager;
+using Contracts.Protos.Client.Auth;
+using Contracts.Protos.Client.CompanyManager;
 
 namespace Client.UI.Services;
 
@@ -14,15 +14,20 @@ public class GrpcClientService : IDisposable
         _serverAddress = serverAddress;
     }
 
-    private GrpcChannel Channel => _channel ??= GrpcChannel.ForAddress(_serverAddress,
-        new GrpcChannelOptions
+    // TODO: Реализовать обмен ключами при первом подключении (аналог TLS handshake) для шифрования чувствительных данных
+    private GrpcChannel Channel => _channel ??= CreateChannel();
+
+    private GrpcChannel CreateChannel()
+    {
+        var options = new GrpcChannelOptions();
+#if DEBUG
+        options.HttpHandler = new HttpClientHandler
         {
-            HttpHandler = new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback =
-                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            }
-        });
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        };
+#endif
+        return GrpcChannel.ForAddress(_serverAddress, options);
+    }
 
     public Authentication.AuthenticationClient AuthClient =>
         new Authentication.AuthenticationClient(Channel);

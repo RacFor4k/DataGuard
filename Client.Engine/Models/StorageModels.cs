@@ -16,6 +16,7 @@ namespace Client.Engine.Models
         public Stream? Content { get; set; }
         public string? FileName { get; set; }
         public string? FilePath { get; set; }
+        public string? LocalPath { get; set; }
         public long Size { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
     }

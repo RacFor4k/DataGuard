@@ -30,7 +30,7 @@ public class GrpcValidationTests
     {
         using var db = TestSupport.CreateDbContext(out var connection);
         await using var _ = connection.ConfigureAwait(false);
-        var (_, database) = TestSupport.CreateRedisMock();
+        var (multiplexer, _) = TestSupport.CreateRedisMock();
         var security = new Mock<ISecurityService>();
         var service = new CompanyManagerService(
             NullLogger<CompanyManagerService>.Instance,
@@ -38,7 +38,8 @@ public class GrpcValidationTests
             TestSupport.CreateSecurityOptions(),
             TestSupport.CreateCompanyManagerOptions([1, 2, 3, 4]),
             db,
-            database.Object);
+            multiplexer.Object,
+            new UserAccessor());
 
         var response = await service.CreateCompany(new CreateCompanyRequest
         {
@@ -57,18 +58,18 @@ public class GrpcValidationTests
     {
         using var db = TestSupport.CreateDbContext(out var connection);
         await using var _ = connection.ConfigureAwait(false);
-        var (_, database) = TestSupport.CreateRedisMock();
+        var (multiplexer, _) = TestSupport.CreateRedisMock();
         var jwt = new Mock<IJwtService>();
         var security = new Mock<ISecurityService>();
         security.Setup(s => s.VerifyNonceToken("nonce")).ReturnsAsync(true);
         var service = new AuthenticationService(
             db,
-            database.Object,
+            multiplexer.Object,
             NullLogger<AuthenticationService>.Instance,
             jwt.Object,
             security.Object,
             TestSupport.CreateSecurityOptions(),
-            new UserAccessor(NullLogger<UserAccessor>.Instance));
+            new UserAccessor());
 
         var response = await service.Login(new LoginRequest
         {

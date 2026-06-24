@@ -219,7 +219,8 @@ public class TestJwtTokenProvider : IJwtTokenProvider
         return Task.FromResult("test-jwt-token");
     }
 
-    public void SetToken(JwtToken token)
+    public Task SetTokenAsync(JwtToken token)
     {
+        return Task.CompletedTask;
     }
 }

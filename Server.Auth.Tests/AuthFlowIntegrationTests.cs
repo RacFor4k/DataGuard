@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Contracts.Protos.Auth;
 using Contracts.Protos.CompanyManager;
@@ -20,7 +21,7 @@ public class AuthFlowIntegrationTests
         using var db = TestSupport.CreateDbContext(out var connection);
         await using var _ = connection.ConfigureAwait(false);
         var redisStore = new Dictionary<string, string>();
-        var (_, database) = TestSupport.CreateRedisMock();
+        var (multiplexer, database) = TestSupport.CreateRedisMock();
         database
             .Setup(d => d.StringSetAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<TimeSpan?>(), It.IsAny<When>()))
             .Callback<RedisKey, RedisValue, TimeSpan?, When>((key, value, _, _) => redisStore[key.ToString()] = value.ToString())
@@ -50,21 +51,23 @@ public class AuthFlowIntegrationTests
         jwt.Setup(j => j.GenerateRefreshToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
             .Returns("refresh-token");
 
+        var companyUserAccessor = new UserAccessor();
         var companyService = new CompanyManagerService(
             NullLogger<CompanyManagerService>.Instance,
             security.Object,
             TestSupport.CreateSecurityOptions(),
             TestSupport.CreateCompanyManagerOptions([1, 2, 3, 4]),
             db,
-            database.Object);
+            multiplexer.Object,
+            companyUserAccessor);
         var authService = new AuthenticationService(
             db,
-            database.Object,
+            multiplexer.Object,
             NullLogger<AuthenticationService>.Instance,
             jwt.Object,
             security.Object,
             TestSupport.CreateSecurityOptions(),
-            new UserAccessor(NullLogger<UserAccessor>.Instance));
+            new UserAccessor());
 
         var createCompany = await companyService.CreateCompany(new CreateCompanyRequest
         {
@@ -76,11 +79,20 @@ public class AuthFlowIntegrationTests
         Assert.Equal(200, createCompany.Status);
         Assert.False(string.IsNullOrWhiteSpace(createCompany.RegistrationCode));
 
+        // Set up auth for SetCompanyPublicKey (requires access token JWT + system:owner claim)
+        var ownerId = Guid.NewGuid();
+        companyUserAccessor.UserJwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(claims:
+        [
+            new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Typ, "access"),
+            new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub, ownerId.ToString()),
+        ]);
+        var ownerCtx = TestSupport.CreateServerCallContextWithClaims(new Claim("role", "system:owner"));
+
         var setPublicKey = await companyService.SetCompanyPublicKey(new SetCompanyPublicKeyRequest
         {
             RegistrationCode = createCompany.RegistrationCode,
             CompanyPublicKeyPem = "public-key-pem"
-        }, TestSupport.CreateServerCallContext());
+        }, ownerCtx);
         Assert.Equal(200, setPublicKey.Status);
 
         var register = await authService.Register(new RegisterRequest

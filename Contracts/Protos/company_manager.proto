@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option csharp_namespace = "Contracts.Protos.CompanyManager";
 
-package comnpany_manager;
+package company_manager;
 
 service CompanyManager {
     rpc CreateCompany (CreateCompanyRequest) returns (CreateCompanyResponse);

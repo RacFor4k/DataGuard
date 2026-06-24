@@ -28,6 +28,18 @@ public class MinioBlobStore : IStorageBlobStore
         return ms;
     }
 
+    /// <summary>
+    /// Потоковая загрузка объекта из хранилища напрямую в целевой поток без промежуточной буферизации в памяти.
+    /// </summary>
+    public async Task GetObjectToStreamAsync(string bucketName, string objectName, Stream targetStream, CancellationToken ct = default)
+    {
+        var args = new GetObjectArgs()
+            .WithBucket(bucketName)
+            .WithObject(objectName)
+            .WithCallbackStream(stream => stream.CopyTo(targetStream));
+        await _minioClient.GetObjectAsync(args, ct);
+    }
+
     public async Task PutObjectAsync(string bucketName, string objectName, Stream content, long size, CancellationToken ct = default)
     {
         var args = new PutObjectArgs()

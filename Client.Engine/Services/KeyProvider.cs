@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Client.Engine.Interfaces;
 
@@ -8,7 +9,7 @@ namespace Client.Engine.Services
 {
     public interface IKeyProvider
     {
-        Task<byte[]> GetKeyAsync();
+        Task<byte[]?> GetKeyAsync();
         Task SetKeyAsync(byte[] key);
         Task ClearKeyAsync();
         bool HasKey { get; }
@@ -22,23 +23,12 @@ namespace Client.Engine.Services
 
         public bool HasKey => _key != null;
 
-        public async Task<byte[]> GetKeyAsync()
+        public async Task<byte[]?> GetKeyAsync()
         {
             await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                if (_key == null)
-                {
-                    throw new InvalidOperationException("Key is not set yet");
-                }
-
-                // Проверка, что ключ не удален из кучи
-                if (!_keyHandle.IsAllocated)
-                {
-                    throw new InvalidOperationException("Key has been released");
-                }
-
-                return _key;
+                return _key == null ? null : (byte[])_key.Clone();
             }
             finally
             {
@@ -83,12 +73,14 @@ namespace Client.Engine.Services
             await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                if (_keyHandle.IsAllocated)
+                if (_key != null)
                 {
-                    _keyHandle.Free();
+                    CryptographicOperations.ZeroMemory(_key);
+                    if (_keyHandle.IsAllocated)
+                        _keyHandle.Free();
                     _keyHandle = default;
+                    _key = null;
                 }
-                _key = null;
             }
             finally
             {

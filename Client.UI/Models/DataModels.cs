@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Client.UI.Models;
 
@@ -10,20 +11,21 @@ public class NotificationItem
     public string Type { get; set; } = "info"; // info | warning | success | error
 }
 
-public class FileItem
+public partial class FileItem : ObservableObject
 {
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = "file";
-    public string Icon { get; set; } = "📄";
-    public string Size { get; set; } = string.Empty;
-    public string Owner { get; set; } = string.Empty;
-    public string Modified { get; set; } = string.Empty;
-    public string Access { get; set; } = "Полный доступ";
-    public bool IsSelected { get; set; }
-    public bool IsConfidential { get; set; }
-    public string Extension { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _type = "file";
+    [ObservableProperty] private string _icon = "📄";
+    [ObservableProperty] private string _size = string.Empty;
+    [ObservableProperty] private string _owner = string.Empty;
+    [ObservableProperty] private string _modified = string.Empty;
+    [ObservableProperty] private string _access = "Полный доступ";
+    [ObservableProperty] private bool _isSelected;
+    [ObservableProperty] private bool _isConfidential;
+    [ObservableProperty] private string _extension = string.Empty;
+    [ObservableProperty] private bool _isExpanded;
+
     public List<FileItem> Children { get; set; } = new();
-    public bool IsExpanded { get; set; }
 }
 
 public class FolderNode
@@ -44,65 +46,67 @@ public class AccessRight
     public bool IsGroup { get; set; }
 }
 
-public class ChatMessage
+public partial class ChatMessage : ObservableObject
 {
-    public string Author { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public string Time { get; set; } = string.Empty;
-    public bool IsMe { get; set; }
-    public bool IsSystem { get; set; }
-    public bool IsRead { get; set; } = true;
+    [ObservableProperty] private string _author = string.Empty;
+    [ObservableProperty] private string _content = string.Empty;
+    [ObservableProperty] private string _time = string.Empty;
+    [ObservableProperty] private bool _isMe;
+    [ObservableProperty] private bool _isSystem;
+    [ObservableProperty] private bool _isRead = true;
 }
 
-public class ChatThread
+public partial class ChatThread : ObservableObject
 {
-    public string Name { get; set; } = string.Empty;
-    public string LastMessage { get; set; } = string.Empty;
-    public string Time { get; set; } = string.Empty;
-    public int UnreadCount { get; set; }
-    public string Icon { get; set; } = "💬";
-    public bool IsDocument { get; set; }
-    public bool IsPinned { get; set; }
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _lastMessage = string.Empty;
+    [ObservableProperty] private string _time = string.Empty;
+    [ObservableProperty] private int _unreadCount;
+    [ObservableProperty] private string _icon = "💬";
+    [ObservableProperty] private bool _isDocument;
+    [ObservableProperty] private bool _isPinned;
+
     public ObservableCollection<ChatMessage> Messages { get; set; } = new();
 }
 
-public class ExternalLink
+public partial class ExternalLink : ObservableObject
 {
-    public string Name { get; set; } = string.Empty;
-    public string Target { get; set; } = string.Empty;
-    public string Expires { get; set; } = string.Empty;
-    public string Status { get; set; } = "Активна";
-    public string Permissions { get; set; } = "Только просмотр";
-    public int Downloads { get; set; }
-    public int MaxDownloads { get; set; }
-    public string CreatedBy { get; set; } = string.Empty;
-    public string Created { get; set; } = string.Empty;
-    public bool HasWatermark { get; set; }
-    public string IpRestriction { get; set; } = string.Empty;
-    public string TimeWindow { get; set; } = string.Empty;
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _target = string.Empty;
+    [ObservableProperty] private string _expires = string.Empty;
+    [ObservableProperty] private string _status = "Активна";
+    [ObservableProperty] private string _permissions = "Только просмотр";
+    [ObservableProperty] private int _downloads;
+    [ObservableProperty] private int _maxDownloads;
+    [ObservableProperty] private string _createdBy = string.Empty;
+    [ObservableProperty] private string _created = string.Empty;
+    [ObservableProperty] private bool _hasWatermark;
+    [ObservableProperty] private string _ipRestriction = string.Empty;
+    [ObservableProperty] private string _timeWindow = string.Empty;
 }
 
-public class AuditEntry
+public partial class AuditEntry : ObservableObject
 {
-    public string Time { get; set; } = string.Empty;
-    public string User { get; set; } = string.Empty;
-    public string Action { get; set; } = string.Empty;
-    public string Target { get; set; } = string.Empty;
-    public string Ip { get; set; } = string.Empty;
-    public string Result { get; set; } = "Успешно";
-    public string Device { get; set; } = string.Empty;
-    public string Browser { get; set; } = string.Empty;
+    [ObservableProperty] private string _time = string.Empty;
+    [ObservableProperty] private string _user = string.Empty;
+    [ObservableProperty] private string _action = string.Empty;
+    [ObservableProperty] private string _target = string.Empty;
+    [ObservableProperty] private string _ip = string.Empty;
+    [ObservableProperty] private string _result = "Успешно";
+    [ObservableProperty] private string _device = string.Empty;
+    [ObservableProperty] private string _browser = string.Empty;
 }
 
-public class PolicyGroup
+public partial class PolicyGroup : ObservableObject
 {
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
-    public int Members { get; set; }
-    public string Template { get; set; } = string.Empty;
-    public bool Inherited { get; set; }
+    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty] private string _type = string.Empty;
+    [ObservableProperty] private int _members;
+    [ObservableProperty] private string _template = string.Empty;
+    [ObservableProperty] private bool _inherited;
+
     public List<GroupMember> MemberList { get; set; } = new();
-    public string Description { get; set; } = string.Empty;
+    [ObservableProperty] private string _description = string.Empty;
 }
 
 public class GroupMember

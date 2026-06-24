@@ -8,7 +8,7 @@ namespace Client.Engine.Interfaces
 {
     public interface IJwtTokenProvider
     {
-        void SetToken(JwtToken token);
+        Task SetTokenAsync(JwtToken token);
         Task<string> GetOrRefreshTokenAsync();
     }
 }

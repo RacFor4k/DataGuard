@@ -17,6 +17,13 @@ public class StorageDirectory
     [MaxLength(1024)]
     public string DirectoryName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Нормализованное (нижний регистр) имя директории для уникального индекса.
+    /// </summary>
+    [Required]
+    [MaxLength(1024)]
+    public string NormalizedName { get; set; } = string.Empty;
+
     [Required]
     [MaxLength(4096)]
     public string NormalizedPath { get; set; } = string.Empty;
@@ -26,4 +33,10 @@ public class StorageDirectory
     public DateTime? UpdatedAtUtc { get; set; }
 
     public DateTime? DeletedAtUtc { get; set; }
+
+    /// <summary>
+    /// Версия строки для оптимистичного контроля параллелизма.
+    /// </summary>
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

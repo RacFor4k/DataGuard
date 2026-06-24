@@ -10,14 +10,14 @@ public class SecurityServiceTests
     [Fact]
     public async Task GetNonceToken_ThenVerifyNonceToken_ReturnsTrueOnce()
     {
-        var (_, database) = TestSupport.CreateRedisMock();
+        var (multiplexer, database) = TestSupport.CreateRedisMock();
         database
             .Setup(d => d.StringSetAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<TimeSpan?>(), It.IsAny<bool>(), It.IsAny<When>(), It.IsAny<CommandFlags>()))
             .ReturnsAsync(true);
         database
             .Setup(d => d.KeyDeleteAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()))
             .ReturnsAsync(true);
-        var service = new SecurityService(database.Object, NullLogger<SecurityService>.Instance, TestSupport.CreateSecurityOptions());
+        var service = new SecurityService(multiplexer.Object, NullLogger<SecurityService>.Instance, TestSupport.CreateSecurityOptions());
 
         string token = await service.GetNonceToken();
         bool verified = await service.VerifyNonceToken(token);
@@ -29,8 +29,8 @@ public class SecurityServiceTests
     [Fact]
     public async Task VerifyNonceToken_WhenFormatInvalid_ReturnsFalse()
     {
-        var (_, database) = TestSupport.CreateRedisMock();
-        var service = new SecurityService(database.Object, NullLogger<SecurityService>.Instance, TestSupport.CreateSecurityOptions());
+        var (multiplexer, _) = TestSupport.CreateRedisMock();
+        var service = new SecurityService(multiplexer.Object, NullLogger<SecurityService>.Instance, TestSupport.CreateSecurityOptions());
 
         bool verified = await service.VerifyNonceToken("bad-token");
 
@@ -40,8 +40,8 @@ public class SecurityServiceTests
     [Fact]
     public async Task GenerateSaltAndHashPassword_UseConfiguredLengths()
     {
-        var (_, database) = TestSupport.CreateRedisMock();
-        var service = new SecurityService(database.Object, NullLogger<SecurityService>.Instance, TestSupport.CreateSecurityOptions());
+        var (multiplexer, _) = TestSupport.CreateRedisMock();
+        var service = new SecurityService(multiplexer.Object, NullLogger<SecurityService>.Instance, TestSupport.CreateSecurityOptions());
 
         byte[] salt = service.GenerateSalt();
         byte[] hash = await service.HashPasswordAsync("StrongPass1!", salt);

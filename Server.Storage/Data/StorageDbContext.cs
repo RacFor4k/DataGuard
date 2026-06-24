@@ -30,6 +30,7 @@ public class StorageDbContext : DbContext
         {
             entity.HasIndex(e => e.DirectoryId);
             entity.HasIndex(e => new { e.OwnerId, e.NormalizedPath });
+            entity.HasIndex(e => new { e.OwnerId, e.ParentDirectoryId, e.NormalizedName }).IsUnique();
             entity.HasQueryFilter(e => e.DeletedAtUtc == null);
         });
 

@@ -25,7 +25,7 @@ namespace Client.Engine.Services
         }
         public async Task<bool> TryLoadTokenAsync(Guid accountId)
         {
-            _semaphore.Wait();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
                 using var scope = _scopeFactory.CreateScope();
@@ -43,9 +43,9 @@ namespace Client.Engine.Services
                 _semaphore.Release();
             }
         }
-        public void SetToken(JwtToken token)
+        public async Task SetTokenAsync(JwtToken token)
         {
-            _semaphore.Wait();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
                 Volatile.Write(ref _token, token);
@@ -60,7 +60,7 @@ namespace Client.Engine.Services
             var currentToken = Volatile.Read(ref _token);
             if (currentToken == null)
             {
-                _logger.LogInformation("Token is null");
+                _logger.LogInformation("Токен отсутствует");
                 throw new InvalidOperationException("Token is not valid");
             }
             if (currentToken.DecodedAccessToken.ValidTo < DateTime.UtcNow)
@@ -72,26 +72,26 @@ namespace Client.Engine.Services
 
         private async Task<JwtToken> RefreshTokenAsync()
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
                 var currentToken = Volatile.Read(ref _token);
                 if (currentToken == null)
                 {
-                    _logger.LogWarning("Token is null");
+                    _logger.LogWarning("Токен отсутствует");
                     throw new InvalidOperationException("Token is not valid");
                 }
                 if (currentToken.DecodedAccessToken.ValidTo > DateTime.UtcNow)
                 {
-                    _logger.LogTrace("Token already refreshed by another thread");
+                    _logger.LogTrace("Токен уже обновлён другим потоком");
                     return currentToken;
                 }
                 if (currentToken.DecodedRefreshToken.ValidTo < DateTime.UtcNow)
                 {
-                    _logger.LogWarning("Refresh token is expired");
+                    _logger.LogWarning("Refresh-токен истёк");
                     throw new InvalidOperationException("Refresh token expired");
                 }
-                _logger.LogInformation("Refreshing token");
+                _logger.LogInformation("Обновление токена");
                 var requestHeader = new Metadata
                 {
                     { "Authorization", $"Bearer {currentToken.RefreshToken}" }
@@ -99,7 +99,7 @@ namespace Client.Engine.Services
                 var refreshTokenResponse = await _authClient.RefreshTokenAsync(new Contracts.Protos.Auth.RefreshTokenRequest(), requestHeader);
                 if (refreshTokenResponse.Status != 200)
                 {
-                    _logger.LogWarning(refreshTokenResponse.Message);
+                    _logger.LogWarning("Не удалось обновить токен: {Message}", refreshTokenResponse.Message);
                     throw new InvalidOperationException("Token is not valid");
                 }
                 var newToken = new JwtToken
@@ -142,7 +142,7 @@ namespace Client.Engine.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to save the refreshed token to the database");
+                _logger.LogError(ex, "Ошибка сохранения обновлённого токена в базу данных");
             }
         }
     }

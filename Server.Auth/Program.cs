@@ -1,14 +1,31 @@
-﻿using Server.Auth.Interfaces;
+﻿using Serilog;
+using Server.Auth.Interfaces;
 using Server.Auth.Services;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using Server.Auth.Middlewares;
 using Server.Auth.Options;
+using AspNetCoreRateLimit;
+
+// Настройка Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json")
+        .Build())
+    .CreateLogger();
 
 // Создание и настройка приложения
 var builder = WebApplication.CreateBuilder(args);
 
+// Подключение Serilog
+builder.Host.UseSerilog();
+
 // ── Настройка сервисов ───────────────────────────────────────────────────────
+
+// Ограничение частоты запросов
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
 
 // Подключение к Redis
 var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection") ?? throw new InvalidOperationException("Redis connection string not found.");
@@ -48,6 +65,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Ограничение частоты запросов
+app.UseIpRateLimiting();
 
 // JWT middleware
 app.UseMiddleware<JwtMiddleware>();

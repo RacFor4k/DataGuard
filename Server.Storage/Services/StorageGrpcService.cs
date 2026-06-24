@@ -2,11 +2,13 @@ using System.Buffers;
 using System.Security.Cryptography;
 using Google.Protobuf;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authorization;
 using Server.Storage.Interfaces;
 using Server.Storage.Models;
 
 namespace Server.Storage.Services;
 
+[Authorize]
 public partial class StorageGrpcService : Contracts.Protos.Storage.StorageService.StorageServiceBase
 {
     private readonly IStorageFileRepository _fileRepo;
@@ -113,6 +115,24 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
         byte[] sha256Hash;
         long totalSize = 0;
 
+        // Проверка существования родительской директории перед загрузкой
+        Guid? parentDirId = null;
+        if (!string.IsNullOrEmpty(fileMetadata.ParentDirectoryId) && Guid.TryParse(fileMetadata.ParentDirectoryId, out var parsedDirId))
+        {
+            parentDirId = parsedDirId;
+            var parentDir = await _dirRepo.GetDirectoryAsync(parsedDirId, ownerId.Value, ct: context.CancellationToken);
+            if (parentDir == null)
+            {
+                return new Contracts.Protos.Storage.UploadFileResponse
+                {
+                    Success = false,
+                    Message = "Родительская директория не найдена."
+                };
+            }
+        }
+
+        // NOTE: Полный рефакторинг потоковой загрузки (gRPC → MinIO без буферизации в MemoryStream)
+        // требует значительной переработки архитектуры. Текущая реализация буферизует чанки в памяти.
         using var ms = new MemoryStream();
         try
         {
@@ -269,7 +289,7 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
         if (ownerId == null)
             return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Ошибка аутентификации." };
 
-        if (request.DataCase != Contracts.Protos.Storage.UpdateFileRequest.DataOneofCase.FileId)
+        if (string.IsNullOrEmpty(request.FileId))
             return new Contracts.Protos.Storage.UpdateFileResponse { Success = false, Message = "Некорректный запрос." };
 
         if (string.IsNullOrEmpty(request.NonceToken))
@@ -294,7 +314,7 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
 
             byte[] data = ms.ToArray();
 
-            if (request.DataCase == Contracts.Protos.Storage.UpdateFileRequest.DataOneofCase.Update)
+            if (request.OperationCase == Contracts.Protos.Storage.UpdateFileRequest.OperationOneofCase.Update)
             {
                 var update = request.Update;
                 if (update.Offset < 0 || update.Offset + update.Data.Length > MaxFileSize)
@@ -308,7 +328,7 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
 
                 update.Data.CopyTo(data, (int)update.Offset);
             }
-            else if (request.DataCase == Contracts.Protos.Storage.UpdateFileRequest.DataOneofCase.Erase)
+            else if (request.OperationCase == Contracts.Protos.Storage.UpdateFileRequest.OperationOneofCase.Erase)
             {
                 var erase = request.Erase;
                 if (erase.Offset < 0 || erase.Offset >= data.Length)
@@ -556,6 +576,7 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
             OwnerId = ownerId.Value,
             ParentDirectoryId = parentId,
             DirectoryName = dirName,
+            NormalizedName = dirName.ToLowerInvariant(),
             NormalizedPath = normalizedPath,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -739,6 +760,7 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
             OwnerId = ownerId.Value,
             ParentDirectoryId = targetParentId,
             DirectoryName = newDirName,
+            NormalizedName = newDirName.ToLowerInvariant(),
             NormalizedPath = normalizedPath,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -798,6 +820,7 @@ public partial class StorageGrpcService : Contracts.Protos.Storage.StorageServic
                 OwnerId = ownerId,
                 ParentDirectoryId = destDirId,
                 DirectoryName = sub.DirectoryName,
+                NormalizedName = sub.DirectoryName.ToLowerInvariant(),
                 NormalizedPath = newSubPath,
                 CreatedAtUtc = DateTime.UtcNow
             };

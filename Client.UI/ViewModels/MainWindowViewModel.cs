@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Client.UI.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Client.UI.ViewModels;
 
@@ -40,17 +41,26 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<NotificationItem> Notifications { get; } = new();
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(
+        LoginViewModel loginVM,
+        RegisterViewModel registerVM,
+        SetupCompanyViewModel setupVM,
+        FilesViewModel filesVM,
+        MessengerViewModel messengerVM,
+        ExternalAccessViewModel externalAccessVM,
+        PoliciesViewModel policiesVM,
+        AuditViewModel auditVM,
+        SettingsViewModel settingsVM)
     {
-        LoginVM = new LoginViewModel();
-        RegisterVM = new RegisterViewModel();
-        SetupVM = new SetupCompanyViewModel();
-        FilesVM = new FilesViewModel();
-        MessengerVM = new MessengerViewModel();
-        ExternalAccessVM = new ExternalAccessViewModel();
-        PoliciesVM = new PoliciesViewModel();
-        AuditVM = new AuditViewModel();
-        SettingsVM = new SettingsViewModel();
+        LoginVM = loginVM;
+        RegisterVM = registerVM;
+        SetupVM = setupVM;
+        FilesVM = filesVM;
+        MessengerVM = messengerVM;
+        ExternalAccessVM = externalAccessVM;
+        PoliciesVM = policiesVM;
+        AuditVM = auditVM;
+        SettingsVM = settingsVM;
 
         LoginVM.LoginSucceeded += OnLoginSucceeded;
         LoginVM.GoToRegister += () => { ShowLogin = false; ShowRegister = true; };

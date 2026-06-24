@@ -40,5 +40,11 @@ public class StorageFile
     [Column(TypeName = "bytea")]
     public byte[]? ContentHash { get; set; }
 
+    /// <summary>
+    /// Версия строки для оптимистичного контроля параллелизма.
+    /// </summary>
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
+
     public ICollection<FileMetadataEntry> Metadata { get; set; } = new List<FileMetadataEntry>();
 }

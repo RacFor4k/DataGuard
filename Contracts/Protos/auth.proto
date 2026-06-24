@@ -57,6 +57,7 @@ message LoginResponse {
 }
 
 // Запрос на обновление токена пользователя
+// Refresh-токен передаётся через HTTP-заголовок Authorization: Bearer <token>
 message RefreshTokenRequest {
 }
 

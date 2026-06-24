@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Client.Engine.Models;
@@ -104,17 +106,17 @@ namespace Client.Engine.Workers
                         case "register":
                             if (args.Length > 1 && args[1] == "help")
                             {
-                                Console.WriteLine("register <registration_code> <password> [company_public_key_pem] - зарегистрировать пользователя");
+                                Console.WriteLine("register <registration_code> [company_public_key_pem] - зарегистрировать пользователя (пароль запрашивается интерактивно)");
                                 break;
                             }
-                            if (args.Length < 3 || args.Length > 4)
+                            if (args.Length < 2 || args.Length > 3)
                             {
                                 Console.WriteLine("Неверное количество аргументов");
                                 break;
                             }
                             var registrationCode = args[1];
-                            var password = args[2];
-                            string? companyPublicKeyPem = args.Length == 4 ? args[3] : null;
+                            var password = ReadPasswordHidden("Пароль: ");
+                            string? companyPublicKeyPem = args.Length == 3 ? args[2] : null;
                             using (var scope = _serviceScopeFactory.CreateScope())
                             {
                                 var authenticationService = scope.ServiceProvider.GetRequiredService<AuthenticationService>();
@@ -133,16 +135,16 @@ namespace Client.Engine.Workers
                         case "login":
                             if (args.Length > 1 && args[1] == "help")
                             {
-                                Console.WriteLine("login <account_id> <password> - войти в аккаунт");
+                                Console.WriteLine("login <account_id> - войти в аккаунт (пароль запрашивается интерактивно)");
                                 break;
                             }
-                            if (args.Length != 3)
+                            if (args.Length != 2)
                             {
                                 Console.WriteLine("Неверное количество аргументов");
                                 break;
                             }
                             var accountId = args[1];
-                            var loginPassword = args[2];
+                            var loginPassword = ReadPasswordHidden("Пароль: ");
                             using (var scope = _serviceScopeFactory.CreateScope())
                             {
                                 var authenticationService = scope.ServiceProvider.GetRequiredService<AuthenticationService>();
@@ -176,10 +178,10 @@ namespace Client.Engine.Workers
                         case "full_register":
                             if (args.Length > 1 && args[1] == "help")
                             {
-                                Console.WriteLine("full_register <company_email> <company_name> <master_key_base64> <company_pubkey_file> <password> - создать компанию, установить ключ, зарегистрироваться");
+                                Console.WriteLine("full_register <company_email> <company_name> <master_key_base64> <company_pubkey_file> - создать компанию, установить ключ, зарегистрироваться (пароль запрашивается интерактивно)");
                                 break;
                             }
-                            if (args.Length != 6)
+                            if (args.Length != 5)
                             {
                                 Console.WriteLine("Неверное количество аргументов");
                                 break;
@@ -188,7 +190,7 @@ namespace Client.Engine.Workers
                             var frCompanyName = args[2];
                             var frMasterKey = args[3];
                             var frKeyFile = args[4];
-                            var frPassword = args[5];
+                            var frPassword = ReadPasswordHidden("Пароль: ");
                             if (!File.Exists(frKeyFile))
                             {
                                 Console.WriteLine($"Файл не найден: {frKeyFile}");
@@ -236,8 +238,8 @@ namespace Client.Engine.Workers
                             break;
                         case "help":
                             Console.WriteLine("create_company <email> <name> <master_key_base64> - создать компанию");
-                            Console.WriteLine("register <registration_code> <password> [company_public_key_pem] - зарегистрировать пользователя");
-                            Console.WriteLine("login <account_id> <password> - войти в аккаунт");
+                            Console.WriteLine("register <registration_code> [company_public_key_pem] - зарегистрировать пользователя (пароль запрашивается интерактивно)");
+                            Console.WriteLine("login <account_id> - войти в аккаунт (пароль запрашивается интерактивно)");
                             Console.WriteLine("list_accounts - показать сохранённые аккаунты");
                             Console.WriteLine("storage_upload <file_path> <storage_path> <file_name> - загрузить файл");
                             Console.WriteLine("storage_download <file_id> <output_path> - скачать файл");
@@ -309,12 +311,10 @@ namespace Client.Engine.Workers
                             using (var scope = _serviceScopeFactory.CreateScope())
                             {
                                 var storageService = scope.ServiceProvider.GetRequiredService<StorageClientService>();
-                                var response = storageService.GetFileAsync(downloadFileId).Result;
-                                if (response.Success && response.Content != null)
+                                var response = storageService.GetFileAsync(downloadFileId, downloadOutputPath).Result;
+                                if (response.Success)
                                 {
-                                    using var outputFile = File.Create(downloadOutputPath);
-                                    response.Content.CopyTo(outputFile);
-                                    Console.WriteLine($"Файл скачан: {downloadOutputPath}");
+                                    Console.WriteLine($"Файл скачан: {response.LocalPath}");
                                 }
                                 else
                                 {
@@ -717,6 +717,39 @@ namespace Client.Engine.Workers
                 }
             }
         }
+        /// <summary>
+        /// Интерактивный ввод пароля с скрытыми символами (отображаются звёздочки).
+        /// Поддерживает Backspace и Enter.
+        /// </summary>
+        private static string ReadPasswordHidden(string prompt = "Пароль: ")
+        {
+            Console.Write(prompt);
+            var sb = new StringBuilder();
+            while (true)
+            {
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    break;
+                }
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (sb.Length > 0)
+                    {
+                        sb.Length--;
+                        Console.Write("\b \b");
+                    }
+                }
+                else if (!char.IsControl(key.KeyChar))
+                {
+                    sb.Append(key.KeyChar);
+                    Console.Write("*");
+                }
+            }
+            return sb.ToString();
+        }
+
         private class MockServerCallContext : ServerCallContext
         {
             protected override string MethodCore => "MockMethod";

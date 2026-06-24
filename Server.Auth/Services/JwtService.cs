@@ -18,46 +18,47 @@ namespace Server.Auth.Services
         private readonly DataGuardDbContext _dbContext;
         private readonly IDatabase _redis;
         private readonly IOptions<JwtOptions> _jwtOptions;
-        public ILogger<JwtService> _logger { get; set; }
+        private readonly ILogger<JwtService> _logger;
         private static readonly JwtSecurityTokenHandler _jwtHandler = new JwtSecurityTokenHandler();
+
+        // Кэширование криптографических объектов (С15)
+        private static SymmetricSecurityKey? _cachedSecurityKey;
+        private static SigningCredentials? _cachedCredentials;
+        private static byte[]? _cachedKey;
 
         public JwtService(DataGuardDbContext dbContext, IConnectionMultiplexer redis, IOptions<JwtOptions> jwtOptions, ILogger<JwtService> logger)
         {
             _dbContext = dbContext;
             _redis = redis.GetDatabase().WithKeyPrefix("jwt:");
             _jwtOptions = jwtOptions;
+            _logger = logger;
             if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Issuer))
                 throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
             if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
                 throw new InvalidOperationException("JWT Audience not found in appsettings.json");
             if (_jwtOptions.Value.Key == null || _jwtOptions.Value.Key.Length == 0)
                 throw new InvalidOperationException("JWT Key not found in appsettings.json");
-            _logger = logger;
+
+            // Инициализация кэшированных криптографических объектов
+            if (_cachedKey == null || !_cachedKey.SequenceEqual(_jwtOptions.Value.Key))
+            {
+                _cachedKey = _jwtOptions.Value.Key;
+                _cachedSecurityKey = new SymmetricSecurityKey(_cachedKey);
+                _cachedCredentials = new SigningCredentials(_cachedSecurityKey, SecurityAlgorithms.HmacSha256);
+            }
         }
-        public JwtService(DataGuardDbContext dbContext, IDatabase redis, IOptions<JwtOptions> jwtOptions, ILogger<JwtService> logger)
-        {
-            _dbContext = dbContext;
-            _redis = redis;
-            _jwtOptions = jwtOptions;
-            if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Issuer))
-                throw new InvalidOperationException("JWT Issuer not found in appsettings.json");
-            if (string.IsNullOrWhiteSpace(_jwtOptions.Value.Audience))
-                throw new InvalidOperationException("JWT Audience not found in appsettings.json");
-            if (_jwtOptions.Value.Key == null || _jwtOptions.Value.Key.Length == 0)
-                throw new InvalidOperationException("JWT Key not found in appsettings.json");
-            _logger = logger;
-        }
+
         /// <summary>
         /// Генерирует Access токен.
-        /// Заполянется nullable поля в UserJwt.
         /// </summary>
-        /// <param name="userJwt">UserJwt объект.</param>
+        /// <param name="subject">Идентификатор пользователя.</param>
+        /// <param name="name">Имя.</param>
+        /// <param name="surname">Фамилия.</param>
+        /// <param name="email">Email.</param>
+        /// <param name="groups">Группы.</param>
         /// <returns>Access токен.</returns>
         public string GenerateAccessToken(string subject, string name, string surname, string email, string[] groups)
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
-            SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
             Claim[] claims =
             {
                 new Claim(JwtRegisteredClaimNames.Sub, subject),
@@ -75,16 +76,13 @@ namespace Server.Auth.Services
                 audience: _jwtOptions.Value.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.Add(_jwtOptions.Value.AccessTokenExpiration),
-                signingCredentials: credentials
+                signingCredentials: _cachedCredentials!
             );
             return _jwtHandler.WriteToken(token);
         }
 
         public string GenerateRefreshToken(string subject, string name, string surname, string email, string[] groups)
         {
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
-            SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
             Claim[] claims =
             {
                 new Claim(JwtRegisteredClaimNames.Sub, subject),
@@ -102,23 +100,20 @@ namespace Server.Auth.Services
                 audience: _jwtOptions.Value.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.Add(_jwtOptions.Value.RefreshTokenExpiration),
-                signingCredentials: credentials);
+                signingCredentials: _cachedCredentials!);
 
             return _jwtHandler.WriteToken(token);
         }
 
         public async Task<JwtSecurityToken?> VerifyTokenAsync(string token)
         {
-            _logger.LogTrace($"VerifyTokenAsync called (tokenLength: {token?.Length ?? 0}, peer: unknown)");
-
             if (string.IsNullOrWhiteSpace(token))
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token is null or empty (peer: unknown)");
+                _logger.LogWarning("VerifyTokenAsync: токен пуст");
                 return null;
             }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var securityKey = new SymmetricSecurityKey(_jwtOptions.Value.Key);
+            var securityKey = _cachedSecurityKey!;
 
             var validationParameters = new TokenValidationParameters
             {
@@ -133,52 +128,52 @@ namespace Server.Auth.Services
                 ValidAudience = _jwtOptions.Value.Audience,
 
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromMinutes(1) // Допустимый сдвиг времени для компенсации рассинхронизации часов
+                // S5: Настраиваемый ClockSkew
+                ClockSkew = _jwtOptions.Value.ClockSkew
             };
 
             try
             {
-                // Метод ValidateToken проверяет подпись, время действия (Lifetime), Issuer и Audience
-                var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                var principal = _jwtHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
 
                 if (validatedToken is not JwtSecurityToken validatedJwtToken)
                 {
-                    _logger.LogWarning($"VerifyTokenAsync failed - token is not a JwtSecurityToken (peer: unknown)");
+                    _logger.LogWarning("VerifyTokenAsync: токен не является JwtSecurityToken");
                     return null;
                 }
 
                 if (await IsTokenRevokedAsync(validatedJwtToken))
                 {
-                    _logger.LogWarning($"VerifyTokenAsync failed - token is revoked (tokenId: {validatedJwtToken.Id}, peer: unknown)");
+                    _logger.LogWarning("VerifyTokenAsync: токен отозван");
                     return null;
                 }
-                _logger.LogInformation($"Token verified successfully (tokenId: {validatedJwtToken.Id}, subject: {validatedJwtToken.Subject}, peer: unknown)");
+                _logger.LogInformation("Токен успешно верифицирован");
                 return validatedJwtToken;
             }
             catch (SecurityTokenExpiredException ex)
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token is expired (tokenId: redacted, error: {ex.Message}, peer: unknown)");
+                _logger.LogWarning("VerifyTokenAsync: токен просрочен, ошибка: {Error}", ex.Message);
                 return null;
             }
             catch (SecurityTokenInvalidSignatureException ex)
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token signature is invalid (tokenId: redacted, error: {ex.Message}, peer: unknown)");
+                _logger.LogWarning("VerifyTokenAsync: невалидная подпись токена, ошибка: {Error}", ex.Message);
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"VerifyTokenAsync failed - token validation failed (tokenId: redacted, error: {ex.Message}, peer: unknown)");
+                _logger.LogWarning("VerifyTokenAsync: ошибка валидации токена, ошибка: {Error}", ex.Message);
                 return null;
             }
         }
+
         public async Task<bool> RevokeTokenAsync(JwtSecurityToken jwtToken)
         {
-            _logger.LogTrace($"RevokeTokenAsync called (tokenId: {jwtToken.Id}, subject: {jwtToken.Subject}, type: {jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value}, peer: unknown)");
             try
             {
                 if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
                 {
-                    _logger.LogError($"RevokeTokenAsync failed - token type claim not found (tokenId: {jwtToken.Id}, peer: unknown)");
+                    _logger.LogError("RevokeTokenAsync: claim типа токена не найден");
                     throw new InvalidOperationException("Token type claim not found");
                 }
                 if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
@@ -186,59 +181,53 @@ namespace Server.Auth.Services
                     TimeSpan ttl = jwtToken.ValidTo - DateTime.UtcNow;
                     if (ttl < TimeSpan.Zero)
                     {
-                        _logger.LogTrace($"RevokeTokenAsync - token is expired (tokenId: {jwtToken.Id}, ttl: {ttl.TotalSeconds}s, peer: unknown)");
                         return true;
                     }
-                    _logger.LogTrace($"RevokeTokenAsync - adding token to blacklist (tokenId: {jwtToken.Id}, ttl: {ttl.TotalSeconds}s, peer: unknown)");
                     await _redis.StringSetAsync($"blacklist:{jwtToken.Id}", jwtToken.Subject.ToString(), ttl);
-                    _logger.LogInformation($"Token revoked successfully (tokenId: {jwtToken.Id}, subject: {jwtToken.Subject}, peer: unknown)");
+                    _logger.LogInformation("Access-токен успешно отозван");
                     return true;
                 }
                 else
                 {
-                    _logger.LogTrace($"RevokeTokenAsync - token is refresh token, removing from database (tokenId: {jwtToken.Id}, peer: unknown)");
                     UserJwt? userJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(jwtToken.Id);
                     if (userJwt == null)
                     {
-                        _logger.LogWarning($"RevokeTokenAsync - refresh token not found in database (tokenId: {jwtToken.Id}, peer: unknown)");
+                        _logger.LogWarning("RevokeTokenAsync: refresh-токен не найден в БД");
                         return true;
                     }
                     _dbContext.UserJwtRefreshTokens.Remove(userJwt);
                     await _dbContext.SaveChangesAsync();
-                    _logger.LogInformation($"Refresh token revoked successfully (tokenId: {jwtToken.Id}, peer: unknown)");
+                    _logger.LogInformation("Refresh-токен успешно отозван");
                     return true;
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError($"RevokeTokenAsync failed (tokenId: {jwtToken.Id}, error: {e.Message}, peer: unknown)");
+                _logger.LogError(e, "RevokeTokenAsync: ошибка при отзыве токена");
                 return false;
             }
         }
+
         public async Task<bool> IsTokenRevokedAsync(JwtSecurityToken jwtToken)
         {
-            _logger.LogTrace($"IsTokenRevokedAsync called (tokenId: {jwtToken.Id}, subject: {jwtToken.Subject}, type: {jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value}, peer: unknown)");
             if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == null)
             {
-                _logger.LogError($"IsTokenRevokedAsync failed - token type claim not found (tokenId: {jwtToken.Id}, peer: unknown)");
+                _logger.LogError("IsTokenRevokedAsync: claim типа токена не найден");
                 throw new InvalidOperationException("Token type claim not found");
             }
             if (jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Typ)?.Value == "access")
             {
-                _logger.LogTrace($"IsTokenRevokedAsync - checking access token (tokenId: {jwtToken.Id}, peer: unknown)");
                 bool isRevoked = await _redis.KeyExistsAsync($"blacklist:{jwtToken.Id}");
-                _logger.LogTrace($"IsTokenRevokedAsync - access token revoked: {isRevoked} (tokenId: {jwtToken.Id}, peer: unknown)");
                 return isRevoked;
             }
             else
             {
-                _logger.LogTrace($"IsTokenRevokedAsync - checking refresh token (tokenId: {jwtToken.Id}, peer: unknown)");
                 UserJwt? userJwt = await _dbContext.UserJwtRefreshTokens.FindAsync(jwtToken.Id);
                 bool isRevoked = userJwt == null;
-                _logger.LogTrace($"IsTokenRevokedAsync - refresh token revoked: {isRevoked} (tokenId: {jwtToken.Id}, peer: unknown)");
                 return isRevoked;
             }
         }
+
         public JwtSecurityToken ParseToken(string token)
         {
             return _jwtHandler.ReadJwtToken(token);

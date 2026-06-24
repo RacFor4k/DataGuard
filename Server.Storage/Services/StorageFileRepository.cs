@@ -39,10 +39,20 @@ public class StorageFileRepository : IStorageFileRepository
 
     public async Task<StorageFile?> UpdateFileAsync(StorageFile file, CancellationToken ct = default)
     {
-        file.UpdatedAtUtc = DateTime.UtcNow;
-        _db.Files.Update(file);
+        var existing = await _db.Files.FirstOrDefaultAsync(f => f.FileId == file.FileId && f.OwnerId == file.OwnerId, ct);
+        if (existing == null) return null;
+
+        existing.FileName = file.FileName;
+        existing.NormalizedPath = file.NormalizedPath;
+        existing.ParentDirectoryId = file.ParentDirectoryId;
+        existing.ContentHash = file.ContentHash;
+        existing.Size = file.Size;
+        existing.BucketName = file.BucketName;
+        existing.StorageKey = file.StorageKey;
+        existing.UpdatedAtUtc = DateTime.UtcNow;
+
         await _db.SaveChangesAsync(ct);
-        return file;
+        return existing;
     }
 
     public async Task<bool> DeleteFileAsync(Guid fileId, Guid ownerId, CancellationToken ct = default)

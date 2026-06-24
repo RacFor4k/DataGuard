@@ -47,7 +47,7 @@ namespace Client.Engine.Services
 
         public override async Task<RegisterResponse> Register(RegisterRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Register request from: {context.RequestHeaders.GetValue("User-Agent")}");
+            _logger.LogInformation("Запрос регистрации от пользователя {UserAgent}", context.RequestHeaders.GetValue("User-Agent"));
             if (request.RegistrationCode.Length != 12
                 || !request.RegistrationCode.All(char.IsLetterOrDigit))
             {
@@ -78,20 +78,20 @@ namespace Client.Engine.Services
                 });
                 if (setCompanyPublicKeyResponse.Status != 200)
                 {
-                    _logger.LogError($"Failed to set company public key: {setCompanyPublicKeyResponse.Message}");
+                    _logger.LogError("Не удалось установить публичный ключ компании: {Message}", setCompanyPublicKeyResponse.Message);
                     return new RegisterResponse { Status = setCompanyPublicKeyResponse.Status, Message = setCompanyPublicKeyResponse.Message };
                 }
             }
             else
             {
-                _logger.LogTrace($"Company public key not provided, fetching from server (peer: {context.Peer})");
+                _logger.LogTrace("Публичный ключ компании не предоставлен, получение с сервера, peer: {Peer}", context.Peer);
                 var getCompanyPublicKeyResponse = await _companyManagerClient.GetCompanyPublicKeyAsync(new Contracts.Protos.CompanyManager.GetCompanyPublicKeyRequest
                 {
                     RegistrationCode = request.RegistrationCode
                 });
                 if (getCompanyPublicKeyResponse.Status != 200)
                 {
-                    _logger.LogError($"Failed to get company public key: {getCompanyPublicKeyResponse.Message}");
+                    _logger.LogError("Не удалось получить публичный ключ компании: {Message}", getCompanyPublicKeyResponse.Message);
                     return new RegisterResponse { Status = getCompanyPublicKeyResponse.Status, Message = getCompanyPublicKeyResponse.Message };
                 }
                 companyPublicKeyPem = getCompanyPublicKeyResponse.CompanyPublicKeyPem;
@@ -121,7 +121,7 @@ namespace Client.Engine.Services
             };
             if(!Guid.TryParse(registerResponse.UserId, out Guid accountId))
             {
-                _logger.LogError($"UserId is invalid (peer: {context.Peer})");
+                _logger.LogError("Некорректный UserId, peer: {Peer}", context.Peer);
                 return new RegisterResponse { Status = 500, Message = "UserId is invalid" };
             }
             var account = new Account
@@ -137,7 +137,7 @@ namespace Client.Engine.Services
                 Account = account
             };
             account.JwtToken = jwtToken;
-            _jwtTokenProvider.SetToken(jwtToken);
+            await _jwtTokenProvider.SetTokenAsync(jwtToken);
             _dbContext.Accounts.Add(account);
             await _dbContext.SaveChangesAsync();
             await _keyProvider.SetKeyAsync(key);
@@ -147,15 +147,15 @@ namespace Client.Engine.Services
 
         public override async Task<LoginResponse> Login(LoginRequest request, ServerCallContext context)
         {
-            _logger.LogTrace($"Login called");
+            _logger.LogTrace("Вызов Login");
             if (string.IsNullOrEmpty(request.AccountId))
             {
-                _logger.LogWarning($"AccountId is empty (peer: {context.Peer})");
+                _logger.LogWarning("AccountId пуст, peer: {Peer}", context.Peer);
                 return new LoginResponse { Status = 400, Message = "AccountId is empty" };
             }
             if (!Guid.TryParse(request.AccountId, out Guid accountId))
             {
-                _logger.LogWarning($"AccountId is invalid (peer: {context.Peer})");
+                _logger.LogWarning("AccountId некорректен, peer: {Peer}", context.Peer);
                 return new LoginResponse { Status = 400, Message = "AccountId is invalid" };
             }
             if (request.Password.Length < _securityOptions.Password.MinimumLength)
@@ -175,7 +175,7 @@ namespace Client.Engine.Services
             var getNonceResponse = await _securityServiceClient.GetNonceAsync(new ());
             if (getNonceResponse.Status != 200)
             {
-                _logger.LogWarning($"GetNonce failed (peer: {context.Peer})");
+                _logger.LogWarning("Ошибка получения nonce, peer: {Peer}", context.Peer);
                 return new LoginResponse { Status = getNonceResponse.Status, Message = getNonceResponse.Message };
             }
             var nonceToken = getNonceResponse.NonceToken;
@@ -185,7 +185,7 @@ namespace Client.Engine.Services
             });
             if (getSaltResponse.Status != 200)
             {
-                _logger.LogWarning($"GetSalt failed (peer: {context.Peer})");
+                _logger.LogWarning("Ошибка получения salt, peer: {Peer}", context.Peer);
                 return new LoginResponse { Status = getSaltResponse.Status, Message = getSaltResponse.Message };
             }
             byte[] salt = getSaltResponse.Salt.ToByteArray();
@@ -198,12 +198,12 @@ namespace Client.Engine.Services
             });
             if (loginResponse.Status != 200)
             {
-                _logger.LogWarning($"Login failed (peer: {context.Peer})");
+                _logger.LogWarning("Ошибка входа, peer: {Peer}", context.Peer);
                 return new LoginResponse { Status = loginResponse.Status, Message = loginResponse.Message };
             }
             if (loginResponse.EncryptedKey.Length != _securityOptions.KeyLength + _securityOptions.NonceLength + _securityOptions.TagLength)
             {
-                _logger.LogWarning($"Encrypted key is invalid (length: {loginResponse.EncryptedKey.Length}, expected: {_securityOptions.KeyLength + _securityOptions.NonceLength + _securityOptions.TagLength}, peer: {context.Peer})");
+                _logger.LogWarning("Некорректный зашифрованный ключ (length: {ActualLength}, expected: {ExpectedLength}), peer: {Peer}", loginResponse.EncryptedKey.Length, _securityOptions.KeyLength + _securityOptions.NonceLength + _securityOptions.TagLength, context.Peer);
                 return new LoginResponse { Status = 500, Message = "Encrypted key is invalid" };
             }
             byte[] encryptedKey = loginResponse.EncryptedKey.ToByteArray();

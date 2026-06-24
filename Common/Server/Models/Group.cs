@@ -16,6 +16,10 @@ namespace Common.Server.Models
         public Icon? Icon { get; set; }
         public required string Name { get; set; }
         public string Description { get; set; } = string.Empty;
+        /// <summary>
+        /// Определяет, является ли группа привилегий (false) или требует выделенный workspace (true)
+        /// </summary>
+        public bool HasWorkspace { get; set; } = false;
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
         public ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();

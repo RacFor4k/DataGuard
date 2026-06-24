@@ -86,6 +86,9 @@ namespace Client.Engine.Helpers
             if (directoryPath.Contains(".."))
                 throw new ArgumentException("Некорректный путь: Path traversal не допускается.", nameof(directoryPath));
 
+            if (directoryPath.StartsWith('/'))
+                throw new ArgumentException("Путь должен быть относительным.", nameof(directoryPath));
+
             if (directoryPath.Contains(':'))
                 throw new ArgumentException("Некорректный путь: буквы дисков не допускаются.", nameof(directoryPath));
         }
