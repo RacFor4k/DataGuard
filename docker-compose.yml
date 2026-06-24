@@ -26,6 +26,7 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
 
+    
 volumes:
   pg_data_v18:
   redis_data:
