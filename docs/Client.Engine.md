@@ -1,532 +1,335 @@
-# Client.Engine API Documentation
+# Client.Engine — Клиентский движок
 
 ## Обзор
 
-**Client.Engine** — мост между GUI и серверами DataGuard. Предоставляет gRPC API для GUI, делегируя всю обработку логики серверам. Поддерживает операции аутентификации, управления компаниями и файлового хранилища.
+**Client.Engine** — фоновый процесс (Background Worker) и одновременно gRPC-сервер, выполняющий роль промежуточного слоя между графическим интерфейсом (DataGuard.UI) и серверами DataGuard. Отвечает за выполнение клиентской криптографии, проксирование запросов и локальное хранение данных аутентификации.
 
 **Технологии:**
-- ASP.NET Core gRPC
-- Entity Framework Core + SQLite (локальное хранение)
-- JWT Bearer (аутентификация)
-- MinIO S3 (blob-хранилище через Server.Storage)
+- ASP.NET Core gRPC 2.80.0 (сервер для GUI)
+- Grpc.Net.ClientFactory 2.80.0 (клиент к серверам)
+- Entity Framework Core 10.0.9 + SQLite (локальное хранение)
+- Konscious.Security.Cryptography.Argon2 1.3.1
+- System.Security.Cryptography (AES-256-GCM, RSA-OAEP-SHA256, PBKDF2, HMAC-SHA256)
+
+**Транспорт для GUI:** Named Pipe `DataGuardPipe`, протокол HTTP/2
 
 ---
 
-## Authentication Service
+## Конфигурация
 
-### Register
+### appsettings.json
 
-**Вызываемая функция:**
-`Register`
-
-**Параметры:**
-- `registration_code` (string): Код регистрации
-- `password` (string): Пароль
-
-**Необходимые HTTP заголовки:**
-- `User-Agent`
-
-**Параметры возврата:**
-- `status` (int32): Статус ответа
-- `message` (string): Сообщение статуса
-
-**Описание:**
-Регистрация нового пользователя с предоставленным кодом регистрации и паролем.
-
-**Примеры возвращаемых значений:**
-- Status: 400 Message: "Registration code is required."
-- Status: 400 Message: "Password too short"
-- Status: 400 Message: "Password too long"
-- Status: 400 Message: "Password cannot contain whitespace"
-- Status: 400 Message: "Password must contain at least one uppercase letter"
-- Status: 400 Message: "Password must contain at least one lowercase letter"
-- Status: 400 Message: "Password must contain at least one digit"
-- Status: 400 Message: "Password must contain at least one special character"
-
-**Формат входящих данных:**
-- `registration_code` должен содержать ровно 12 символов и состоять только из букв и цифр.
-- `password` должен содержать от 8 до 32 символов, включая хотя бы одну заглавную букву, одну строчную букву, одну цифру и один специальный символ.
+| Секция | Ключ | Значение по умолчанию | Описание |
+|:---|:---|:---|:---|
+| `Grpc` | `AuthUrl` | `https://localhost:7203` | URL Server.Auth |
+| `Grpc` | `CompanyManagerUrl` | `https://localhost:7203` | URL Server.Auth (CompanyManager endpoint) |
+| `Grpc` | `SecurityUrl` | `https://localhost:7203` | URL Server.Auth (Security endpoint) |
+| `Grpc` | `StorageUrl` | `https://localhost:8081` | URL Server.Storage |
+| `Security` | `SaltLength` | 32 | Длина соли (256 бит) |
+| `Security` | `HashLength` | 32 | Длина хеша (256 бит) |
+| `Security` | `HashIterations` | 600 000 | Итерации PBKDF2 |
+| `Security` | `NonceLength` | 12 | Длина nonce AES-GCM (96 бит) |
+| `Security` | `TagLength` | 16 | Длина тега AES-GCM (128 бит) |
+| `Security` | `MasterKeySalt` | — | Соль мастер-ключа (env var) |
+| `Security` | `KeyLength` | 32 | Длина symmetric key (256 бит) |
+| `Security` | `RsaKeySize` | 4096 | Размер RSA-ключа компании (бит) |
+| `Security` | `Password:MinimumLength` | 8 | Минимальная длина пароля |
+| `Security` | `Password:MaximumLength` | 21 | Максимальная длина пароля |
+| `Security` | `Password:EncryptedLength` | 64 | Длина шифрованного пароля (512 бит) |
+| `Security` | `Argon2:DegreeOfParallelism` | 1 | Параллелизм Argon2id |
+| `Security` | `Argon2:Iterations` | 3 | Итерации Argon2id |
+| `Security` | `Argon2:MemorySize` | 19456 | Объём памяти Argon2id (19 МБ) |
 
 ---
 
-## Storage Service
+## Архитектура
 
-### Обзор
+Client.Engine одновременно является:
+1. **gRPC-сервером** — принимает запросы от DataGuard.UI через Named Pipe
+2. **gRPC-клиентом** — перенаправляет запросы на Server.Auth и Server.Storage через HTTPS
 
-**StorageService** — сервис для работы с файловым хранилищем Server.Storage. Предоставляет 21 gRPC + 2 REST метода для управления файлами, директориями, метаданными и ссылками.
+```mermaid
+graph LR
+    UI["DataGuard.UI"] -->|"Named Pipe<br/>Client proto"| CE["Client.Engine"]
+    CE -->|"HTTPS<br/>Server proto"| AUTH["Server.Auth"]
+    CE -->|"HTTPS<br/>Storage proto"| STORAGE["Server.Storage"]
+    CE --> SQLITE[("SQLite")]
+```
 
-**Особенности:**
-- Автоматическое получение nonce для всех изменяющих операций
-- Автоматическая подстановка JWT токена в заголовки
-- Валидация входных данных на клиенте
-- Обработка gRPC-ошибок без проброса исключений на GUI
+### Ключевое отличие proto-контрактов
 
-### Операции с файлами
+Клиентские proto-контракты (`Contracts/Protos/Client/`) используют упрощённые типы:
 
-#### UploadFileAsync
+| Операция | Клиентский контракт | Серверный контракт |
+|:---|:---|:---|
+| Register | `password: string` | `encrypted_password: bytes`, `encrypted_key: bytes`, `password_hash: bytes`, `client_salt: bytes`, `backup_encrypted_key: bytes` |
+| Login | `password: string` | `password_hash: bytes`, `nonce_token: string` |
 
-**Вызываемая функция:** `UploadFileAsync`
-
-**Параметры:**
-- `fileStream` (Stream): Поток данных файла
-- `fileName` (string): Имя файла (без `/` или `\`)
-- `filePath` (string): Путь директории (например, `docs/projects`)
-- `metadata` (Dictionary<string, string>?): Опциональные метаданные
-
-**Параметры возврата:** `StorageUploadResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `FileId` (string?): GUID созданного файла
-
-**Описание:** Загрузка файла в хранилище. Файл разбивается на чанки по 1 МБ и стримится на сервер.
-
-**Ограничения:**
-- Максимальный размер чанка: 1 МБ
-- Максимальный размер файла: 5 ГБ
+Client.Engine принимает простой пароль от GUI и выполняет полную криптографическую подготовку перед отправкой на сервер.
 
 ---
 
-#### GetFileAsync
+## Сервисы
 
-**Вызываемая функция:** `GetFileAsync`
+### 1. AuthenticationService
 
-**Параметры:**
-- `fileId` (Guid): GUID файла
+**Реализация:** `Client.Engine/Services/AuthenticationService.cs`
+**gRPC-контракт:** `Contracts/Protos/Client/auth.proto`
+**Область видимости:** Scoped
 
-**Параметры возврата:** `StorageDownloadResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `Content` (Stream?): Поток данных файла
-- `FileName` (string?): Имя файла
-- `FilePath` (string?): Путь к директории
-- `Size` (long): Размер файла в байтах
-- `Metadata` (Dictionary<string, string>?): Метаданные файла
+Выполняет криптографическую подготовку данных аутентификации и проксирует запросы на Server.Auth.
 
-**Описание:** Скачивание файла из хранилища. Файл стримится чанками по 256 КБ.
+#### Register
 
----
+**Параметры запроса (от GUI):**
 
-#### UpdateFileAsync
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `registration_code` | string | Код регистрации (12 символов, `[A-Za-z0-9]`) |
+| `password` | string | Пароль пользователя (от 8 до 21 символа) |
+| `company_public_key_pem` | string (optional) | RSA-4096 публичный ключ компании (если GUI его сгенерировал) |
 
-**Вызываемая функция:** `UpdateFileAsync`
+**Валидация пароля (на клиенте):**
 
-**Параметры:**
-- `fileId` (Guid): GUID файла
-- `offset` (long): Смещение в файле (≥ 0)
-- `data` (byte[]?): Данные для записи (для операции update)
-- `eraseSize` (long?): Размер стираемого блока (для операции erase)
+| Правило | Сообщение |
+|:---|:---|
+| Длина < 8 | Password too short |
+| Длина > 21 | Password too long |
+| Содержит пробелы | Password cannot contain whitespace |
+| Нет заглавной буквы | Password must contain at least one uppercase letter |
+| Нет строчной буквы | Password must contain at least one lowercase letter |
+| Нет цифры | Password must contain at least one digit |
+| Нет специального символа | Password must contain at least one special character |
 
-**Параметры возврата:** `StorageOperationResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
+**Криптографическая цепочка регистрации:**
 
-**Описание:** Частичное обновление файла. Поддерживает две операции:
-- `update` — запись данных по смещению
-- `erase` — запись нулей по смещению
+```mermaid
+graph TD
+    A["Пароль (string)"] --> B["RandomNumberGenerator<br/>key = 32 байта"]
+    A --> C["RandomNumberGenerator<br/>salt = 32 байта"]
+    B --> D["SecurityHelper.EncryptPassword<br/>AES-256-GCM(password, key)<br/>→ encrypted_password (92 байта)"]
+    A --> E["PBKDF2(password, salt, 600K)"]
+    B --> F["SecurityHelper.EncryptKey<br/>AES-256-GCM(key, PBKDF2-derivative)<br/>→ encrypted_key (60 байт)"]
+    A --> G["SecurityHelper.GetSecurityHash<br/>Argon2id(password, salt)<br/>→ password_hash (64 байта)"]
+    B --> H["SecurityHelper.EncryptBackupKey<br/>RSA-OAEP-SHA256(company_pubkey, key)<br/>→ backup_encrypted_key (512 байт)"]
+    D --> I["Server.Auth.Register()"]
+    F --> I
+    G --> I
+    H --> I
+    C --> I
+```
 
-**Требует nonce:** Да
+1. **Генерация symmetric key** — 32 случайных байта (`RandomNumberGenerator`)
+2. **Генерация клиентской соли** — 32 случайных байта
+3. **Шифрование пароля** — AES-256-GCM с symmetric key. Результат: `nonce(12) + tag(16) + ciphertext(64) = 92 байта`
+4. **Шифрование ключа** — PBKDF2 (600 000 итераций, SHA-256) → производный ключ → AES-256-GCM шифрование symmetric key. Результат: `nonce(12) + tag(16) + ciphertext(32) = 60 байт`
+5. **Хеширование пароля** — Argon2id (пароль, соль, 3 итерации, 19 МБ). Результат: `salt(32) + hash(32) = 64 байта`
+6. **Резервное шифрование ключа** — RSA-OAEP-SHA256 с публичным ключом компании (4096 бит). Результат: 512 байт
+7. **Отправка** на Server.Auth через gRPC
+8. **Сохранение** Account и JwtToken в локальную SQLite
+9. **Хранение** symmetric key в памяти через `IKeyProvider`
+10. **Обнуление** всех временных буферов через `CryptographicOperations.ZeroMemory`
 
----
+#### Login
 
-#### DeleteFileAsync
+**Параметры запроса (от GUI):**
 
-**Вызываемая функция:** `DeleteFileAsync`
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `account_id` | string | GUID учётной записи |
+| `password` | string | Пароль пользователя |
 
-**Параметры:**
-- `fileId` (Guid): GUID файла
+**Криптографическая цепочка входа:**
 
-**Параметры возврата:** `StorageOperationResult`
-
-**Описание:** Мягкое удаление файла (soft delete). Blob в MinIO не удаляется.
-
-**Требует nonce:** Да
-
----
-
-#### MoveFileAsync
-
-**Вызываемая функция:** `MoveFileAsync`
-
-**Параметры:**
-- `fileId` (Guid): GUID файла
-- `newPath` (string): Новый путь директории
-
-**Параметры возврата:** `StorageOperationResult`
-
-**Описание:** Перемещение файла в другую директорию. Blob в MinIO не перемещается.
-
-**Требует nonce:** Да
-
----
-
-#### CopyFileAsync
-
-**Вызываемая функция:** `CopyFileAsync`
-
-**Параметры:**
-- `fileId` (Guid): GUID исходного файла
-- `newPath` (string): Путь директории назначения
-
-**Параметры возврата:** `StorageCopyResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `NewFileId` (string?): GUID нового файла
-
-**Описание:** Копирование файла. Создаёт новый blob в MinIO.
-
-**Требует nonce:** Да
+1. Получение nonce-токена через `Security.GetNonce()`
+2. Получение клиентской соли через `Security.GetSalt(account_id)`
+3. Хеширование пароля: Argon2id(password, salt) → `salt(32) + hash(32)`
+4. Отправка на Server.Auth через gRPC: `Login(user_id, password_hash, nonce_token)`
+5. Получение `encrypted_key` из ответа
+6. Расшифрование ключа: AES-256-GCM Decrypt с PBKDF2-производным ключом
+7. Хранение symmetric key в памяти через `IKeyProvider`
+8. Обнуление `encryptedKey` и временных буферов
 
 ---
 
-#### RenameFileAsync
+### 2. CompanyManagerService
 
-**Вызываемая функция:** `RenameFileAsync`
+**Реализация:** `Client.Engine/Services/CompanyManagerService.cs`
+**gRPC-контракт:** `Contracts/Protos/Client/company_manager.proto`
+**Область видимости:** Scoped
 
-**Параметры:**
-- `fileId` (Guid): GUID файла
-- `newName` (string): Новое имя файла (без `/` или `\`)
+#### CreateCompany
 
-**Параметры возврата:** `StorageOperationResult`
+**Параметры запроса (от GUI):**
 
-**Описание:** Переименование файла. Blob в MinIO не изменяется.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `company_name` | string | Название компании |
+| `company_email` | string | Email компании |
+| `master_key` | string | Мастер-ключ компании (Base64-encoded) |
 
-**Требует nonce:** Да
+**Логика:**
+1. Валидация полей (имя, email через `MailAddress.TryCreate`, мастер-ключ)
+2. Получение nonce-токена через `Security.GetNonce()`
+3. Хеширование мастер-ключа: Argon2id(master_key_bytes, MasterKeySalt) → 64 байта
+4. Отправка на Server.Auth через gRPC
 
----
+#### SetCompanyPublicKey
 
-### Операции с директориями
-
-#### NewDirectoryAsync
-
-**Вызываемая функция:** `NewDirectoryAsync`
-
-**Параметры:**
-- `directoryPath` (string): Путь новой директории
-
-**Параметры возврата:** `StorageDirectoryResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `DirectoryId` (string?): GUID созданной директории
-
-**Описание:** Создание новой директории. Родительская директория должна существовать.
-
-**Требует nonce:** Нет
+Прокси-метод — передаёт запрос на Server.Auth без модификации.
 
 ---
 
-#### RenameDirectoryAsync
+### 3. StorageClientService
 
-**Вызываемая функция:** `RenameDirectoryAsync`
+**Реализация:** `Client.Engine/Services/StorageClientService.cs`
+**gRPC-контракт:** `Contracts/Protos/storage.proto`
+**Область видимости:** Scoped
+**Реализует:** `IStorageService` (21 метод)
 
-**Параметры:**
-- `directoryId` (Guid): GUID директории
-- `newName` (string): Новое имя директории
+Прокси-сервис, обеспечивающий прозрачный доступ к Server.Storage с автоматическим:
 
-**Параметры возврата:** `StorageOperationResult`
+- Получением nonce-токена для всех изменяющих операций
+- Подстановкой JWT-токена в заголовки (`Authorization: Bearer {token}`)
+- Обработкой gRPC-ошибок (исключения не пробрасываются на GUI)
+- Валидацией входных данных на клиенте
 
-**Описание:** Переименование директории. Рекурсивно обновляет пути вложенных объектов.
+#### Методы
 
-**Требует nonce:** Да
-
----
-
-#### DeleteDirectoryAsync
-
-**Вызываемая функция:** `DeleteDirectoryAsync`
-
-**Параметры:**
-- `directoryId` (Guid): GUID директории
-- `recursive` (bool): Удалять ли вложенные объекты
-
-**Параметры возврата:** `StorageOperationResult`
-
-**Описание:** Мягкое удаление директории. При recursive=false — только пустая директория.
-
-**Требует nonce:** Да
-
----
-
-#### MoveDirectoryAsync
-
-**Вызываемая функция:** `MoveDirectoryAsync`
-
-**Параметры:**
-- `directoryId` (Guid): GUID директории
-- `newPath` (string): Новый путь
-
-**Параметры возврата:** `StorageOperationResult`
-
-**Описание:** Перемещение директории. Запрещает перемещение внутрь себя.
-
-**Требует nonce:** Да
+| Метод | Описание | Требует nonce | Особенности |
+|:---|:---|:---|:---|
+| `UploadFileAsync` | Загрузка файла (стриминг, чанки ≤ 1 МБ) | Нет | Формирует `FileMetadata` + стримит чанки |
+| `GetFileAsync` | Скачивание файла (стриминг, чанки 256 КБ) | Нет | Собирает ответ в `MemoryStream` |
+| `UpdateFileAsync` | Частичное обновление (write/erase) | Да | `offset` + `data` или `eraseSize` |
+| `DeleteFileAsync` | Мягкое удаление файла | Да | — |
+| `MoveFileAsync` | Перемещение файла | Да | — |
+| `CopyFileAsync` | Копирование файла | Да | — |
+| `RenameFileAsync` | Переименование файла | Да | — |
+| `NewDirectoryAsync` | Создание директории | Нет | — |
+| `RenameDirectoryAsync` | Переименование директории | Да | — |
+| `DeleteDirectoryAsync` | Удаление директории | Да | Параметр `recursive` |
+| `MoveDirectoryAsync` | Перемещение директории | Да | — |
+| `CopyDirectoryAsync` | Копирование директории | Да | Параметр `recursive` |
+| `GetMetadataAsync` | Получение метаданных файла | Нет | — |
+| `UpdateMetadataAsync` | Полная замена метаданных | Нет | — |
+| `ListDirectoryAsync` | Список файлов в директории | Нет | Параметр `recursive` |
+| `GenerateLinkAsync` | Генерация ссылки | Да | По умолчанию TTL = 24 ч |
+| `GenerateDirectLinkAsync` | Генерация прямой ссылки | Да | — |
+| `DownloadFileViaLinkAsync` | Скачивание по ссылке (REST) | Нет | Без JWT |
+| `DownloadFileViaDirectLinkAsync` | Скачивание по прямой ссылке (REST) | Нет | Без JWT |
 
 ---
 
-#### CopyDirectoryAsync
+### 4. JwtTokenProvider
 
-**Вызываемая функция:** `CopyDirectoryAsync`
+**Реализация:** `Client.Engine/Services/JwtTokenProvider.cs`
+**Область видимости:** Singleton
+**Интерфейс:** `IJwtTokenProvider`
 
-**Параметры:**
-- `directoryId` (Guid): GUID исходной директории
-- `newPath` (string): Путь директории назначения
-- `recursive` (bool): Копировать ли вложенные объекты
+Управляет JWT-токенами пользователя в памяти и в локальной SQLite.
 
-**Параметры возврата:** `StorageDirectoryCopyResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `NewDirectoryId` (string?): GUID новой директории
+| Метод | Описание |
+|:---|:---|
+| `SetToken(JwtToken)` | Устанавливает токен (после регистрации/входа). Потокобезопасно через `SemaphoreSlim` |
+| `GetOrRefreshTokenAsync()` | Возвращает access-токен. Если истёк — автоматически обновляет через `RefreshTokenAsync` |
+| `TryLoadTokenAsync(Guid)` | Загружает токен из SQLite при запуске приложения |
+| `SaveTokenAsync(JwtToken)` | Сохраняет/обновляет токен в SQLite |
 
-**Описание:** Копирование директории. При recursive=true — рекурсивно копирует все вложенные файлы.
-
-**Требует nonce:** Да
-
----
-
-### Операции с атрибутами
-
-#### GetMetadataAsync
-
-**Вызываемая функция:** `GetMetadataAsync`
-
-**Параметры:**
-- `fileId` (Guid): GUID файла
-
-**Параметры возврата:** `StorageMetadataResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `FileId` (string?): GUID файла
-- `FileName` (string?): Имя файла
-- `FilePath` (string?): Путь к директории
-- `Size` (long): Размер файла
-- `Metadata` (Dictionary<string, string>?): Пользовательские метаданные
-
-**Описание:** Получение метаданных файла. Не возвращает storageKey, bucketName, OwnerId.
-
-**Требует nonce:** Нет
+**Механизм обновления:**
+1. Проверяет `ValidTo` у access-токена
+2. Если истёк — проверяет `ValidTo` у refresh-токена
+3. Если refresh тоже истёк — выбрасывает `InvalidOperationException`
+4. Вызывает `Server.Auth.RefreshToken` с refresh-токеном в заголовке `Authorization`
+5. Сохраняет новую пару токенов в SQLite
 
 ---
 
-#### UpdateMetadataAsync
+### 5. KeyProvider
 
-**Вызываемая функция:** `UpdateMetadataAsync`
+**Реализация:** `Client.Engine/Services/KeyProvider.cs`
+**Область видимости:** Singleton
+**Интерфейс:** `IKeyProvider`
 
-**Параметры:**
-- `fileId` (Guid): GUID файла
-- `metadata` (Dictionary<string, string>): Новые метаданные (полная замена)
+Хранит symmetric key (256 бит) в памяти пользователя. Ключ **не персистируется** на диск.
 
-**Параметры возврата:** `StorageOperationResult`
+| Метод | Описание |
+|:---|:---|
+| `SetKeyAsync(byte[])` | Сохраняет ключ. Дублирует массив, фиксирует в куче через `GCHandle.Alloc(Normal)`. Потокобезопасно |
+| `GetKeyAsync()` | Возвращает ключ. Проверяет, что `GCHandle` не освобождён |
+| `ClearKeyAsync()` | Освобождает `GCHandle`, обнуляет ссылку |
+| `HasKey` | Возвращает `true`, если ключ установлен |
 
-**Описание:** Полная замена метаданных файла. Все существующие ключи удаляются.
-
-**Ограничения:**
-- Максимум 64 ключа
-- Максимальная длина ключа: 256 символов
-- Максимальная длина значения: 4096 символов
-- Запрещённые ключи: storageKey, ownerId, physicalPath, bucketName, __*
-
-**Требует nonce:** Нет
+**Безопасность:** Ключ фиксируется в куче (`GCHandleType.Normal`), что предотвращает сборку мусора, но не обеспечивает защиту от дампа памяти. При вызове `ClearKeyAsync` дескриптор освобождается, а ссылка обнуляется.
 
 ---
 
-### Операции со списками
+### 6. SecurityHelper
 
-#### ListDirectoryAsync
+**Реализация:** `Client.Engine/Helpers/SecurityHelper.cs`
+**Тип:** Статический класс
 
-**Вызываемая функция:** `ListDirectoryAsync`
+Содержит все криптографические операции клиента:
 
-**Параметры:**
-- `directoryId` (Guid): GUID директории
-- `recursive` (bool): Включать ли вложенные объекты
+| Метод | Алгоритм | Назначение |
+|:---|:---|:---|
+| `EncryptPassword` | AES-256-GCM | Шифрование пароля: `nonce(12) + tag(16) + ciphertext(EncryptedLength)` |
+| `EncryptKey` | PBKDF2 → AES-256-GCM | Шифрование symmetric key: `nonce(12) + tag(16) + ciphertext(KeyLength)` |
+| `DecryptKey` | PBKDF2 → AES-256-GCM | Расшифрование symmetric key |
+| `GetSecurityHash` | Argon2id | Хеширование: `salt(SaltLength) + hash(HashLength)` |
+| `GenerateRsaKeyPair` | RSA | Генерация пары RSA-ключей заданного размера (мин. 2048 бит). Возвращает PEM-строки |
+| `EncryptBackupKey` | RSA-OAEP-SHA256 | Шифрование symmetric key публичным ключом компании |
 
-**Параметры возврата:** `StorageListResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `Items` (List<StorageFileItem>): Список файлов
-
-**Описание:** Получение списка файлов в директории. Поддиректории в ответ не включаются.
-
-**Требует nonce:** Нет
-
----
-
-### Операции со ссылками
-
-#### GenerateLinkAsync
-
-**Вызываемая функция:** `GenerateLinkAsync`
-
-**Параметры:**
-- `fileId` (Guid): GUID файла
-- `groups` (string[]?): Список групп с доступом
-- `users` (string[]?): Список пользователей с доступом
-- `ttlSeconds` (int): Время жизни ссылки в секундах (1 — 2 592 000)
-
-**Параметры возврата:** `StorageLinkResult`
-- `Success` (bool): Успешность операции
-- `Message` (string): Сообщение статуса
-- `Link` (string?): Ссылка вида `/storage/links/{token}`
-
-**Описание:** Генерация безопасной ссылки на файл.
-
-**Требует nonce:** Да
+Все методы обнуляют чувствительные буферы через `CryptographicOperations.ZeroMemory` после использования.
 
 ---
 
-#### GenerateDirectLinkAsync
+### 7. Консольные команды
 
-**Вызываемая функция:** `GenerateDirectLinkAsync`
+**Реализация:** `Client.Engine/Workers/ConsoleCommandWorker.cs`
+**Условие запуска:** `Environment.UserInteractive == true` (только в интерактивном режиме)
 
-**Параметры:** Аналогично GenerateLinkAsync
-
-**Параметры возврата:** `StorageLinkResult`
-- `Link` (string?): Ссылка вида `/storage/direct/{token}`
-
-**Описание:** Генерация прямой ссылки на скачивание файла.
-
-**Требует nonce:** Да
-
----
-
-#### DownloadFileViaLinkAsync
-
-**Вызываемая функция:** `DownloadFileViaLinkAsync`
-
-**Параметры:**
-- `token` (string): Токен ссылки
-
-**Параметры возврата:** `StorageDownloadResult`
-
-**Описание:** Скачивание файла по ссылке (REST API). Не требует JWT.
-
----
-
-#### DownloadFileViaDirectLinkAsync
-
-**Вызываемая функция:** `DownloadFileViaDirectLinkAsync`
-
-**Параметры:**
-- `token` (string): Токен ссылки
-
-**Параметры возврата:** `StorageDownloadResult`
-
-**Описание:** Скачивание файла по прямой ссылке (REST API). Не требует JWT.
+| Команда | Синтаксис | Описание |
+|:---|:---|:---|
+| Загрузка файла | `storage_upload <file_path> <storage_path> <file_name>` | Загружает файл в хранилище |
+| Скачивание файла | `storage_download <file_id> <output_path>` | Скачивает файл по GUID |
+| Удаление файла | `storage_delete <file_id>` | Удаляет файл |
+| Перемещение файла | `storage_move <file_id> <new_path>` | Перемещает файл |
+| Копирование файла | `storage_copy <file_id> <new_path>` | Копирует файл |
+| Переименование файла | `storage_rename <file_id> <new_name>` | Переименовывает файл |
+| Метаданные файла | `storage_get_metadata <file_id>` | Выводит метаданные |
+| Обновление метаданных | `storage_update_metadata <file_id> <key=value,...>` | Обновляет метаданные |
+| Создание директории | `storage_new_dir <directory_path>` | Создаёт директорию |
+| Переименование директории | `storage_rename_dir <directory_id> <new_name>` | Переименовывает директорию |
+| Удаление директории | `storage_delete_dir <directory_id> <recursive>` | Удаляет директорию |
+| Перемещение директории | `storage_move_dir <directory_id> <new_path>` | Перемещает директорию |
+| Копирование директории | `storage_copy_dir <directory_id> <new_path> <recursive>` | Копирует директорию |
+| Список файлов | `storage_list <directory_id> <recursive>` | Выводит список файлов |
+| Генерация ссылки | `storage_generate_link <file_id> <ttl_seconds>` | Создаёт ссылку |
+| Генерация прямой ссылки | `storage_generate_direct_link <file_id> <ttl_seconds>` | Создаёт прямую ссылку |
 
 ---
 
 ## Модели данных
 
-### StorageOperationResult
-```csharp
-public class StorageOperationResult
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-}
-```
+### Account
 
-### StorageUploadResult
-```csharp
-public class StorageUploadResult : StorageOperationResult
-{
-    public string? FileId { get; set; }
-}
-```
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `AccountId` | Guid | Идентификатор учётной записи (`User.UserId`) |
+| `Email` | string | Электронная почта |
+| `JwtToken` | JwtToken | Навигационное свойство |
 
-### StorageDownloadResult
-```csharp
-public class StorageDownloadResult : StorageOperationResult
-{
-    public Stream? Content { get; set; }
-    public string? FileName { get; set; }
-    public string? FilePath { get; set; }
-    public long Size { get; set; }
-    public Dictionary<string, string>? Metadata { get; set; }
-}
-```
+### JwtToken
 
-### StorageCopyResult
-```csharp
-public class StorageCopyResult : StorageOperationResult
-{
-    public string? NewFileId { get; set; }
-}
-```
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `AccessToken` | string | JWT access-токен |
+| `RefreshToken` | string | JWT refresh-токен |
+| `AccountId` | Guid | Идентификатор учётной записи |
+| `Account` | Account | Навигационное свойство |
+| `DecodedAccessToken` | JwtSecurityToken | Распарсенный access-токен (для проверки `ValidTo`) |
+| `DecodedRefreshToken` | JwtSecurityToken | Распарсенный refresh-токен |
 
-### StorageDirectoryResult
-```csharp
-public class StorageDirectoryResult : StorageOperationResult
-{
-    public string? DirectoryId { get; set; }
-}
-```
+### Storage-модели (результаты операций)
 
-### StorageDirectoryCopyResult
-```csharp
-public class StorageDirectoryCopyResult : StorageOperationResult
-{
-    public string? NewDirectoryId { get; set; }
-}
-```
-
-### StorageMetadataResult
-```csharp
-public class StorageMetadataResult : StorageOperationResult
-{
-    public string? FileId { get; set; }
-    public string? FileName { get; set; }
-    public string? FilePath { get; set; }
-    public long Size { get; set; }
-    public Dictionary<string, string>? Metadata { get; set; }
-}
-```
-
-### StorageListResult
-```csharp
-public class StorageListResult : StorageOperationResult
-{
-    public List<StorageFileItem> Items { get; set; } = new();
-}
-```
-
-### StorageFileItem
-```csharp
-public class StorageFileItem
-{
-    public string? FileId { get; set; }
-    public string? FileName { get; set; }
-    public string? FilePath { get; set; }
-    public long Size { get; set; }
-    public Dictionary<string, string>? Metadata { get; set; }
-}
-```
-
-### StorageLinkResult
-```csharp
-public class StorageLinkResult : StorageOperationResult
-{
-    public string? Link { get; set; }
-}
-```
-
----
-
-## Консольные команды для отладки
-
-| Команда | Описание |
-|---|---|
-| `storage_upload <file_path> <storage_path> <file_name>` | Загрузить файл |
-| `storage_download <file_id> <output_path>` | Скачать файл |
-| `storage_delete <file_id>` | Удалить файл |
-| `storage_move <file_id> <new_path>` | Переместить файл |
-| `storage_copy <file_id> <new_path>` | Скопировать файл |
-| `storage_rename <file_id> <new_name>` | Переименовать файл |
-| `storage_get_metadata <file_id>` | Получить метаданные |
-| `storage_update_metadata <file_id> <key=value,...>` | Обновить метаданные |
-| `storage_new_dir <directory_path>` | Создать директорию |
-| `storage_rename_dir <directory_id> <new_name>` | Переименовать директорию |
-| `storage_delete_dir <directory_id> <recursive>` | Удалить директорию |
-| `storage_move_dir <directory_id> <new_path>` | Переместить директорию |
-| `storage_copy_dir <directory_id> <new_path> <recursive>` | Скопировать директорию |
-| `storage_list <directory_id> <recursive>` | Список файлов |
-| `storage_generate_link <file_id> <ttl_seconds>` | Создать ссылку |
-| `storage_generate_direct_link <file_id> <ttl_seconds>` | Создать прямую ссылку |
+Все модели наследуются от `StorageOperationResult` (`Success: bool`, `Message: string`) и добавляют специфичные поля. См. раздел [Client.Engine → Модели данных](#) в `docs/Database.md`.

@@ -1,16 +1,18 @@
-# Server.Storage API Documentation
+# Server.Storage — Сервис файлового хранилища
 
 ## Обзор
 
-**Server.Storage** — сервис файлового хранилища DataGuard, предоставляющий gRPC и REST API для управления файлами, директориями, метаданными и ссылками. Использует MinIO S3 для blob-хранилища, PostgreSQL для метаданных, Redis для nonce-защиты, JWT Bearer для аутентификации.
+**Server.Storage** — ASP.NET Core сервис (.NET 10), предоставляющий gRPC и REST API для управления файлами, директориями, метаданными и ссылками. Физическое хранение файлов осуществляется в MinIO S3, метаданные — в PostgreSQL.
 
 **Технологии:**
-- ASP.NET Core gRPC (21 метод)
-- ASP.NET Core REST (2 метода)
-- MinIO SDK 7.0.0 (blob-хранилище)
-- Entity Framework Core 10.0.9 + PostgreSQL 18
-- StackExchange.Redis 3.0.0 (nonce)
-- JWT Bearer 8.2.1 (аутентификация)
+- ASP.NET Core gRPC 2.80.0 (21 gRPC-метод)
+- ASP.NET Core REST (2 endpoint: скачивание по ссылкам)
+- Minio SDK 7.0.0 (blob-хранилище)
+- Entity Framework Core 10.0.9 + PostgreSQL 18 (Npgsql)
+- StackExchange.Redis 3.0.0 (nonce-защита)
+- Microsoft.AspNetCore.Authentication.JwtBearer 10.0.9 (аутентификация)
+
+**Порт:** `:8081` (HTTPS)
 
 ---
 
@@ -18,303 +20,278 @@
 
 ### appsettings.json
 
-| Секция | Ключ | Значение | Описание |
-|---|---|---|---|
-| ConnectionStrings | PostgresConnection | `Host=localhost;Port=5432;Database=dataguard_storage;Username=${DB_USER};Password=${DB_PASSWORD}` | Строка подключения к PostgreSQL |
-| ConnectionStrings | RedisConnection | `localhost:6379,password=${REDIS_PASSWORD}` | Строка подключения к Redis |
-| Minio | Endpoint | `localhost:9000` | Адрес MinIO S3 API |
-| Minio | AccessKey | `${MINIO_ROOT_USER}` | Ключ доступа MinIO (env var) |
-| Minio | SecretKey | `${MINIO_ROOT_PASSWORD}` | Секретный ключ MinIO (env var) |
-| Jwt | Secret | `${JWT_SECRET}` | Секрет подписи JWT (env var) |
-| Jwt | Issuer | `DataGuard` | Издатель JWT |
-| Jwt | Audience | `DataGuard.Storage` | Получатель JWT |
+| Секция | Ключ | Значение по умолчанию | Описание |
+|:---|:---|:---|:---|
+| `ConnectionStrings` | `PostgresConnection` | — | Строка подключения к PostgreSQL (база `dataguard_storage`) |
+| `ConnectionStrings` | `RedisConnection` | — | Строка подключения к Redis |
+| `Minio` | `Endpoint` | `localhost:9000` | Адрес MinIO S3 API |
+| `Minio` | `AccessKey` | — | Ключ доступа (env var `MINIO_ROOT_USER`) |
+| `Minio` | `SecretKey` | — | Секретный ключ (env var `MINIO_ROOT_PASSWORD`) |
+| `Jwt` | `Secret` | — | Секрет подписи JWT (env var `JWT_SECRET`) |
+| `Jwt` | `Issuer` | `DataGuard` | Ожидаемый издатель JWT |
+| `Jwt` | `Audience` | `DataGuard.Storage` | Ожидаемый получатель JWT |
 
 **Требуемые переменные окружения:** `DB_USER`, `DB_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET`
 
 ### Ограничения
 
-| Параметр | Значение |
-|---|---|
-| Максимальный размер чанка | 1 МБ |
-| Максимальный размер файла | 5 ГБ |
-| Размер чанка при стриминге | 256 КБ |
-| TTL nonce | 5 минут |
-| Максимальный TTL ссылки | 30 дней |
-| Максимальная длина пути | 4096 символов |
-| Максимальная глубина вложенности | 64 уровня |
-| Максимум ключей метаданных на файл | 64 |
-| Максимальная длина ключа метаданных | 256 символов |
-| Максимальная длина значения метаданных | 4096 символов |
-| Бакет по умолчанию | `dataguard-storage` |
+| Параметр | Значение | Описание |
+|:---|:---|:---|
+| Максимальный размер чанка (upload) | 1 МБ | Ограничение `MaxChunkSize` в `StorageGrpcService` |
+| Максимальный размер файла | 5 ГБ | `MaxFileSize = 5L * 1024 * 1024 * 1024` |
+| Размер чанка при стриминге (download) | 256 КБ | `ChunkSize` в `StorageGrpcService` |
+| TTL nonce | 5 минут | `StorageNonceService` |
+| Максимальный TTL ссылки | 30 дней (2 592 000 с) | `StorageLinkService.MaxLinkTtlDays` |
+| Бакет по умолчанию | `dataguard-storage` | Константа `DefaultBucket` |
 
 ---
 
-## gRPC Сервис: StorageService
+## Аутентификация
 
-**Прото-контракт:** `Contracts/Protos/storage.proto`
-**Пространство имён:** `Contracts.Protos.Storage`
-**Реализация:** `Server.Storage.Services.StorageGrpcService`
+Server.Storage использует стандартный ASP.NET Core JWT Bearer middleware. В отличие от Server.Auth (где применяется собственный `JwtMiddleware`), здесь применяется встроенная схема `JwtBearerDefaults.AuthenticationScheme`.
 
-Все методы извлекают `OwnerId` из JWT токена (клейм `sub`). Все изменяющие операции требуют валидный `nonce_token` (защита от повторных атак через Redis).
+Идентификация текущего пользователя выполняется через `IOwnerIdentityProvider` (реализация — `JwtOwnerIdentityProvider`), который извлекает GUID из claim `sub` (subject) JWT-токена.
+
+```csharp
+// Проверка в каждом методе:
+var ownerId = _ownerProvider.GetOwnerId(context.GetHttpContext());
+if (ownerId == null)
+    return new Response { Success = false, Message = "Не удалось идентифицировать пользователя." };
+```
+
+---
+
+## Архитектура сервисного слоя
+
+```mermaid
+graph TD
+    GRPC["StorageGrpcService<br/>(21 RPC-метод)"]
+    REST["StorageLinksController<br/>(2 REST endpoint)"]
+
+    GRPC --> FILE_REPO["IStorageFileRepository<br/>StorageFileRepository"]
+    GRPC --> DIR_REPO["IStorageDirectoryRepository<br/>StorageDirectoryRepository"]
+    GRPC --> BLOB["IStorageBlobStore<br/>MinioBlobStore"]
+    GRPC --> NONCE["IStorageNonceService<br/>StorageNonceService"]
+    GRPC --> PATH["IStoragePathValidator<br/>StoragePathValidator"]
+    GRPC --> META["IStorageMetadataService<br/>StorageMetadataService"]
+    GRPC --> LINK["IStorageLinkService<br/>StorageLinkService"]
+    GRPC --> OWNER["IOwnerIdentityProvider<br/>JwtOwnerIdentityProvider"]
+
+    FILE_REPO --> DB[(PostgreSQL)]
+    DIR_REPO --> DB
+    META --> DB
+    LINK --> DB
+    NONCE --> REDIS[(Redis)]
+    BLOB --> MINIO[(MinIO S3)]
+    REST --> LINK
+    REST --> BLOB
+    REST --> FILE_REPO
+
+    style FILE_REPO fill:#e8f5e9
+    style DIR_REPO fill:#e8f5e9
+    style BLOB fill:#e3f2fd
+    style NONCE fill:#fff3e0
+    style META fill:#e8f5e9
+    style LINK fill:#e8f5e9
+```
+
+| Интерфейс | Реализация | Область видимости (DI) | Назначение |
+|:---|:---|:---|:---|
+| `IStorageFileRepository` | `StorageFileRepository` | Scoped | CRUD-операции с файлами (PostgreSQL) |
+| `IStorageDirectoryRepository` | `StorageDirectoryRepository` | Scoped | CRUD-операции с директориями (PostgreSQL) |
+| `IStorageBlobStore` | `MinioBlobStore` | Singleton | Чтение/запись blob в MinIO S3 |
+| `IStorageNonceService` | `StorageNonceService` | Singleton | Генерация и верификация nonce (Redis) |
+| `IStoragePathValidator` | `StoragePathValidator` | Singleton | Нормализация и валидация путей |
+| `IStorageMetadataService` | `StorageMetadataService` | Scoped | Управление метаданными файлов |
+| `IStorageLinkService` | `StorageLinkService` | Scoped | Генерация и валидация ссылок |
+| `IOwnerIdentityProvider` | `JwtOwnerIdentityProvider` | Scoped | Извлечение `sub` из JWT |
+
+---
+
+## gRPC API
+
+**Контракт:** `Contracts/Protos/storage.proto`
+
+Все методы возвращают ответ с полями `success` (bool) и `message` (string). Методы, изменяющие данные, требуют параметр `nonce_token` — уникальное одноразовое значение для защиты от повторных атак.
 
 ### Операции с файлами
 
 #### UploadFile
 
-**Вызываемая функция:** `UploadFile`
-**Тип:** Client-streaming gRPC
+**RPC:** `UploadFile (stream UploadFileRequest) returns (UploadFileResponse)`
 
-**Параметры запроса (поток):**
-- Первое сообщение — `FileMetadata`:
-  - `file_name` (string): Имя файла (без `/` или `\`)
-  - `file_path` (string): Путь директории (например, `/docs/projects`)
-  - `Metadata` (map<string,string>): Опциональные метаданные
-- Последующие сообщения — `bytes chunk` (до 1 МБ каждый)
+Серверный стриминг. Первое сообщение должно содержать `metadata`, последующие — `chunk`.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `file_id` (string): GUID созданного файла
+**Формат сообщений:**
 
-**Описание:** Загрузка файла в хранилище. Вычисляет SHA-256 хеш, генерирует уникальный storage key (GUID + расширение), сохраняет blob в MinIO, создаёт запись в БД, сохраняет метаданные.
+```protobuf
+message UploadFileRequest {
+  oneof data {
+    FileMetadata metadata = 1;  // Первое сообщение
+    bytes chunk = 2;            // Последующие сообщения
+  }
+}
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", FileId: "a1b2c3d4-..."
-- Success: false, Message: "Первое сообщение должно содержать метаданные файла."
-- Success: false, Message: "Имя файла не может быть пустым."
-- Success: false, Message: "Имя файла не должно содержать разделителей пути."
-- Success: false, Message: "Некорректный путь: Path traversal не допускается."
-- Success: false, Message: "Размер чанка превышает допустимый лимит."
-- Success: false, Message: "Размер файла превышает допустимый лимит."
-- Success: false, Message: "Не удалось идентифицировать пользователя."
-- Success: false, Message: "Внутренняя ошибка сервера."
+message FileMetadata {
+  string file_name;       // Без / и \
+  string file_path;       // Например, "docs/projects" или "/" для корня
+  int64 size;             // Размер файла в байтах
+  map<string, string> Metadata = 5;  // Пользовательские метаданные (опционально)
+}
+```
 
-**Формат входящих данных:**
-- `file_name` — непустая строка без символов `/` и `\`, макс. 1024 символа
-- `file_path` — относительный путь (например, `docs/projects`), макс. 4096 символов
-- Каждый чанк — до 1 МБ
-- Общий размер файла — до 5 ГБ
+**Ответ:**
+
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `success` | bool | Успешность операции |
+| `message` | string | Текстовое описание |
+| `file_id` | string | GUID созданного файла |
+
+**Логика:**
+1. Идентификация пользователя через JWT
+2. Чтение метаданных из первого сообщения
+3. Валидация имени файла (не пустое, без разделителей пути)
+4. Нормализация пути через `IStoragePathValidator`
+5. Определение родительской директории
+6. Приём чанков (≤ 1 МБ), запись в MinIO через временные объекты
+7. Сборка чанков через `ComposeObjectAsync` (MinIO)
+8. Создание записи `StorageFile` в PostgreSQL
+9. Сохранение пользовательских метаданных
+
+**Требует nonce:** Нет (данные загружаются единоразово через стриминг)
 
 ---
 
 #### GetFile
 
-**Вызываемая функция:** `GetFile`
-**Тип:** Server-streaming gRPC
+**RPC:** `GetFile (GetFileRequest) returns (stream GetFileResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
+Клиентский стриминг. Первый сообщение содержит `metadata`, последующие — `chunk`.
 
-**Параметры возврата (поток):**
-- Первое сообщение — `FileMetadata`:
-  - `file_id` (string): GUID файла
-  - `file_name` (string): Имя файла
-  - `file_path` (string): Путь к директории
-  - `size` (int64): Размер файла в байтах
-- Последующие сообщения — `bytes chunk` (по 256 КБ)
+**Запрос:**
 
-**Описация:** Скачивание файла из хранилища. Потоковая передача blob из MinIO чанками по 256 КБ.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
 
-**Примеры возвращаемых значений:**
-- Первое сообщение: Metadata { FileId: "a1b2c3d4-...", FileName: "report.txt", FilePath: "/docs", Size: 1024 }
-- Последующие: Chunk { <bytes> }
-- Пустой поток (file_id не найден или не принадлежат владельцу)
+**Логика:**
+1. Поиск файла в PostgreSQL (с проверкой `owner_id`)
+2. Загрузка blob из MinIO
+3. Отправка метаданных в первом сообщении
+4. Стриминг данных чанками по 256 КБ
 
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-
----
-
-#### GetFileChanges
-
-**Вызываемая функция:** `GetFileChanges`
-**Тип:** Server-streaming gRPC
-
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-
-**Параметры возврата (поток):**
-- `update` (UpdateOperation): Операция обновления
-  - `offset` (int64): Смещение в файле
-  - `data` (bytes): Данные для записи
-- `erase` (ErraseOperation): Операция стирания
-  - `offset` (int64): Смещение в файле
-  - `size` (int64): Размер стираемого блока
-
-**Описание:** Получение журнала изменений файла. **Внимание: метод является заглушкой** — файл загружается из БД, но изменения не стримятся.
+**Требует nonce:** Нет
 
 ---
 
 #### UpdateFile
 
-**Вызываемая функция:** `UpdateFile`
-**Тип:** Unary gRPC
+**RPC:** `UpdateFile (UpdateFileRequest) returns (UpdateFileResponse)`
 
-**Параметры запроса:**
-- `file_id` (int64, oneof): Идентификатор файла
-- `update` (UpdateOperation, oneof): Операция обновления
-  - `offset` (int64): Смещение в файле (≥ 0)
-  - `data` (bytes): Данные для записи
-- `erase` (ErraseOperation, oneof): Операция стирания
-  - `offset` (int64): Смещение в файле (≥ 0)
-  - `size` (int64): Размер стираемого блока
-- `nonce_token` (string): Токен защиты от повторов
+Частичное обновление содержимого файла.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описация:** Частичное обновление файла. Поддерживает две операции: `update` — запись данных по смещению, `erase` — запись нулей по смещению. Создаётся новый blob в MinIO с новым storage key.
+```protobuf
+message UpdateFileRequest {
+  oneof data {
+    int64 file_id = 1;        // Первое сообщение: идентификатор файла
+    UpdateOperation update = 2;  // Запись данных по смещению
+    ErraseOperation erase = 3;   // Запись нулей по смещению
+  }
+  string nonce_token = 4;      // Nonce-токен (в каждом сообщении)
+}
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Некорректный offset для обновления."
-- Success: false, Message: "Некорректный offset для стирания."
-- Success: false, Message: "Внутренняя ошибка сервера."
+message UpdateOperation {
+  int64 offset;  // Смещение в байтах (≥ 0)
+  bytes data;    // Данные для записи
+}
 
-**Формат входящих данных:**
-- `file_id` — int64, обязательный (один из oneof)
-- `update` или `erase` — один из oneof
-- `nonce_token` — непустая строка
+message ErraseOperation {
+  int64 offset;  // Смещение в байтах
+  int64 size;    // Размер стираемого блока
+}
+```
+
+**Требует nonce:** Да
 
 ---
 
 #### DeleteFile
 
-**Вызываемая функция:** `DeleteFile`
-**Тип:** Unary gRPC
+**RPC:** `DeleteFile (DeleteFileRequest) returns (DeleteFileResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-- `nonce_token` (string): Токен защиты от повторов
+Мягкое удаление файла (soft delete). Blob в MinIO **не удаляется** — устанавливается `DeletedAtUtc` в PostgreSQL. Глобальный query filter автоматически исключает удалённые файлы из всех запросов.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описация:** Мягкое удаление файла (soft delete). Устанавливает `DeletedAtUtc` в БД. Blob в MinIO не удаляется.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Не удалось удалить файл."
-
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
 #### MoveFile
 
-**Вызываемая функция:** `MoveFile`
-**Тип:** Unary gRPC
+**RPC:** `MoveFile (MoveFileRequest) returns (MoveFileResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-- `new_path` (string): Новый путь директории (например, `/archive`)
-- `nonce_token` (string): Токен защиты от повторов
+Перемещение файла в другую директорию. Обновляет `normalized_path` и `parent_directory_id`. Blob в MinIO **не перемещается**.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описание:** Перемещение файла в другую директорию. Blob в MinIO не перемещается — обновляется только путь в БД. Целевая директория должна существовать.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
+| `new_path` | string | Новый путь директории (например, `docs/archive`) |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Некорректный путь: Path traversal не допускается."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Целевая директория не найдена."
-- Success: false, Message: "Файл с таким путём уже существует."
-
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `new_path` — относительный путь без path traversal
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
 #### CopyFile
 
-**Вызываемая функция:** `CopyFile`
-**Тип:** Unary gRPC
+**RPC:** `CopyFile (CopyFileRequest) returns (CopyFileResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID исходного файла
-- `new_path` (string): Путь директории назначения
-- `nonce_token` (string): Токен защиты от повторов
+Полное копирование файла. Создаёт новый blob в MinIO через `CopyObjectAsync` и новую запись в PostgreSQL.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `new_file_id` (string): GUID нового файла
+**Запрос:**
 
-**Описание:** Копирование файла. Создаёт новый blob в MinIO (server-side copy), создаёт новую запись в БД с новым GUID.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID исходного файла |
+| `new_path` | string | Путь директории назначения |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", NewFileId: "e5f6a7b8-..."
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Некорректный путь: Path traversal не допускается."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Целевая директория не найдена."
-- Success: false, Message: "Файл с таким путём уже существует."
-- Success: false, Message: "Не удалось скопировать файл."
+**Ответ:**
 
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `new_path` — относительный путь без path traversal
-- `nonce_token` — непустая строка
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `new_file_id` | string | GUID нового файла |
+
+**Требует nonce:** Да
 
 ---
 
 #### RenameFile
 
-**Вызываемая функция:** `RenameFile`
-**Тип:** Unary gRPC
+**RPC:** `RenameFile (RenameFileRequest) returns (RenameFileResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-- `new_name` (string): Новое имя файла (без `/` или `\`)
-- `nonce_token` (string): Токен защиты от повторов
+Переименование файла. Обновляет `file_name` в PostgreSQL. Blob в MinIO **не изменяется**.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описание:** Переименование файла. Blob в MinIO не изменяется. Обновляется `FileName` и `NormalizedPath` в БД.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
+| `new_name` | string | Новое имя (без `/` и `\`) |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Имя файла не может быть пустым."
-- Success: false, Message: "Имя файла не должно содержать разделителей пути."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Файл с таким именем уже существует."
-
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `new_name` — непустая строка без `/` и `\`, макс. 1024 символа
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
@@ -322,235 +299,149 @@
 
 #### NewDirectory
 
-**Вызываемая функция:** `NewDirectory`
-**Тип:** Unary gRPC
+**RPC:** `NewDirectory (NewDirectoryRequest) returns (NewDirectoryResponse)`
 
-**Параметры запроса:**
-- `directory_path` (string): Путь новой директории (например, `/docs/projects`)
+Создание новой директории. Родительская директория должна существовать.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `directory_id` (string): GUID созданной директории
+**Запрос:**
 
-**Описание:** Создание новой директории. Родительская директория должна существовать.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_path` | string | Полный путь новой директории (например, `docs/projects/2024`) |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", DirectoryId: "c3d4e5f6-..."
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Путь директории не может быть пустым."
-- Success: false, Message: "Некорректный путь: Path traversal не допускается."
-- Success: false, Message: "Директория уже существует."
-- Success: false, Message: "Файл с таким путём уже существует."
-- Success: false, Message: "Родительская директория не найдена."
+**Ответ:**
 
-**Формат входящих данных:**
-- `directory_path` — относительный путь без path traversal, макс. 4096 символов
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_id` | string | GUID созданной директории |
+
+**Требует nonce:** Нет
 
 ---
 
 #### RenameDirectory
 
-**Вызываемая функция:** `RenameDirectory`
-**Тип:** Unary gRPC
+**RPC:** `RenameDirectory (RenameDirectoryRequest) returns (RenameDirectoryResponse)`
 
-**Параметры запроса:**
-- `directory_id` (string): GUID директории
-- `new_name` (string): Новое имя директории (без `/` или `\`)
-- `nonce_token` (string): Токен защиты от повторов
+Переименование директории. Рекурсивно обновляет `normalized_path` у всех вложенных файлов и поддиректорий.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описание:** Переименование директории. Рекурсивно обновляет `NormalizedPath` всех вложенных объектов (поддиректорий и файлов).
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_id` | string | GUID директории |
+| `new_name` | string | Новое имя директории |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор директории."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Имя директории не может быть пустым."
-- Success: false, Message: "Имя директории не должно содержать разделителей пути."
-- Success: false, Message: "Директория не найдена."
-- Success: false, Message: "Директория с таким именем уже существует."
-
-**Формат входящих данных:**
-- `directory_id` — валидный GUID
-- `new_name` — непустая строка без `/` и `\`
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
 #### DeleteDirectory
 
-**Вызываемая функция:** `DeleteDirectory`
-**Тип:** Unary gRPC
+**RPC:** `DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse)`
 
-**Параметры запроса:**
-- `directory_id` (string): GUID директории
-- `recursive` (bool): Удалять ли вложенные объекты
-- `nonce_token` (string): Токен защиты от повторов
+Мягкое удаление директории (soft delete).
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описание:** Мягкое удаление директории. При `recursive=false` — только пустая директория. При `recursive=true` — рекурсивное soft-delete всех вложенных объектов.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_id` | string | GUID директории |
+| `recursive` | bool | `true` — рекурсивное удаление всех вложенных объектов; `false` — только пустая директория |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор директории."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Директория не найдена."
-- Success: false, Message: "Директория не пуста. Используйте рекурсивное удаление."
-
-**Формат входящих данных:**
-- `directory_id` — валидный GUID
-- `recursive` — bool
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
 #### MoveDirectory
 
-**Вызываемая функция:** `MoveDirectory`
-**Тип:** Unary gRPC
+**RPC:** `MoveDirectory (MoveDirectoryRequest) returns (MoveDirectoryResponse)`
 
-**Параметры запроса:**
-- `directory_id` (string): GUID директории
-- `new_path` (string): Новый путь (например, `/archive`)
-- `nonce_token` (string): Токен защиты от повторов
+Перемещение директории. Запрещает перемещение внутрь себя (проверка циклических зависимостей). Рекурсивно обновляет `normalized_path`.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описание:** Перемещение директории. Запрещает перемещение внутрь себя. Рекурсивно обновляет пути вложенных объектов.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_id` | string | GUID директории |
+| `new_path` | string | Новый путь |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор директории."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Некорректный путь: Path traversal не допускается."
-- Success: false, Message: "Директория не найдена."
-- Success: false, Message: "Нельзя переместить директорию внутрь себя."
-- Success: false, Message: "Директория с таким путём уже существует."
-- Success: false, Message: "Целевая родительская директория не найдена."
-
-**Формат входящих данных:**
-- `directory_id` — валидный GUID
-- `new_path` — относительный путь без path traversal
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
 #### CopyDirectory
 
-**Вызываемая функция:** `CopyDirectory`
-**Тип:** Unary gRPC
+**RPC:** `CopyDirectory (CopyDirectoryRequest) returns (CopyDirectoryResponse)`
 
-**Параметры запроса:**
-- `directory_id` (string): GUID исходной директории
-- `new_path` (string): Путь директории назначения
-- `recursive` (bool): Копировать ли вложенные объекты
-- `nonce_token` (string): Токен защиты от повторов
+Копирование директории. При `recursive = true` — рекурсивно копирует все вложенные файлы (создаёт новые blob в MinIO).
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `new_directory_id` (string): GUID новой директории
+**Запрос:**
 
-**Описание:** Копирование директории. При `recursive=true` — рекурсивно копирует все вложенные файлы (с копированием blob в MinIO) и поддиректории.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_id` | string | GUID исходной директории |
+| `new_path` | string | Путь директории назначения |
+| `recursive` | bool | Рекурсивное копирование |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", NewDirectoryId: "g7h8i9j0-..."
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор директории."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Некорректный путь: Path traversal не допускается."
-- Success: false, Message: "Директория не найдена."
-- Success: false, Message: "Директория с таким путём уже существует."
-- Success: false, Message: "Целевая родительская директория не найдена."
+**Ответ:**
 
-**Формат входящих данных:**
-- `directory_id` — валидный GUID
-- `new_path` — относительный путь без path traversal
-- `recursive` — bool
-- `nonce_token` — непустая строка
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `new_directory_id` | string | GUID новой директории |
+
+**Требует nonce:** Да
 
 ---
 
-### Операции с атрибутами
+### Операции с метаданными
 
 #### GetMetadata
 
-**Вызываемая функция:** `GetMetadata`
-**Тип:** Unary gRPC
+**RPC:** `GetMetadata (GetMetadataRequest) returns (GetMetadataResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
+Получение метаданных файла. Не возвращает системные поля (`storageKey`, `bucketName`, `ownerId`).
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `metadata` (FileMetadata):
-  - `file_id` (string): GUID файла
-  - `file_name` (string): Имя файла
-  - `file_path` (string): Путь к директории
-  - `size` (int64): Размер файла
-  - `Metadata` (map<string,string>): Пользовательские метаданные
+**Запрос:**
 
-**Описание:** Получение метаданных файла. Не возвращает `storageKey`, `bucketName`, `OwnerId`.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", Metadata { FileId: "...", FileName: "report.txt", FilePath: "/docs", Size: 1024, Metadata: { "author": "user1" } }
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Файл не найден."
+**Ответ:**
 
-**Формат входящих данных:**
-- `file_id` — валидный GUID
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `metadata` | FileMetadata | Метаданные файла (имя, путь, размер, пользовательские метаданные) |
+
+**Требует nonce:** Нет
 
 ---
 
 #### UpdateMetadata
 
-**Вызываемая функция:** `UpdateMetadata`
-**Тип:** Unary gRPC
+**RPC:** `UpdateMetadata (UpdateMetadataRequest) returns (UpdateMetadataResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-- `metadata` (map<string,string>): Новые метаданные (полная замена)
+**Полная замена** метаданных файла. Все существующие записи удаляются, затем создаются новые.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
+**Запрос:**
 
-**Описание:** Полная замена метаданных файла. Все существующие ключи удаляются, записываются новые.
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
+| `metadata` | map<string, string> | Новые метаданные (полная замена) |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Ключ метаданных не может быть пустым."
-- Success: false, Message: "Превышена максимальная длина ключа метаданных."
-- Success: false, Message: "Превышена максимальная длина значения метаданных."
-- Success: false, Message: "Ключ метаданных 'storageKey' зарезервирован."
-- Success: false, Message: "Превышено максимальное количество ключей метаданных."
-- Success: false, Message: "Внутренняя ошибка сервера."
+**Ограничения:**
+- Максимум 64 записи
+- Максимальная длина ключа — 256 символов
+- Максимальная длина значения — 4096 символов
+- Запрещённые ключи: `storageKey`, `ownerId`, `physicalPath`, `bucketName`, а также все ключи, начинающиеся с `__`
 
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `metadata` — map<string,string>, макс. 64 ключа, ключ макс. 256 символов, значение макс. 4096 символов
-- Запрещённые ключи: `storageKey`, `ownerId`, `physicalPath`, `bucketName`, все начинающиеся с `__`
+**Требует nonce:** Нет
 
 ---
 
@@ -558,29 +449,24 @@
 
 #### ListDirectory
 
-**Вызываемая функция:** `ListDirectory`
-**Тип:** Unary gRPC
+**RPC:** `ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse)`
 
-**Параметры запроса:**
-- `directory_id` (string): GUID директории
-- `recursive` (bool): Включать ли вложенные объекты
+Получение списка файлов в директории.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `items` (repeated FileMetadata): Список файлов
+**Запрос:**
 
-**Описание:** Получение списка файлов в директории. При `recursive=true` включает все вложенные файлы. Поддиректории в ответ не включаются (только файлы).
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `directory_id` | string | GUID директории |
+| `recursive` | bool | Включать ли вложенные файлы из поддиректорий |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", Items: [ { FileId: "...", FileName: "a.txt", FilePath: "/docs", Size: 100 }, { FileId: "...", FileName: "b.txt", FilePath: "/docs", Size: 200 } ]
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор директории."
-- Success: false, Message: "Директория не найдена."
+**Ответ:**
 
-**Формат входящих данных:**
-- `directory_id` — валидный GUID
-- `recursive` — bool
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `items` | repeated FileMetadata | Список файлов (поддиректории не включаются) |
+
+**Требует nonce:** Нет
 
 ---
 
@@ -588,245 +474,119 @@
 
 #### GenerateLink
 
-**Вызываемая функция:** `GenerateLink`
-**Тип:** Unary gRPC
+**RPC:** `GenerateLink (GenerateLinkRequest) returns (GenerateLinkResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-- `groups` (repeated string): Список групп с доступом
-- `users` (repeated string): Список пользователей с доступом
-- `ttl_seconds` (int32): Время жизни ссылки в секундах (1 — 2 592 000)
-- `nonce_token` (string): Токен защиты от повторов
+Генерация безопасной ссылки на файл. Обычная ссылка перенаправляет на прямую.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `link` (string): Ссылка вида `/storage/links/{token}`
+**Запрос:**
 
-**Описание:** Генерация безопасной ссылки на файл. Токен генерируется криптографически стойким генератором (32 байта → Base64 URL-safe).
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `file_id` | string | GUID файла |
+| `groups` | repeated string | Список групп с доступом (опционально) |
+| `users` | repeated string | Список пользователей с доступом (опционально) |
+| `ttl_seconds` | int32 | Время жизни в секундах (1 — 2 592 000) |
+| `nonce_token` | string | Nonce-токен |
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", Link: "/storage/links/aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "TTL должен быть положительным."
-- Success: false, Message: "TTL не может превышать 30 дней."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Внутренняя ошибка сервера."
+**Ответ:**
 
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `ttl_seconds` — int32, от 1 до 2 592 000 (30 дней)
-- `nonce_token` — непустая строка
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `link` | string | Ссылка вида `/storage/links/{token}` |
+
+**Требует nonce:** Да
 
 ---
 
 #### GenerateDirectLink
 
-**Вызываемая функция:** `GenerateDirectLink`
-**Тип:** Unary gRPC
+**RPC:** `GenerateDirectLink (GenerateLinkRequest) returns (GenerateLinkResponse)`
 
-**Параметры запроса:**
-- `file_id` (string): GUID файла
-- `groups` (repeated string): Список групп с доступом
-- `users` (repeated string): Список пользователей с доступом
-- `ttl_seconds` (int32): Время жизни ссылки в секундах (1 — 2 592 000)
-- `nonce_token` (string): Токен защиты от повторов
+Генерация прямой ссылки для скачивания файла.
 
-**Параметры возврата:**
-- `success` (bool): Успешность операции
-- `message` (string): Сообщение статуса
-- `link` (string): Ссылка вида `/storage/direct/{token}`
+**Запрос:** Аналогично `GenerateLink`.
 
-**Описание:** Генерация прямой ссылки на скачивание файла. Отличается от `GenerateLink` маршрутом (`/storage/direct/` вместо `/storage/links/`).
+**Ответ:**
 
-**Примеры возвращаемых значений:**
-- Success: true, Message: "OK", Link: "/storage/direct/aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"
-- Success: false, Message: "Ошибка аутентификации."
-- Success: false, Message: "Некорректный идентификатор файла."
-- Success: false, Message: "TTL должен быть положительным."
-- Success: false, Message: "TTL не может превышать 30 дней."
-- Success: false, Message: "Требуется nonce_token."
-- Success: false, Message: "Невалидный или повторный nonce."
-- Success: false, Message: "Файл не найден."
-- Success: false, Message: "Внутренняя ошибка сервера."
+| Поле | Тип | Описание |
+|:---|:---|:---|
+| `link` | string | Ссылка вида `/storage/direct/{token}` |
 
-**Формат входящих данных:**
-- `file_id` — валидный GUID
-- `ttl_seconds` — int32, от 1 до 2 592 000 (30 дней)
-- `nonce_token` — непустая строка
+**Требует nonce:** Да
 
 ---
 
 ## REST API
 
-**Контроллер:** `StorageLinksController`
-**Префикс маршрута:** `/storage`
+### Скачивание по обычной ссылке
 
-### GET /storage/links/{token}
+```
+GET /storage/links/{token}
+```
 
-**Параметры:**
-- `token` (string, path): Токен ссылки
+**Аутентификация:** Не требуется.
 
-**Параметры возврата:**
-- `302 Redirect` → `/storage/direct/{token}` (если ссылка валидна)
-- `410 Gone` — "Ссылка истекла." (если `ExpiresAtUtc < DateTime.UtcNow`)
-- `404 Not Found` (если ссылка не найдена)
+**Ответы:**
 
-**Описание:** Редирект на прямую ссылку. Проверяет срок действия ссылки.
-
----
-
-### GET /storage/direct/{token}
-
-**Параметры:**
-- `token` (string, path): Токен ссылки
-
-**Параметры возврата:**
-- `200 OK` — файл с `Content-Type: application/octet-stream` и `Content-Disposition` с оригинальным именем
-- `410 Gone` — "Ссылка истекла." (если `ExpiresAtUtc < DateTime.UtcNow`)
-- `404 Not Found` (если ссылка или файл не найден)
-- `500 Internal Server Error` — "Ошибка при загрузке файла." (ошибка MinIO)
-
-**Описание:** Скачивание файла по прямой ссылке. Стримит blob из MinIO.
+| Код | Описание |
+|:---|:---|
+| 307 | Перенаправление на `/storage/direct/{token}` |
+| 404 | Ссылка не найдена |
+| 410 | Ссылка истекла |
 
 ---
 
-## Модели данных
+### Скачивание по прямой ссылке
 
-### StorageFile (таблица: `storage_files`)
+```
+GET /storage/direct/{token}
+```
 
-| Свойство | Тип | Ограничения | Описание |
-|---|---|---|---|
-| FileId | Guid | PK | Уникальный идентификатор |
-| OwnerId | Guid | NOT NULL | Владелец |
-| ParentDirectoryId | Guid? | NULL | Родительская директория |
-| FileName | string | NOT NULL, max 1024 | Имя файла |
-| NormalizedPath | string | NOT NULL, max 4096 | Нормализованный путь |
-| Size | long | NOT NULL | Размер в байтах |
-| StorageKey | string | NOT NULL, max 1024 | Ключ в MinIO (GUID + расширение) |
-| BucketName | string | NOT NULL, max 256 | Бакет MinIO |
-| CreatedAtUtc | DateTime | NOT NULL | Дата создания |
-| UpdatedAtUtc | DateTime? | NULL | Дата обновления |
-| DeletedAtUtc | DateTime? | NULL | Дата удаления (soft delete) |
-| ContentHash | byte[] | bytea | SHA-256 хеш |
+**Аутентификация:** Не требуется.
+
+**Ответы:**
+
+| Код | Content-Type | Описание |
+|:---|:---|:---|
+| 200 | `application/octet-stream` | Потоковое содержимое файла |
+| 404 | — | Ссылка или файл не найдены |
+| 410 | — | Ссылка истекла |
+| 500 | — | Ошибка при загрузке из MinIO |
 
 ---
 
-### StorageDirectory (таблица: `storage_directories`)
+## Nonce-защита
 
-| Свойство | Тип | Ограничения | Описание |
-|---|---|---|---|
-| DirectoryId | Guid | PK | Уникальный идентификатор |
-| OwnerId | Guid | NOT NULL | Владелец |
-| ParentDirectoryId | Guid? | NULL | Родительская директория |
-| DirectoryName | string | NOT NULL, max 1024 | Имя директории |
-| NormalizedPath | string | NOT NULL, max 4096 | Нормализованный путь |
-| CreatedAtUtc | DateTime | NOT NULL | Дата создания |
-| UpdatedAtUtc | DateTime? | NULL | Дата обновления |
-| DeletedAtUtc | DateTime? | NULL | Дата удаления (soft delete) |
+Все изменяющие операции (upload, delete, move, copy, rename, update, generate link) требуют `nonce_token`.
+
+**Формат nonce-токена:** уникальная строка, генерируемая клиентом (например, GUID). Сервер проверяет уникальность через Redis с использованием атомарной операции `SET ... NX` (только если ключ не существует).
+
+**Ключ в Redis:** `nonce:{ownerId}:{operationName}:{nonceToken}`
+
+**TTL:** 5 минут (одноразовое использование — при успешной операции nonce помечается как потреблённый и не может быть переиспользован).
 
 ---
 
-### StorageSharedLink (таблица: `storage_shared_links`)
+## Сводная таблица методов
 
-| Свойство | Тип | Ограничения | Описание |
-|---|---|---|---|
-| Id | Guid | PK | Уникальный идентификатор |
-| FileId | Guid | FK → StorageFile | Файл |
-| OwnerId | Guid | NOT NULL | Владелец |
-| Token | string | NOT NULL, max 512, UNIQUE | Токен ссылки |
-| ExpiresAtUtc | DateTime | NOT NULL | Срок действия |
-| IsDirect | bool | NOT NULL | Прямая ссылка |
-| CreatedAtUtc | DateTime | NOT NULL | Дата создания |
-
----
-
-### FileMetadataEntry (таблица: `file_metadata_entries`)
-
-| Свойство | Тип | Ограничения | Описание |
-|---|---|---|---|
-| Id | Guid | PK | Уникальный идентификатор |
-| FileId | Guid | FK → StorageFile | Файл |
-| Key | string | NOT NULL, max 256 | Ключ метаданных |
-| Value | string | NOT NULL, max 4096 | Значение метаданных |
-
----
-
-### StorageFileAccess (таблица: `storage_file_access`)
-
-| Свойство | Тип | Ограничения | Описание |
-|---|---|---|---|
-| Id | Guid | PK | Уникальный идентификатор |
-| FileId | Guid | FK → StorageFile | Файл |
-| UserId | string? | max 256 | Пользователь |
-| GroupId | string? | max 256 | Группа |
-| AccessLevel | StorageAccessLevel | NOT NULL | Уровень доступа |
-
-**StorageAccessLevel (enum):** `Read` (0), `Write` (1), `Owner` (2)
-
----
-
-### StorageNonce (таблица: `storage_nonces`)
-
-| Свойство | Тип | Ограничения | Описание |
-|---|---|---|---|
-| Id | Guid | PK | Уникальный идентификатор |
-| OwnerId | Guid | NOT NULL | Владелец |
-| OperationName | string | NOT NULL, max 256 | Имя операции |
-| Token | string | NOT NULL, max 512 | Токен nonce |
-| ExpiresAtUtc | DateTime | NOT NULL | Срок действия |
-| Consumed | bool | NOT NULL | Потреблён |
-
----
-
-## Аутентификация
-
-Все gRPC методы требуют JWT Bearer токен в заголовке `Authorization`. Токен должен содержать клейм `sub` (GUID владельца).
-
-**Алгоритм:** HMAC-SHA256
-**Issuer:** `DataGuard`
-**Audience:** `DataGuard.Storage`
-**ClockSkew:** 0 (строгая проверка срока)
-
-REST эндпоинты (`/storage/links/`, `/storage/direct/`) не требуют JWT — доступ контролируется через токен ссылки.
-
----
-
-## Защита от повторных атак (Nonce)
-
-Все изменяющие операции требуют `nonce_token`. Nonce потребляется атомарно через Redis с TTL 5 минут:
-
-- **Ключ Redis:** `nonce:{ownerId}:{operationName}:{token}`
-- **Механизм:** `StringSet` с флагом `When.NotExists`
-- **Повторное использование:** отклоняется
-
-Операции, требующие nonce: `UpdateFile`, `DeleteFile`, `MoveFile`, `CopyFile`, `RenameFile`, `RenameDirectory`, `DeleteDirectory`, `MoveDirectory`, `CopyDirectory`, `GenerateLink`, `GenerateDirectLink`.
-
-Операции без nonce: `UploadFile`, `GetFile`, `GetFileChanges`, `GetMetadata`, `ListDirectory`, `NewDirectory`, `UpdateMetadata`.
-
----
-
-## Безопасность
-
-| Аспект | Реализация |
-|---|---|
-| Path traversal | Запрещён: `..`, абсолютные пути, `C:` drive letters |
-| Storage key | Генерируется как `Guid.NewGuid() + расширение`, не зависит от имени файла |
-| Публичные токены | Криптографически стойкие (32 байта, `RandomNumberGenerator`), не `Guid.NewGuid()` |
-| Soft delete | Файлы и директории помечаются `DeletedAtUtc`, не удаляются физически |
-| Ошибки | Не раскрывают внутренние детали (storage key, bucket name, stack trace) |
-| Владелец | Проверяется на уровне repository для всех операций |
-| Метаданные | Запрещённые ключи: `storageKey`, `ownerId`, `physicalPath`, `bucketName`, `__*` |
-
----
-
-## Известные ограничения
-
-1. **GetFileChanges** — заглушка, не возвращает данные изменений
-2. **DeleteFile** — не удаляет blob из MinIO (orphaned blob)
-3. **ListDirectory** — возвращает только файлы, без поддиректорий
-4. **UpdateFileRequest.file_id** — в proto определён как `int64`, не `string` (несоответствие с другими методами)
-5. **REST эндпоинты** — не имеют rate limiting
+| Метод | Тип | Стриминг | Требует nonce | Требует JWT |
+|:---|:---|:---|:---|:---|
+| UploadFile | gRPC | Серверный (вход) | Нет | Да |
+| GetFile | gRPC | Серверный (исход) | Нет | Да |
+| UpdateFile | gRPC | Нет | Да | Да |
+| DeleteFile | gRPC | Нет | Да | Да |
+| MoveFile | gRPC | Нет | Да | Да |
+| CopyFile | gRPC | Нет | Да | Да |
+| RenameFile | gRPC | Нет | Да | Да |
+| NewDirectory | gRPC | Нет | Нет | Да |
+| RenameDirectory | gRPC | Нет | Да | Да |
+| DeleteDirectory | gRPC | Нет | Да | Да |
+| MoveDirectory | gRPC | Нет | Да | Да |
+| CopyDirectory | gRPC | Нет | Да | Да |
+| GetMetadata | gRPC | Нет | Нет | Да |
+| UpdateMetadata | gRPC | Нет | Нет | Да |
+| ListDirectory | gRPC | Нет | Нет | Да |
+| GenerateLink | gRPC | Нет | Да | Да |
+| GenerateDirectLink | gRPC | Нет | Да | Да |
+| GET /storage/links/{token} | REST | Нет | Нет | Нет |
+| GET /storage/direct/{token} | REST | Нет | Нет | Нет |

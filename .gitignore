@@ -430,3 +430,6 @@ appsettings.*.json
 # Qwen
 .qwen
 .kilo
+
+# Tool results (temporary)
+tool-results/

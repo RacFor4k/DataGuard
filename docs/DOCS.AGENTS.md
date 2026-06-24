@@ -1,36 +1,75 @@
-# Documentation Guidelines for DataGuard Project
+# Правила ведения документации DataGuard
 
-## Purpose
-This document outlines the guidelines for maintaining comprehensive and consistent documentation across the DataGuard project. It ensures that all team members follow a standardized approach to documenting code, processes, and system architecture.
+## 1. Общие положения
 
-## API Documentation
-API documentation should include:
-- Called function
-- Parameters with descriptions and types
-- Required HTTP headers
-- Returned parameters
-- Function description
-- Examples of returned values (e.g., Status: 400 Message: ...)
-- Format of incoming data expected by the receiving party to avoid BadRequest
+1. **Язык:** Вся документация — на русском языке.
+2. **Гиперссылки:** Допускается добавление ссылок на другие файлы документации для навигации и контекста.
+3. **Актуальность:** При изменениях в API или архитектуре соответствующий документ обновляется в рамках того же запроса.
+4. **Согласованность:** Все документы должны следовать единому стилю и формату.
+5. **Ясность:** Избегать избыточного жаргона и сложных конструкций.
+6. **Примеры:** Приводить практические примеры там, где это уместно.
 
-## General Guidelines
-1. **Language**: All documentation must be written in Russian.
-2. **Hyperlinks**: Agents are allowed to add hyperlinks to other documentation files for better navigation and context.
-3. **Updates**: If an agent receives new rules in a request that are not covered in this document, it must update this document with the new rules at the end of request execution.
-4. **Consistency**: Ensure that all documentation follows a consistent style and format to maintain readability and ease of use.
-5. **Clarity**: Write documentation in a clear and concise manner, avoiding unnecessary jargon or complex sentences.
-6. **Examples**: Provide practical examples wherever possible to illustrate concepts and usage.
-7. **Versioning**: Document any changes in the API or system architecture that might affect existing implementations.
+---
 
-## File Structure
-- **docs/Client.Engine.md**: Documentation for Client.Engine API
-- **docs/Server.md**: Documentation for Server.Auth API
-- **docs/Server.Storage.md**: Documentation for Server.Storage API (gRPC + REST)
+## 2. Структура документации
 
-## Best Practices
-- **Regular Updates**: Keep documentation updated with the latest changes in the codebase.
-- **Collaboration**: Encourage team collaboration in maintaining and improving documentation.
-- **Feedback**: Regularly seek feedback from team members to improve the quality and usefulness of the documentation.
+| Файл | Назначение |
+|:---|:---|
+| `docs/Architecture.md` | Архитектурный обзор: стиль, слои, схема взаимодействия, протоколы, аутентификация |
+| `docs/Database.md` | Слой данных: схемы PostgreSQL (ER-диаграммы), Redis, MinIO, SQLite, миграции |
+| `docs/Server.Auth.md` | Спецификация API Server.Auth: все gRPC-методы, параметры, коды ответов, логика |
+| `docs/Server.Storage.md` | Спецификация API Server.Storage: gRPC + REST, методы, nonce-защита, ограничения |
+| `docs/Client.Engine.md` | Клиентский движок: криптография, проксирование, сервисы, модели, консольные команды |
+| `docs/DataGuard.UI.md` | GUI-приложение: архитектура MVVM, экраны, модели данных, стили |
+| `docs/DeveloperGuide.md` | Руководство разработчика: требования, запуск, миграции, тестирование, кодстайл |
+| `docs/INTEGRATION.md` | План интеграции DataGuard.UI ↔ Client.Engine |
+| `docs/DOCS.AGENTS.md` | Настоящий файл: правила ведения документации |
 
-## Conclusion
-Adhering to these guidelines will ensure that the DataGuard project documentation is comprehensive, up-to-date, and useful for all team members.
+---
+
+## 3. Форматирование
+
+### Код
+
+```markdown
+```csharp
+// Пример кода
+public class Example
+{
+    public void Method() { }
+}
+```
+```
+
+Язык блока кода указывается всегда: `csharp`, `json`, `bash`, `sql`, `yaml`, `protobuf`, `mermaid`.
+
+### Таблицы
+
+Использовать для параметров, конфигурации, кодов ответов и сравнений.
+
+### Диаграммы
+
+Использовать Mermaid для:
+- Схем взаимодействия (`sequenceDiagram`, `graph`)
+- ER-диаграмм (`erDiagram`)
+
+---
+
+## 4. Требования к документированию API
+
+Каждый RPC-метод должен быть задокументирован со следующими разделами:
+
+1. **Вызываемая функция** — название RPC
+2. **Параметры запроса** — таблица с типами и описаниями
+3. **Заголовки** — необходимые HTTP/metadata заголовки
+4. **Параметры ответа** — таблица с типами и описаниями
+5. **Описание** — назначение метода
+6. **Коды ответов** — таблица «статус — сообщение — условие»
+7. **Логика** — пошаговое описание алгоритма
+8. **Формат входящих данных** — ограничения на поля
+
+---
+
+## 5. Обновление документации
+
+При добавлении новых правил или изменении формата документации обновите настоящий файл, добавив новую запись в раздел «История изменений».
