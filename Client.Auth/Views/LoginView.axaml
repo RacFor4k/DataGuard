@@ -1,0 +1,126 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.Auth.ViewModels"
+             xmlns:cvt="using:Client.Auth.Converters"
+             x:Class="Client.Auth.Views.LoginView"
+             x:DataType="vm:AuthViewModel"
+             Background="#0F1117">
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
+        <StackPanel Spacing="0">
+            <!-- Logo -->
+            <StackPanel HorizontalAlignment="Center" Spacing="10" Margin="0,0,0,36">
+                <Border Width="64" Height="64" CornerRadius="18" Background="#0D1B3E"
+                        BorderBrush="#1E3A5F" BorderThickness="1" HorizontalAlignment="Center">
+                    <Path Data="{StaticResource IconShield}" Fill="#3B82F6"
+                          Width="34" Height="34" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="DataGuard" FontSize="26" FontWeight="Bold"
+                           Foreground="#F1F5F9" HorizontalAlignment="Center"/>
+                <TextBlock Text="Защищённый корпоративный документооборот"
+                           FontSize="13" Foreground="#475569" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Card -->
+            <Border Background="#0D1120" BorderBrush="#1E2535" BorderThickness="1"
+                    CornerRadius="14" Padding="32">
+                <StackPanel Spacing="20">
+                    <TextBlock Text="Вход в систему" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#F1F5F9" HorizontalAlignment="Center"/>
+
+                    <!-- Error -->
+                    <Border IsVisible="{Binding LoginHasError}" Background="#1A0808" BorderBrush="#7F1D1D"
+                            BorderThickness="1" CornerRadius="8" Padding="14,10">
+                        <TextBlock Text="{Binding LoginError}" Foreground="#FCA5A5"
+                                   FontSize="13" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Loading -->
+                    <StackPanel IsVisible="{Binding IsLoading}" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Spacing="8">
+                        <TextBlock Text="Подключение к серверу..." Foreground="#475569" FontSize="12"/>
+                    </StackPanel>
+
+                    <!-- Email selector (if saved emails exist) -->
+                    <StackPanel Spacing="6" IsVisible="{Binding HasSavedEmails}">
+                        <TextBlock Text="Аккаунт" Foreground="#64748B" FontSize="12" FontWeight="SemiBold"/>
+                        <ComboBox ItemsSource="{Binding SavedEmails}"
+                                  SelectedIndex="{Binding SelectedEmailIndex}"
+                                  Height="42" FontSize="14"
+                                  IsEnabled="{Binding !IsLoading}">
+                            <ComboBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}"/>
+                            </ComboBox.KeyBindings>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Email input (if no saved emails) -->
+                    <StackPanel Spacing="2" IsVisible="{Binding ShowEmailInput}">
+                        <TextBlock Text="Email" Foreground="#64748B" FontSize="12" FontWeight="SemiBold"/>
+                        <TextBox x:Name="EmailInputBox"
+                                 Watermark="Введите email..." Text="{Binding EmailInputText}"
+                                 Height="42" FontSize="14" IsEnabled="{Binding !IsLoading}"
+                                 LostFocus="EmailInputBox_LostFocus">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}"/>
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <TextBlock IsVisible="{Binding EmailInputHasError}"
+                                   Text="{Binding EmailInputError}"
+                                   Classes="validation-err" Margin="4,2,0,0"/>
+                    </StackPanel>
+
+                    <!-- Password with show/hide -->
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Пароль" Foreground="#64748B" FontSize="12" FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0"
+                                     Watermark="Введите пароль..."
+                                     Text="{Binding LoginPassword}"
+                                     PasswordChar="{Binding LoginPasswordVisible, Converter={x:Static cvt:BoolToPasswordCharConverter.Instance}}"
+                                     Height="42" FontSize="14"
+                                     IsEnabled="{Binding !IsLoading}">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}"/>
+                                </TextBox.KeyBindings>
+                            </TextBox>
+                            <Button Grid.Column="1" Classes="ghost" Width="42" Height="42"
+                                    VerticalAlignment="Stretch" Margin="4,0,0,0"
+                                    Command="{Binding ToggleLoginPasswordCommand}">
+                                <Panel>
+                                    <Path Data="{StaticResource IconEye}" Fill="#64748B"
+                                          Width="18" Height="18"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          IsVisible="{Binding !LoginPasswordVisible}"/>
+                                    <Path Data="{StaticResource IconEyeOff}" Fill="#64748B"
+                                          Width="18" Height="18"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          IsVisible="{Binding LoginPasswordVisible}"/>
+                                </Panel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Login button -->
+                    <Button Classes="primary" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center" Height="44"
+                            Command="{Binding LoginCommand}"
+                            IsEnabled="{Binding !IsLoading}">
+                        <TextBlock Text="Войти" FontSize="14" FontWeight="SemiBold"/>
+                    </Button>
+
+                    <Rectangle Height="1" Fill="#1E2535"/>
+
+                    <!-- Register link -->
+                    <Button Background="Transparent" BorderThickness="0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Padding="0,8" Cursor="Hand" Command="{Binding GoToRegisterCommand}">
+                        <TextBlock Text="Регистрация" Foreground="#3B82F6" FontSize="13"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="DataGuard Beta 1.1" Foreground="#1E2535"
+                       HorizontalAlignment="Center" Margin="0,16,0,0" FontSize="12"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

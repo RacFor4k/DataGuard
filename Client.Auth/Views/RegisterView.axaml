@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Client.Auth.ViewModels"
+             xmlns:cvt="using:Client.Auth.Converters"
+             x:Class="Client.Auth.Views.RegisterView"
+             x:DataType="vm:AuthViewModel"
+             Background="#0F1117">
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Width="440">
+        <Border Background="#0D1120" BorderBrush="#1E2535" BorderThickness="1"
+                CornerRadius="14" Padding="32">
+            <StackPanel Spacing="16">
+                <StackPanel HorizontalAlignment="Center" Spacing="4">
+                    <TextBlock Text="Регистрация" FontSize="18" FontWeight="SemiBold"
+                               Foreground="#F1F5F9" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Введите код от администратора компании" FontSize="13"
+                               Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Error -->
+                <Border IsVisible="{Binding RegHasError}" Background="#1A0808" BorderBrush="#7F1D1D"
+                        BorderThickness="1" CornerRadius="8" Padding="14,10">
+                    <TextBlock Text="{Binding RegError}" Foreground="#FCA5A5"
+                               FontSize="13" TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Registration code -->
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Код регистрации (12 символов)" Foreground="#475569"
+                               FontSize="12" FontWeight="SemiBold"/>
+                    <TextBox x:Name="CodeInput"
+                             Watermark="Например: ABC123DEF456"
+                             Text="{Binding RegistrationCode}" MaxLength="12"
+                             IsEnabled="{Binding !IsLoading}"
+                             LostFocus="CodeInput_LostFocus">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding RegisterCommand}"/>
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <TextBlock IsVisible="{Binding CodeValidationVisible}"
+                               Text="{Binding CodeValidationMessage}"
+                               FontSize="11"
+                               Foreground="{Binding CodeValidationIsOk, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                               Margin="4,2,0,0"/>
+                </StackPanel>
+
+                <!-- Password -->
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Пароль" Foreground="#475569" FontSize="12" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0"
+                                 Watermark="Введите пароль..."
+                                 Text="{Binding RegPassword}"
+                                 PasswordChar="{Binding RegPasswordVisible, Converter={x:Static cvt:BoolToPasswordCharConverter.Instance}}"
+                                 IsEnabled="{Binding !IsLoading}">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding RegisterCommand}"/>
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Grid.Column="1" Classes="ghost" Width="42" Height="40"
+                                VerticalAlignment="Stretch" Margin="4,0,0,0"
+                                Command="{Binding ToggleRegPasswordCommand}">
+                            <Panel>
+                                <Path Data="{StaticResource IconEye}" Fill="#64748B"
+                                      Width="18" Height="18"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      IsVisible="{Binding !RegPasswordVisible}"/>
+                                <Path Data="{StaticResource IconEyeOff}" Fill="#64748B"
+                                      Width="18" Height="18"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      IsVisible="{Binding RegPasswordVisible}"/>
+                            </Panel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Password requirements with colored text -->
+                    <Border Background="#0F1117" CornerRadius="8" Padding="12,10" Margin="0,4,0,0">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Требования к паролю:" Foreground="#475569"
+                                       FontSize="11" Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Data="{StaticResource IconCheck}" Width="12" Height="12"
+                                      Fill="{Binding HasMinLength, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Мин. 8 символов" FontSize="11"
+                                           Foreground="{Binding HasMinLength, Converter={x:Static cvt:BoolToColorConverter.Instance}}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Data="{StaticResource IconCheck}" Width="12" Height="12"
+                                      Fill="{Binding HasUpperCase, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Заглавная буква" FontSize="11"
+                                           Foreground="{Binding HasUpperCase, Converter={x:Static cvt:BoolToColorConverter.Instance}}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Data="{StaticResource IconCheck}" Width="12" Height="12"
+                                      Fill="{Binding HasLowerCase, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Строчная буква" FontSize="11"
+                                           Foreground="{Binding HasLowerCase, Converter={x:Static cvt:BoolToColorConverter.Instance}}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Data="{StaticResource IconCheck}" Width="12" Height="12"
+                                      Fill="{Binding HasDigit, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Цифра" FontSize="11"
+                                           Foreground="{Binding HasDigit, Converter={x:Static cvt:BoolToColorConverter.Instance}}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Data="{StaticResource IconCheck}" Width="12" Height="12"
+                                      Fill="{Binding HasSpecial, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Спецсимвол (!@#$...)" FontSize="11"
+                                           Foreground="{Binding HasSpecial, Converter={x:Static cvt:BoolToColorConverter.Instance}}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Confirm password -->
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Подтверждение пароля" Foreground="#475569"
+                               FontSize="12" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox x:Name="ConfirmInput" Grid.Column="0"
+                                 Watermark="Повторите пароль..."
+                                 Text="{Binding RegPasswordConfirm}"
+                                 PasswordChar="{Binding RegPasswordConfirmVisible, Converter={x:Static cvt:BoolToPasswordCharConverter.Instance}}"
+                                 IsEnabled="{Binding !IsLoading}"
+                                 LostFocus="ConfirmInput_LostFocus">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding RegisterCommand}"/>
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Grid.Column="1" Classes="ghost" Width="42" Height="40"
+                                VerticalAlignment="Stretch" Margin="4,0,0,0"
+                                Command="{Binding ToggleRegPasswordConfirmCommand}">
+                            <Panel>
+                                <Path Data="{StaticResource IconEye}" Fill="#64748B"
+                                      Width="18" Height="18"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      IsVisible="{Binding !RegPasswordConfirmVisible}"/>
+                                <Path Data="{StaticResource IconEyeOff}" Fill="#64748B"
+                                      Width="18" Height="18"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      IsVisible="{Binding RegPasswordConfirmVisible}"/>
+                            </Panel>
+                        </Button>
+                    </Grid>
+                    <TextBlock IsVisible="{Binding ConfirmValidationVisible}"
+                               Text="{Binding ConfirmValidationMessage}"
+                               FontSize="11"
+                               Foreground="{Binding ConfirmValidationIsOk, Converter={x:Static cvt:BoolToColorConverter.Instance}}"
+                               Margin="4,2,0,0"/>
+                </StackPanel>
+
+                <!-- Registration result with copy button -->
+                <Border IsVisible="{Binding ShowRegResult}" Background="#0D2B0D"
+                        BorderBrush="#22C55E" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Регистрация прошла успешно!" Foreground="#86EFAC" FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Border Grid.Column="0" Background="#0F1117" CornerRadius="6" Padding="12,8">
+                                <TextBlock Text="{Binding RegistrationResultCode}" FontSize="18" FontWeight="Bold"
+                                           Foreground="#3B82F6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Button Grid.Column="1" Classes="secondary" Margin="8,0,0,0"
+                                    Padding="10,8" Command="{Binding CopyRegistrationCodeCommand}"
+                                    VerticalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Path Data="{StaticResource IconCopy}" Fill="#F1F5F9"
+                                          Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Копировать" FontSize="12" Foreground="#F1F5F9"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Buttons: Войти + Зарегистрироваться -->
+                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !ShowRegResult}">
+                    <Button Grid.Column="0" Classes="ghost"
+                            Command="{Binding GoToLoginCommand}"
+                            Padding="16,10" Margin="0,0,12,0" Height="44"
+                            HorizontalContentAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Path Data="{StaticResource IconArrowLeft}" Fill="#3B82F6"
+                                  Width="14" Height="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Войти" Foreground="#3B82F6" FontSize="13"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1" Classes="primary"
+                            Command="{Binding RegisterCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Height="44">
+                        <TextBlock Text="Зарегистрироваться" FontSize="14" FontWeight="SemiBold"/>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

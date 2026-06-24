@@ -1,0 +1,162 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style Selector=":is(Control)">
+        <Style.Resources>
+            <SolidColorBrush x:Key="BgBaseBrush" Color="#0F1117"/>
+            <SolidColorBrush x:Key="BgSurfaceBrush" Color="#161B27"/>
+            <SolidColorBrush x:Key="BgCardBrush" Color="#1E2535"/>
+            <SolidColorBrush x:Key="BgHoverBrush" Color="#252D3F"/>
+            <SolidColorBrush x:Key="AccentBlueBrush" Color="#3B82F6"/>
+            <SolidColorBrush x:Key="AccentGreenBrush" Color="#22C55E"/>
+            <SolidColorBrush x:Key="AccentRedBrush" Color="#EF4444"/>
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F1F5F9"/>
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
+            <SolidColorBrush x:Key="TextMutedBrush" Color="#475569"/>
+            <SolidColorBrush x:Key="BorderNormalBrush" Color="#2D3748"/>
+        </Style.Resources>
+    </Style>
+
+    <Style Selector="Window">
+        <Setter Property="Background" Value="#0F1117"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
+    </Style>
+
+    <Style Selector="TextBlock.h1">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="#F1F5F9"/>
+    </Style>
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#F1F5F9"/>
+    </Style>
+    <Style Selector="TextBlock.h3">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#F1F5F9"/>
+    </Style>
+    <Style Selector="TextBlock.body">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="#94A3B8"/>
+    </Style>
+    <Style Selector="TextBlock.muted">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="#475569"/>
+    </Style>
+    <Style Selector="TextBlock.validation-ok">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="#22C55E"/>
+    </Style>
+    <Style Selector="TextBlock.validation-err">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="#EF4444"/>
+    </Style>
+
+    <!-- PRIMARY BUTTON -->
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="#3B82F6"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#2563EB"/>
+    </Style>
+
+    <!-- SECONDARY BUTTON -->
+    <Style Selector="Button.secondary">
+        <Setter Property="Background" Value="#1E2535"/>
+        <Setter Property="Foreground" Value="#F1F5F9"/>
+        <Setter Property="BorderBrush" Value="#2D3748"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="14,8"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#252D3F"/>
+    </Style>
+
+    <!-- GHOST BUTTON -->
+    <Style Selector="Button.ghost">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#94A3B8"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#252D3F"/>
+    </Style>
+
+    <!-- TEXTBOX -->
+    <Style Selector="TextBox">
+        <Setter Property="Background" Value="#1E2535"/>
+        <Setter Property="Foreground" Value="#F1F5F9"/>
+        <Setter Property="BorderBrush" Value="#2D3748"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="CaretBrush" Value="#3B82F6"/>
+        <Setter Property="SelectionBrush" Value="#3B82F640"/>
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#3B82F6"/>
+    </Style>
+    <Style Selector="TextBox /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="#475569"/>
+    </Style>
+
+    <!-- COMBOBOX -->
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="#1E2535"/>
+        <Setter Property="Foreground" Value="#F1F5F9"/>
+        <Setter Property="BorderBrush" Value="#2D3748"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,8"/>
+    </Style>
+
+    <!-- PASSWORD BOX WRAPPER -->
+    <Style Selector="Border.pwd-wrapper">
+        <Setter Property="Background" Value="#1E2535"/>
+        <Setter Property="BorderBrush" Value="#2D3748"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+    <Style Selector="Border.pwd-wrapper:focus-within /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#3B82F6"/>
+    </Style>
+
+    <!-- SCROLLBAR -->
+    <Style Selector="ScrollBar /template/ Thumb">
+        <Setter Property="Background" Value="#2D3748"/>
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb:pointerover">
+        <Setter Property="Background" Value="#3D4F6A"/>
+    </Style>
+
+    <!-- TITLE BAR BUTTONS (system-style) -->
+    <Style Selector="Button.titlebar-btn">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#94A3B8"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.titlebar-btn:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#252D3F"/>
+    </Style>
+    <Style Selector="Button.titlebar-close:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#C0392B"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+</Styles>

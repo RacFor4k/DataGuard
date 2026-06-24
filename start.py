@@ -33,8 +33,8 @@ SERVICES = {
         "profile": None,
     },
     "UI": {
-        "name": "Client.UI",
-        "project": "Client.UI/Client.UI.csproj",
+        "name": "Client.Manager",
+        "project": "Client.Manager/Client.Manager.csproj",
         "port": 0,
         "profile": None,
     },
@@ -103,14 +103,12 @@ def clean_up():
         if proc.poll() is None:  # Процесс всё ещё запущен
             try:
                 if sys.platform == "win32":
-                    # Рекурсивно убиваем всё дерево дочерних dotnet-процессов на Windows
                     subprocess.run(
                         ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                     )
                 else:
-                    # Убиваем группу процессов на Linux/macOS
                     os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
             except Exception as e:
                 try:
@@ -195,13 +193,11 @@ def initialize_project():
         master_key_hash = ""
         try:
             argon2_mod = importlib.import_module("argon2")
-            # Настройки совпадают с вашими параметрами в appsettings: m=19456, t=3, p=1
             ph = argon2_mod.PasswordHasher(
                 time_cost=3, memory_cost=19456, parallelism=1, hash_len=32
             )
             master_key_hash = ph.hash(master_key)
         except Exception:
-            # Дефолтный корректный хэш на случай отсутствия установленного модуля в рантайме
             master_key_hash = "$argon2id$v=19$m=19456,t=3,p=1$c2FsdHNhbHRzYWx0c2FsdA$VGVtcG9yYXJ5SGFzaFZhbHVlRm9yRGV2ZWxvcG1lbnQ"
 
         try:
@@ -215,7 +211,6 @@ def initialize_project():
                 f.write(f"JWT_SECRET={jwt_secret}\n")
                 f.write(f"JWT_KEY={jwt_key}\n")
                 f.write(f"COMPANY_MANAGER_MASTER_KEY={master_key}\n")
-                # Одинарные кавычки предотвращают интерполяцию знаков $ в Docker Compose
                 f.write(f"COMPANY_MANAGER_MASTER_KEY_HASH='{master_key_hash}'\n")
                 f.write(f"SECURITY_NONCE_SECRET_KEY={nonce_key}\n")
                 f.write(f"SECURITY_MASTER_KEY_SALT={master_key_salt}\n")
@@ -301,7 +296,7 @@ def invoke_migrations():
             sys.exit(1)
 
 
-# ─── Асинхронное чтение логов в реальном времени ──────────────────────────────────
+# ─── Асинхронное чтение логов в реальном времени ──────────────────────────
 
 
 def log_reader(stream, prefix, color_ansi):
@@ -310,7 +305,6 @@ def log_reader(stream, prefix, color_ansi):
             if line:
                 cleaned_line = line.rstrip()
                 if cleaned_line:
-                    # Вывод вида: [Server.Auth] Информация из лога
                     print(
                         f"[{color_ansi}{prefix}{ANSI_RESET}] {cleaned_line}", flush=True
                     )
@@ -340,16 +334,15 @@ def start_dotnet_service(service_cfg):
     env["DOTNET_ENVIRONMENT"] = "Development"
 
     try:
-        # setsid обеспечивает новую группу процессов в UNIX, упрощая терминирование дерева потомков
         preexec = os.setsid if sys.platform != "win32" else None
         proc = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            encoding="utf-8",  # Явно указываем UTF-8 для декодирования вывода .NET
-            errors="replace",  # Заменяем некорректные байты, чтобы скрипт не падал
+            encoding="utf-8",
+            errors="replace",
             env=env,
-            bufsize=1,  # Построчный буфер
+            bufsize=1,
             preexec_fn=preexec,
         )
     except Exception as e:
@@ -358,7 +351,6 @@ def start_dotnet_service(service_cfg):
 
     RUNNING_PROCESSES.append((name, proc))
 
-    # Запускаем фоновые потоки чтения stdout и stderr, чтобы буферы dotnet не переполнялись
     t_out = threading.Thread(
         target=log_reader, args=(proc.stdout, name, ANSI_GRAY), daemon=True
     )
@@ -386,13 +378,13 @@ def start_dotnet_service(service_cfg):
 
 
 def main():
-    # Парсим аргументы (поддерживает и -style, и --style)
     args = [a.lower() for a in sys.argv[1:]]
     setup_flag = "--setup" in args or "-setup" in args
     stop_flag = "--stop" in args or "-stop" in args
     ui_flag = "--ui" in args or "-ui" in args
     migrate_flag = "--migrate" in args or "-migrate" in args
     build_flag = "--build" in args or "-build" in args
+    test_flag = "--test" in args or "-test" in args
     skip_infra = (
         "--skipinfra" in args
         or "-skipinfra" in args
@@ -403,7 +395,7 @@ def main():
         "--skipmigrations" in args
         or "-skipmigrations" in args
         or "--skip-migrations" in args
-        or "-skip-migrations" in args
+        or "-skipmigrations" in args
     )
 
     if stop_flag:
@@ -419,6 +411,20 @@ def main():
     if setup_flag:
         initialize_project()
 
+    # Тесты (без инфраструктуры)
+    if test_flag:
+        print_step("Running tests (dotnet test)", "T")
+        try:
+            result = subprocess.run(
+                ["dotnet", "test", "--no-build"],
+                text=True,
+            )
+            print_log(result, "OK" if result else "WARN")
+        except Exception as e:
+            print_log(f"Tests failed: {e}", "ERROR")
+            sys.exit(1)
+        sys.exit(0)
+
     # Проверка .env перед запуском
     if not os.path.exists(os.path.join(os.getcwd(), ".env")):
         print_log(".env not found. Run setup first: python start.py -Setup", "ERROR")
@@ -426,7 +432,6 @@ def main():
 
     # Обработка команды генерации и применения миграций
     if migrate_flag:
-        # Определение имени миграции
         migration_name = None
         for idx, arg in enumerate(sys.argv):
             if arg.lower() in ("-migrate", "--migrate"):
@@ -437,7 +442,6 @@ def main():
         if not migration_name:
             migration_name = f"Auto_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-        # 1. Проверяем, запущена ли БД (порт 5432)
         db_running = False
         try:
             with socket.create_connection(("localhost", 5432), timeout=1):
@@ -447,101 +451,73 @@ def main():
 
         started_temp_infra = False
         if not db_running:
-            print_log(
-                "Database is not running. Starting temporary infrastructure...", "WARN"
-            )
+            print_log("Database is not running. Starting temporary infrastructure...", "WARN")
             start_infrastructure()
             started_temp_infra = True
         else:
             print_log("Database is already running. Using existing instance.", "OK")
 
-        # 2. Генерируем новые миграции для проектов Auth и Storage
         print_step(f"Generating migrations: {migration_name}", 1)
         projects_to_migrate = [
             {"project": SERVICES["Auth"]["project"], "name": SERVICES["Auth"]["name"]},
-            {
-                "project": SERVICES["Storage"]["project"],
-                "name": SERVICES["Storage"]["name"],
-            },
+            {"project": SERVICES["Storage"]["project"], "name": SERVICES["Storage"]["name"]},
         ]
 
         for m in projects_to_migrate:
             print_log(f"Generating migration for {m['name']}...", "INFO")
             try:
                 subprocess.run(
-                    [
-                        "dotnet",
-                        "ef",
-                        "migrations",
-                        "add",
-                        migration_name,
-                        "--project",
-                        m["project"],
-                    ],
+                    ["dotnet", "ef", "migrations", "add", migration_name, "--project", m["project"]],
                     check=True,
                 )
-                print_log(
-                    f"Migration '{migration_name}' successfully created for {m['name']}",
-                    "OK",
-                )
+                print_log(f"Migration '{migration_name}' created for {m['name']}", "OK")
             except subprocess.CalledProcessError:
-                print_log(
-                    f"Could not generate migration for {m['name']} (it may already exist or contain no changes)",
-                    "WARN",
-                )
+                print_log(f"Could not generate migration for {m['name']}", "WARN")
             except Exception as e:
-                print_log(
-                    f"Unexpected error during migration generation for {m['name']}: {e}",
-                    "ERROR",
-                )
+                print_log(f"Unexpected error during migration for {m['name']}: {e}", "ERROR")
 
-        # 3. Применяем миграции
         invoke_migrations()
 
-        # 4. Если инфраструктура запускалась временно — выключаем её
         if started_temp_infra:
             print_step("Stopping temporary infrastructure", 3)
             try:
                 subprocess.run(["docker", "compose", "down"], check=True)
-                print_log("Temporary infrastructure stopped successfully", "OK")
+                print_log("Temporary infrastructure stopped", "OK")
             except Exception as e:
                 print_log(f"Failed to stop temporary infrastructure: {e}", "WARN")
 
-        print_log("Migration process completed successfully!", "OK")
+        print_log("Migration process completed!", "OK")
         sys.exit(0)
 
     try:
-        # Шаг 1 — Инфраструктура
         if not skip_infra:
             start_infrastructure()
         else:
             print_log("Infrastructure skipped (-SkipInfra)", "WARN")
 
-        # Шаг 1.5 — Сборка проектов (если передан флаг -build)
         if build_flag:
             build_projects()
 
-        # Шаг 2 — Миграции
         if not skip_migrations:
             invoke_migrations()
         else:
             print_log("Migrations skipped (-SkipMigrations)", "WARN")
 
-        # Шаг 3 — Server.Auth
+        # Step 3 — Server.Auth
         print_step("Starting Server.Auth (gRPC :7203)", 3)
         start_dotnet_service(SERVICES["Auth"])
 
-        # Шаг 4 — Server.Storage
+        # Step 4 — Server.Storage
         print_step("Starting Server.Storage (gRPC+REST :7122)", 4)
         start_dotnet_service(SERVICES["Storage"])
 
-        # Шаг 5 — Client.Engine
+        # Step 5 — Client.Engine
         print_step("Starting Client.Engine (Named Pipe)", 5)
         start_dotnet_service(SERVICES["Client"])
 
-        # Шаг 6 — Client.UI (Опционально)
+        # Step 6 — Client.Manager (опционально, заменяет Client.UI)
         if ui_flag:
-            print_step("Starting Client.UI (Avalonia 11)", 6)
+            print_step("Starting Client.Manager (Avalonia 11)", 6)
             start_dotnet_service(SERVICES["UI"])
 
         # ─── Итог ────────────────────────────────────────────────────────────────────
@@ -555,7 +531,11 @@ def main():
         print("    Server.Storage  → https://localhost:7122  (gRPC + REST)")
         print("    Client.Engine   → Named Pipe: DataGuardPipe")
         if ui_flag:
-            print("    Client.UI       → Desktop (Avalonia 11)")
+            print("    Client.Manager  → Desktop (Avalonia 11)")
+        print("")
+        print("  Architecture:")
+        print("    Client.Auth     → Library (login/register window)")
+        print("    Client.Manager  → Main GUI (references Client.Auth)")
         print("")
         print("  Infrastructure:")
         print("    PostgreSQL      → localhost:5432")
@@ -563,27 +543,20 @@ def main():
         print("    MinIO API       → localhost:9000")
         print("    MinIO Console   → http://localhost:9001")
         print("")
-        print(
-            f"  {ANSI_GRAY}To stop, press Ctrl+C or run: python start.py -Stop{ANSI_RESET}"
-        )
+        print(f"  {ANSI_GRAY}To stop, press Ctrl+C or run: python start.py -Stop{ANSI_RESET}")
         print("")
 
-        # Мониторинг процессов в основном потоке
+        # Мониторинг процессов
         while not EVENT_SHUTDOWN.is_set():
-            # Проверяем, не упал ли какой-то из процессов
             for name, proc in RUNNING_PROCESSES:
                 exit_code = proc.poll()
                 if exit_code is not None:
-                    print_log(
-                        f"Process {name} terminated unexpectedly with code {exit_code}",
-                        "ERROR",
-                    )
+                    print_log(f"Process {name} terminated with code {exit_code}", "ERROR")
                     EVENT_SHUTDOWN.set()
                     break
             time.sleep(0.5)
 
     finally:
-        # Вызывается при падении процесса, закрытии окна или нажатии Ctrl+C
         clean_up()
 
 
