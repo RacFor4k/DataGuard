@@ -29,6 +29,8 @@
     <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#F1F5F9"/></Style>
     <Style Selector="TextBlock.body"><Setter Property="FontSize" Value="13"/><Setter Property="Foreground" Value="#94A3B8"/></Style>
     <Style Selector="TextBlock.muted"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#475569"/></Style>
+    <Style Selector="TextBlock.validation-ok"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#22C55E"/></Style>
+    <Style Selector="TextBlock.validation-err"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#EF4444"/></Style>
 
     <!-- Primary Button -->
     <Style Selector="Button.primary"><Setter Property="Background" Value="#3B82F6"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="16,10"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/></Style>
