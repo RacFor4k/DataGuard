@@ -1,0 +1,97 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style Selector=":is(Control)">
+        <Style.Resources>
+            <SolidColorBrush x:Key="BgBaseBrush" Color="#0F1117"/>
+            <SolidColorBrush x:Key="BgSurfaceBrush" Color="#161B27"/>
+            <SolidColorBrush x:Key="BgCardBrush" Color="#1E2535"/>
+            <SolidColorBrush x:Key="BgHoverBrush" Color="#252D3F"/>
+            <SolidColorBrush x:Key="BgSelectedBrush" Color="#1A2B4A"/>
+            <SolidColorBrush x:Key="AccentBlueBrush" Color="#3B82F6"/>
+            <SolidColorBrush x:Key="AccentGreenBrush" Color="#22C55E"/>
+            <SolidColorBrush x:Key="AccentRedBrush" Color="#EF4444"/>
+            <SolidColorBrush x:Key="AccentYellowBrush" Color="#F59E0B"/>
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F1F5F9"/>
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
+            <SolidColorBrush x:Key="TextMutedBrush" Color="#475569"/>
+            <SolidColorBrush x:Key="BorderNormalBrush" Color="#2D3748"/>
+            <SolidColorBrush x:Key="BorderFocusBrush" Color="#3B82F6"/>
+        </Style.Resources>
+    </Style>
+
+    <!-- Window -->
+    <Style Selector="Window"><Setter Property="Background" Value="#0F1117"/><Setter Property="FontFamily" Value="Segoe UI, Arial"/></Style>
+
+    <!-- Text styles -->
+    <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="24"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="#F1F5F9"/></Style>
+    <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="18"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#F1F5F9"/></Style>
+    <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#F1F5F9"/></Style>
+    <Style Selector="TextBlock.body"><Setter Property="FontSize" Value="13"/><Setter Property="Foreground" Value="#94A3B8"/></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#475569"/></Style>
+    <Style Selector="TextBlock.validation-ok"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#22C55E"/></Style>
+    <Style Selector="TextBlock.validation-err"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#EF4444"/></Style>
+
+    <!-- Primary Button -->
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#3B82F6"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="16,10"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#2563EB"/></Style>
+
+    <!-- Secondary Button -->
+    <Style Selector="Button.secondary"><Setter Property="Background" Value="#1E2535"/><Setter Property="Foreground" Value="#F1F5F9"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="14,8"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#252D3F"/></Style>
+
+    <!-- Danger Button -->
+    <Style Selector="Button.danger"><Setter Property="Background" Value="#7F1D1D"/><Setter Property="Foreground" Value="#FCA5A5"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="14,8"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#991B1B"/></Style>
+
+    <!-- Success Button -->
+    <Style Selector="Button.success"><Setter Property="Background" Value="#14532D"/><Setter Property="Foreground" Value="#86EFAC"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="14,8"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button.success:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#166534"/></Style>
+
+    <!-- Ghost Button -->
+    <Style Selector="Button.ghost"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#94A3B8"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="8,6"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#252D3F"/></Style>
+
+    <!-- Nav Button -->
+    <Style Selector="Button.nav-btn"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#94A3B8"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="12,10"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13"/></Style>
+    <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#252D3F"/></Style>
+
+    <!-- TextBox -->
+    <Style Selector="TextBox"><Setter Property="Background" Value="#1E2535"/><Setter Property="Foreground" Value="#F1F5F9"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="12,10"/><Setter Property="FontSize" Value="14"/><Setter Property="CaretBrush" Value="#3B82F6"/><Setter Property="SelectionBrush" Value="#3B82F640"/></Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement"><Setter Property="BorderBrush" Value="#3B82F6"/></Style>
+    <Style Selector="TextBox /template/ TextBlock#PART_Watermark"><Setter Property="Foreground" Value="#475569"/></Style>
+
+    <!-- Card -->
+    <Style Selector="Border.card"><Setter Property="Background" Value="#1E2535"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="20"/></Style>
+    <Style Selector="Border.card-sm"><Setter Property="Background" Value="#1E2535"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="12,10"/></Style>
+
+    <!-- Badges -->
+    <Style Selector="Border.badge-blue"><Setter Property="Background" Value="#1E3A5F"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="8,3"/></Style>
+    <Style Selector="Border.badge-green"><Setter Property="Background" Value="#14532D"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="8,3"/></Style>
+    <Style Selector="Border.badge-red"><Setter Property="Background" Value="#7F1D1D"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="8,3"/></Style>
+    <Style Selector="Border.badge-yellow"><Setter Property="Background" Value="#78350F"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="8,3"/></Style>
+
+    <!-- Divider -->
+    <Style Selector="Rectangle.divider"><Setter Property="Fill" Value="#2D3748"/><Setter Property="Height" Value="1"/></Style>
+
+    <!-- Toast -->
+    <Style Selector="Border.toast"><Setter Property="Background" Value="#1E2535"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="14,10"/><Setter Property="Width" Value="320"/></Style>
+
+    <!-- KPI Card -->
+    <Style Selector="Border.kpi-card"><Setter Property="Background" Value="#1E2535"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="10"/><Setter Property="Padding" Value="16,14"/></Style>
+
+    <!-- ComboBox -->
+    <Style Selector="ComboBox"><Setter Property="Background" Value="#1E2535"/><Setter Property="Foreground" Value="#F1F5F9"/><Setter Property="BorderBrush" Value="#2D3748"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="12,8"/></Style>
+
+    <!-- CheckBox -->
+    <Style Selector="CheckBox"><Setter Property="Foreground" Value="#F1F5F9"/><Setter Property="FontSize" Value="13"/></Style>
+
+    <!-- Scrollbar -->
+    <Style Selector="ScrollBar /template/ Thumb"><Setter Property="Background" Value="#2D3748"/></Style>
+    <Style Selector="ScrollBar /template/ Thumb:pointerover"><Setter Property="Background" Value="#3D4F6A"/></Style>
+
+    <!-- Title bar buttons -->
+    <Style Selector="Button.titlebar-btn"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#94A3B8"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="0"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button.titlebar-btn:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#252D3F"/></Style>
+    <Style Selector="Button.titlebar-close:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#C0392B"/><Setter Property="Foreground" Value="White"/></Style>
+</Styles>

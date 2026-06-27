@@ -433,3 +433,6 @@ appsettings.*.json
 
 # Tool results (temporary)
 tool-results/
+
+# Avalonia build tasks
+.avalonia-build-tasks/
