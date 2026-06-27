@@ -1,9 +1,9 @@
-using Avalonia;
+﻿using Avalonia;
 using System;
 
 namespace Client.Manager;
 
-class Program
+sealed class Program
 {
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp()
@@ -12,6 +12,9 @@ class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+#if DEBUG
+            .WithDeveloperTools()
+#endif
             .WithInterFont()
             .LogToTrace();
 }

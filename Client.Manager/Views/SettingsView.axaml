@@ -1,69 +1,27 @@
+<!-- Корневое представление раздела настроек, связывающее экран с моделью SettingsViewModel. -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Client.Manager.ViewModels"
              x:Class="Client.Manager.Views.SettingsView"
              x:DataType="vm:SettingsViewModel"
-             Background="#0F1117">
-
-    <DockPanel>
-        <Border DockPanel.Dock="Top" Padding="24,20"
-                BorderBrush="#2D3748" BorderThickness="0,0,0,1" Background="#161B27">
-            <TextBlock Text="Настройки" Classes="h2"/>
-        </Border>
-
-        <ScrollViewer HorizontalAlignment="Center" MaxWidth="640" Padding="24,24">
-            <StackPanel Spacing="24">
-                <Border Classes="card">
-                    <StackPanel Spacing="16">
-                        <TextBlock Text="Подключение" Classes="h3"/>
-                        <Rectangle Classes="divider"/>
-                        <StackPanel Spacing="6">
-                            <TextBlock Text="Адрес сервера" Classes="muted"/>
-                            <TextBox Text="{Binding ServerAddress}" Watermark="https://localhost:7777"/>
-                        </StackPanel>
-                        <Border Classes="badge-green" HorizontalAlignment="Left">
-                            <TextBlock Text="● Подключено" FontSize="12" Foreground="#86EFAC"/>
-                        </Border>
-                        <Button Classes="secondary" Content="Проверить соединение" FontSize="13" Padding="14,8"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Classes="card">
-                    <StackPanel Spacing="16">
-                        <TextBlock Text="Безопасность" Classes="h3"/>
-                        <Rectangle Classes="divider"/>
-                        <CheckBox Content="Автоматически блокировать сессию" IsChecked="{Binding AutoLock}"/>
-                        <StackPanel Spacing="6">
-                            <TextBlock Text="Длительность сессии (часов)" Classes="muted"/>
-                            <TextBox Text="{Binding SessionHours}" Width="80" HorizontalAlignment="Left"/>
-                        </StackPanel>
-                        <Button Classes="secondary" Content="Сменить пароль" FontSize="13" Padding="14,8"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Classes="card" Background="#0D1120">
-                    <StackPanel Spacing="10">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Path Data="{StaticResource IconShield}" Fill="#3B82F6" Width="24" Height="24" VerticalAlignment="Center"/>
-                            <StackPanel Spacing="2" VerticalAlignment="Center">
-                                <TextBlock Text="DataGuard" Classes="h3"/>
-                                <TextBlock Text="Beta 1.1 · GUI Client" Classes="muted" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                        <Rectangle Classes="divider"/>
-                        <TextBlock Text=".NET 9 + Avalonia 11.2 + gRPC" Classes="muted" FontSize="12"/>
-                    </StackPanel>
-                </Border>
-
-                <Grid ColumnDefinitions="*,Auto">
-                    <Border Grid.Column="0" IsVisible="{Binding SavedOk}" Background="#14532D"
-                            CornerRadius="8" Padding="14,10" Margin="0,0,12,0">
-                        <TextBlock Text="Настройки сохранены" Foreground="#86EFAC" FontSize="13"/>
-                    </Border>
-                    <Button Grid.Column="1" Classes="primary" Content="Сохранить"
-                            Command="{Binding SaveCommand}" Height="44" Padding="20,0"/>
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>
-    </DockPanel>
+             mc:Ignorable="d"
+             d:DesignWidth="800"
+             d:DesignHeight="450">
+  <!-- Основная тёмная область раздела настроек с отступами для будущих параметров приложения. -->
+  <Border Background="{DynamicResource AppBackgroundBrush}" Padding="28">
+    <!-- Вертикальная панель, группирующая заголовок и пояснение раздела настроек. -->
+    <StackPanel Spacing="8">
+      <!-- Заголовок раздела настроек, показывающий назначение текущего экрана. -->
+      <TextBlock Text="Настройки"
+                 Foreground="{DynamicResource PrimaryTextBrush}"
+                 FontSize="24"
+                 FontWeight="SemiBold" />
+      <!-- Описание плейсхолдера для будущих настроек приложения DataGuard Manager. -->
+      <TextBlock Text="Плейсхолдер настроек приложения DataGuard Manager."
+                 Foreground="{DynamicResource SecondaryTextBrush}"
+                 FontSize="14" />
+    </StackPanel>
+  </Border>
 </UserControl>

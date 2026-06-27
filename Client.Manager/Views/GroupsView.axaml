@@ -1,0 +1,27 @@
+<!-- Корневое представление раздела групп, связывающее экран с моделью GroupsViewModel. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Client.Manager.ViewModels"
+             x:Class="Client.Manager.Views.GroupsView"
+             x:DataType="vm:GroupsViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="800"
+             d:DesignHeight="450">
+  <!-- Основная тёмная область раздела групп с отступами для интерфейса управления доступом. -->
+  <Border Background="{DynamicResource AppBackgroundBrush}" Padding="28">
+    <!-- Вертикальная панель, группирующая заголовок и пояснение раздела групп. -->
+    <StackPanel Spacing="8">
+      <!-- Заголовок раздела групп, показывающий назначение текущего экрана. -->
+      <TextBlock Text="Группы"
+                 Foreground="{DynamicResource PrimaryTextBrush}"
+                 FontSize="24"
+                 FontWeight="SemiBold" />
+      <!-- Описание плейсхолдера для будущего управления группами и ролями доступа. -->
+      <TextBlock Text="Плейсхолдер управления группами и ролями доступа."
+                 Foreground="{DynamicResource SecondaryTextBrush}"
+                 FontSize="14" />
+    </StackPanel>
+  </Border>
+</UserControl>

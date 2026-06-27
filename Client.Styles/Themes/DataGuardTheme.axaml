@@ -1,0 +1,226 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <FluentTheme />
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F6F8FB" />
+          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="PanelBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="PanelSecondaryBrush" Color="#EEF2F7" />
+          <SolidColorBrush x:Key="PanelHoverBrush" Color="#E5EBF3" />
+          <SolidColorBrush x:Key="BorderBrush" Color="#D5DCE8" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#1E2532" />
+          <SolidColorBrush x:Key="SecondaryTextBrush" Color="#5E687A" />
+          <SolidColorBrush x:Key="SubtleTextBrush" Color="#7B8496" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#1079CE" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#DCEEFF" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#D94040" />
+          <SolidColorBrush x:Key="Bg" Color="#F6F8FB" />
+          <SolidColorBrush x:Key="Panel" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="Panel2" Color="#EEF2F7" />
+          <SolidColorBrush x:Key="Hover" Color="#E5EBF3" />
+          <SolidColorBrush x:Key="Border" Color="#D5DCE8" />
+          <SolidColorBrush x:Key="Text" Color="#1E2532" />
+          <SolidColorBrush x:Key="Muted" Color="#5E687A" />
+          <SolidColorBrush x:Key="Subtle" Color="#7B8496" />
+          <SolidColorBrush x:Key="Accent" Color="#1079CE" />
+          <SolidColorBrush x:Key="AccentSoft" Color="#DCEEFF" />
+          <SolidColorBrush x:Key="Danger" Color="#D94040" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0D0F14" />
+          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#141720" />
+          <SolidColorBrush x:Key="PanelBrush" Color="#141720" />
+          <SolidColorBrush x:Key="PanelSecondaryBrush" Color="#1C1F2A" />
+          <SolidColorBrush x:Key="PanelHoverBrush" Color="#242836" />
+          <SolidColorBrush x:Key="BorderBrush" Color="#2A2F3D" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#E8EAF0" />
+          <SolidColorBrush x:Key="SecondaryTextBrush" Color="#8B92A8" />
+          <SolidColorBrush x:Key="SubtleTextBrush" Color="#555D75" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#1079CE" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#1F2636" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#D94040" />
+          <SolidColorBrush x:Key="Bg" Color="#0D0F14" />
+          <SolidColorBrush x:Key="Panel" Color="#141720" />
+          <SolidColorBrush x:Key="Panel2" Color="#1C1F2A" />
+          <SolidColorBrush x:Key="Hover" Color="#242836" />
+          <SolidColorBrush x:Key="Border" Color="#2A2F3D" />
+          <SolidColorBrush x:Key="Text" Color="#E8EAF0" />
+          <SolidColorBrush x:Key="Muted" Color="#8B92A8" />
+          <SolidColorBrush x:Key="Subtle" Color="#555D75" />
+          <SolidColorBrush x:Key="Accent" Color="#1079CE" />
+          <SolidColorBrush x:Key="AccentSoft" Color="#1F2636" />
+          <SolidColorBrush x:Key="Danger" Color="#D94040" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="FontFamily" Value="Inter" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="Button.NavButton">
+    <Setter Property="Width" Value="38" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="Margin" Value="0,2" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="ToolTip.ShowDelay" Value="650" />
+    <Setter Property="ToolTip.BetweenShowDelay" Value="120" />
+  </Style>
+
+  <Style Selector="Button.NavButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+  </Style>
+
+  <Style Selector="Button.NavButton.active">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <Style Selector="Image.NavIcon">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Opacity" Value="0.88" />
+  </Style>
+
+  <Style Selector="Button.ToolbarButton, Button.ChatFolderButton">
+    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="{DynamicResource PanelSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="Button.ToolbarButton:pointerover, Button.ChatFolderButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="Button.ChatFolderButton.active">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.ViewSwitchButton">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="{DynamicResource PanelSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Button.ViewSwitchButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.TreeItemButton">
+    <Setter Property="Height" Value="30" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="Button.TreeItemButton:pointerover, Button.FileRowButton:pointerover, Button.ChatItemButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+  </Style>
+
+  <Style Selector="Button.TreeItemButton.selected, Button.FileRowButton.selected, Button.ChatItemButton.selected">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.FileRowButton, Button.ChatItemButton, Button.FileItemButton">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="Button.FileItemButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+  </Style>
+
+  <Style Selector="Button.FileItemButton.selected">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.FileHeaderButton">
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="MinHeight" Value="38" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="Button.FileHeaderButton:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="Border.FileRow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+  </Style>
+
+  <Style Selector="Button.ProfileButton">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.ProfileButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+  </Style>
+
+  <Style Selector="Button.HeaderProfileButton">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="Button.HeaderProfileButton:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PanelHoverBrush}" />
+  </Style>
+</Styles>

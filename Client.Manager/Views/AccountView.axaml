@@ -1,0 +1,27 @@
+<!-- Корневое представление раздела аккаунта, связывающее экран с моделью AccountViewModel. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Client.Manager.ViewModels"
+             x:Class="Client.Manager.Views.AccountView"
+             x:DataType="vm:AccountViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="800"
+             d:DesignHeight="450">
+	<!-- Основная тёмная область раздела аккаунта с внутренними отступами для содержимого. -->
+	<Border Background="{DynamicResource AppBackgroundBrush}" Padding="28">
+		<!-- Вертикальная панель, группирующая заголовок и пояснение раздела аккаунта. -->
+		<StackPanel Spacing="8">
+			<!-- Заголовок раздела аккаунта, показывающий назначение текущего экрана. -->
+			<TextBlock Text="Аккаунт"
+					   Foreground="{DynamicResource PrimaryTextBrush}"
+					   FontSize="24"
+					   FontWeight="SemiBold" />
+			<!-- Описание плейсхолдера для будущих данных профиля пользователя и параметров аккаунта. -->
+			<TextBlock Text="Плейсхолдер профиля пользователя и параметров аккаунта."
+					   Foreground="{DynamicResource SecondaryTextBrush}"
+					   FontSize="14" />
+		</StackPanel>
+	</Border>
+</UserControl>

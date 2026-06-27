@@ -1,0 +1,22 @@
+<!-- Корневой UserControl экрана авторизации, связывающий разметку с AuthViewModel. -->
+<UserControl
+    x:Class="Client.AuthLib.Views.AuthView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Client.AuthLib.ViewModels"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:AuthViewModel"
+    mc:Ignorable="d">
+
+    <!-- Design.DataContext задает демонстрационный контекст данных для предпросмотра в дизайнере Avalonia. -->
+    <Design.DataContext>
+        <!-- Экземпляр AuthViewModel используется только дизайнером для корректного отображения привязок. -->
+        <vm:AuthViewModel />
+    </Design.DataContext>
+
+    <!-- ContentControl отображает текущую дочернюю модель представления из процесса авторизации. -->
+    <ContentControl Content="{Binding CurrentViewModel}" />
+</UserControl>

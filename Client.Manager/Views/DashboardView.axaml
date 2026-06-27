@@ -1,0 +1,45 @@
+<!-- Корневое представление главной страницы, связывающее экран с моделью DashboardViewModel. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Client.Manager.ViewModels"
+             x:Class="Client.Manager.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="640">
+
+  <!-- Корневая сетка главной страницы, задающая общий тёмный фон экрана. -->
+  <Grid Background="{DynamicResource AppBackgroundBrush}">
+    <!-- Карточка содержимого главной панели со скруглением, рамкой и внутренними отступами. -->
+    <Border Margin="24"
+            Padding="28"
+            Background="{DynamicResource PanelBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="16">
+      <!-- Вертикальная панель, объединяющая логотип, заголовок и описания главного экрана. -->
+      <StackPanel Spacing="12">
+        <!-- Логотип приложения DataGuard, визуально обозначающий главную страницу. -->
+        <Image Width="44"
+               Height="44"
+               HorizontalAlignment="Left"
+               Source="avares://Client.Styles/Assets/logo.svg" />
+        <!-- Основной заголовок главной страницы приложения. -->
+        <TextBlock Text="Главная"
+                   Foreground="{DynamicResource PrimaryTextBrush}"
+                   FontSize="28"
+                   FontWeight="SemiBold" />
+        <!-- Краткое описание назначения домашней страницы DataGuard. -->
+        <TextBlock Text="Домашняя страница DataGuard"
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   FontSize="14" />
+        <!-- Дополнительное пояснение будущего наполнения главного экрана сводкой и событиями. -->
+        <TextBlock Text="Здесь будут сводка безопасности, быстрые действия и последние события."
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   FontSize="13" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

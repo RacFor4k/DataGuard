@@ -1,130 +1,225 @@
+<!-- Корневой элемент пользовательского представления. -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Client.Manager.ViewModels"
-             xmlns:models="using:Client.Manager.Models"
              x:Class="Client.Manager.Views.MessengerView"
              x:DataType="vm:MessengerViewModel"
-             Background="#0F1117">
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="640">
 
-    <Grid ColumnDefinitions="280,*">
-        <!-- Thread list -->
-        <Border Grid.Column="0" Background="#161B27" BorderBrush="#2D3748" BorderThickness="0,0,1,0">
-            <DockPanel>
-                <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="#2D3748" BorderThickness="0,0,0,1">
-                    <TextBlock Text="Мессенджер" Classes="h3"/>
-                </Border>
-                <ScrollViewer>
-                    <ItemsControl ItemsSource="{Binding Threads}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:ChatThread">
-                                <Button Background="Transparent" BorderThickness="0"
-                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                        Padding="12,10" Cursor="Hand"
-                                        Command="{Binding $parent[UserControl].((vm:MessengerViewModel)DataContext).SelectThreadCommand}"
-                                        CommandParameter="{Binding}">
-                                    <Button.Styles>
-                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
-                                            <Setter Property="Background" Value="#1E2535"/>
-                                        </Style>
-                                    </Button.Styles>
-                                    <Grid ColumnDefinitions="Auto,*,Auto">
-                                        <Border Grid.Column="0" Width="38" Height="38" CornerRadius="19"
-                                                Background="#1E2535" Margin="0,0,10,0">
-                                            <Path Data="{StaticResource IconChat}" Fill="#64748B" Width="18" Height="18"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
-                                                       Foreground="#F1F5F9" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding LastMessage}" FontSize="12"
-                                                       Foreground="#64748B" TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2" Spacing="4" HorizontalAlignment="Right">
-                                            <TextBlock Text="{Binding Time}" FontSize="11" Foreground="#475569"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </DockPanel>
+  <!-- Основная сетка мессенджера со списком чатов и областью переписки. -->
+  <Grid ColumnDefinitions="280,*" Background="{DynamicResource AppBackgroundBrush}">
+    <!-- Левая панель навигации по чатам. -->
+    <Border Grid.Column="0"
+            Background="{DynamicResource PanelBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+      <!-- Сетка заголовка, поиска и списка диалогов. -->
+      <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Верхний блок левой панели с заголовком и папками чатов. -->
+        <Border Grid.Row="0" Padding="16,14" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,0">
+          <!-- Вертикальная группа заголовка чата и фильтров папок. -->
+          <StackPanel Spacing="10">
+            <!-- Заголовок раздела чатов. -->
+            <TextBlock Text="Чат"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
+                       FontSize="18"
+                       FontWeight="SemiBold" />
+            <!-- Список папок чатов. -->
+            <ItemsControl ItemsSource="{Binding Folders}">
+              <!-- Панель расположения элементов списка. -->
+              <ItemsControl.ItemsPanel>
+                <!-- Шаблон панели для коллекции элементов. -->
+                <ItemsPanelTemplate>
+                  <!-- Горизонтальная панель кнопок папок чатов. -->
+                  <StackPanel Orientation="Horizontal" Spacing="8" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <!-- Шаблон отдельного элемента списка. -->
+              <ItemsControl.ItemTemplate>
+                <!-- Шаблон кнопки папки чатов. -->
+                <DataTemplate DataType="vm:ChatFolderPlaceholder">
+                  <!-- Кнопка выбора папки чатов. -->
+                  <Button Classes.ChatFolderButton="True"
+                          Classes.active="{Binding IsSelected}"
+                          Command="{Binding $parent[UserControl].DataContext.SelectFolderCommand}"
+                          CommandParameter="{Binding}"
+                          ToolTip.Tip="Показать чаты папки">
+                    <!-- Сетка названия папки и бейджа количества. -->
+                    <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="6">
+                      <!-- Название папки чатов. -->
+                      <TextBlock Text="{Binding Name}" />
+                      <!-- Бейдж папки с количеством видимых элементов. -->
+                      <Border Grid.Column="1"
+                              MinWidth="18"
+                              Height="18"
+                              Padding="4,0"
+                              Background="{DynamicResource DangerBrush}"
+                              CornerRadius="9"
+                              IsVisible="{Binding HasVisibleBadge}">
+                        <!-- Текст бейджа папки чатов. -->
+                        <TextBlock Text="{Binding BadgeText}" Foreground="White" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
         </Border>
 
-        <!-- Chat area -->
-        <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto"
-              IsVisible="{Binding SelectedThread, Converter={x:Static ObjectConverters.IsNotNull}}">
-            <Border Grid.Row="0" Background="#161B27" Padding="16,12"
-                    BorderBrush="#2D3748" BorderThickness="0,0,0,1">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
-                        <Path Data="{StaticResource IconChat}" Fill="#94A3B8" Width="18" Height="18" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding SelectedThread.Name}" Classes="h3"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
-                                IsVisible="{Binding SelectedThread.IsDocument}">
-                        <Button Classes="success"
-                                Command="{Binding ApproveAccessCommand}" FontSize="12">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Path Data="{StaticResource IconCheck}" Fill="#F1F5F9" Width="14" Height="14" VerticalAlignment="Center"/>
-                                <TextBlock Text="Одобрить" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Classes="danger"
-                                Command="{Binding DenyAccessCommand}" FontSize="12">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Path Data="{StaticResource IconClose}" Fill="#F1F5F9" Width="14" Height="14" VerticalAlignment="Center"/>
-                                <TextBlock Text="Отклонить" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Classes="secondary" FontSize="12">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Path Data="{StaticResource IconFileDoc}" Fill="#F1F5F9" Width="14" Height="14" VerticalAlignment="Center"/>
-                                <TextBlock Text="К файлу" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-            </Border>
+        <!-- Блок визуального поиска по чатам. -->
+        <Border Grid.Row="1" Padding="12,0,12,8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,0">
+          <!-- Визуальное поле поиска чатов. -->
+          <Border Height="30" Background="{DynamicResource PanelSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+            <!-- Подсказка поля поиска чатов. -->
+            <TextBlock Text="Поиск"
+                       Foreground="{DynamicResource SubtleTextBrush}"
+                       VerticalAlignment="Center"
+                       Margin="10,0" />
+          </Border>
+        </Border>
 
-            <ScrollViewer Grid.Row="1" Padding="20,16">
-                <ItemsControl ItemsSource="{Binding SelectedThread.Messages}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:ChatMessage">
-                            <StackPanel Margin="0,6">
-                                <Border IsVisible="{Binding IsSystem}"
-                                        HorizontalAlignment="Center" Margin="0,4"
-                                        Background="#1E2535" CornerRadius="12" Padding="12,5">
-                                    <TextBlock Text="{Binding Content}" FontSize="12" Foreground="#64748B"/>
-                                </Border>
-                                <StackPanel IsVisible="{Binding !IsSystem}">
-                                    <TextBlock Text="{Binding Author}" FontSize="11" Foreground="#475569"
-                                               Margin="8,0,0,3" IsVisible="{Binding !IsMe}"/>
-                                    <Border CornerRadius="12" MaxWidth="400" Padding="12,8"
-                                            Background="#1E2535" HorizontalAlignment="Left">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="{Binding Content}" FontSize="13"
-                                                       Foreground="#F1F5F9" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Time}" FontSize="10"
-                                                       Foreground="#475569" HorizontalAlignment="Right"/>
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+        <!-- Список доступных диалогов. -->
+        <ItemsControl Grid.Row="2"
+                      Margin="8"
+                      HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding Chats}">
+          <!-- Шаблон отдельного элемента списка. -->
+          <ItemsControl.ItemTemplate>
+            <!-- Шаблон элемента диалога. -->
+            <DataTemplate DataType="vm:ChatPlaceholder">
+              <!-- Кнопка выбора диалога. -->
+              <Button Classes.ChatItemButton="True"
+                      HorizontalAlignment="Stretch"
+                      Classes.selected="{Binding IsSelected}"
+                      Command="{Binding $parent[UserControl].DataContext.SelectChatCommand}"
+                      CommandParameter="{Binding}">
+                <!-- Внутренний контейнер элемента диалога. -->
+                <Border Padding="10" HorizontalAlignment="Stretch">
+                  <!-- Сетка аватара, описания и метаданных диалога. -->
+                  <Grid ColumnDefinitions="34,*,Auto">
+                    <!-- Круглый контейнер аватара диалога. -->
+                    <Border Width="30" Height="30" Background="{DynamicResource PanelSecondaryBrush}" CornerRadius="15">
+                      <!-- Иконка аватара диалога. -->
+                      <Image Width="16" Height="16" Source="avares://Client.Styles/Assets/user.svg" />
+                    </Border>
+                    <!-- Группа названия и предпросмотра последнего сообщения. -->
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                      <!-- Название диалога. -->
+                      <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="SemiBold" />
+                      <!-- Предпросмотр последнего сообщения диалога. -->
+                      <TextBlock Text="{Binding Preview}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                    </StackPanel>
+                    <!-- Группа времени и бейджа непрочитанных сообщений. -->
+                    <StackPanel Grid.Column="2" Spacing="4" HorizontalAlignment="Right">
+                      <!-- Время последнего сообщения. -->
+                      <TextBlock Text="{Binding Time}" Foreground="{DynamicResource SubtleTextBrush}" FontSize="11" HorizontalAlignment="Right" />
+                      <!-- Бейдж количества непрочитанных сообщений. -->
+                      <Border MinWidth="18" Height="18" Padding="4,0" Background="{DynamicResource DangerBrush}" CornerRadius="9" IsVisible="{Binding HasUnread}">
+                        <!-- Текст бейджа непрочитанных сообщений. -->
+                        <TextBlock Text="{Binding BadgeText}" Foreground="White" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+    </Border>
 
-            <Border Grid.Row="2" Padding="16,12" Background="#161B27"
-                    BorderBrush="#2D3748" BorderThickness="0,1,0,0">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBox Grid.Column="0" Watermark="Напишите сообщение..."
-                             Text="{Binding MessageInput}" Height="40" Margin="0,0,10,0"/>
-                    <Button Grid.Column="1" Classes="primary" Content="Отправить"
-                            Command="{Binding SendMessageCommand}" Height="40"/>
-                </Grid>
+    <!-- Правая область выбранного чата. -->
+    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
+      <!-- Заголовок выбранного чата. -->
+      <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+        <!-- Кнопка открытия карточки пользователя выбранного чата. -->
+        <Button Classes.HeaderProfileButton="True" ToolTip.Tip="Открыть карточку пользователя">
+          <!-- Сетка аватара и описания выбранного чата. -->
+          <Grid ColumnDefinitions="42,*" Margin="16,12" HorizontalAlignment="Stretch">
+            <!-- Круглый контейнер аватара выбранного чата. -->
+            <Border Width="34" Height="34" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="17">
+              <!-- Иконка аватара выбранного чата. -->
+              <Image Width="18" Height="18" Source="avares://Client.Styles/Assets/user.svg" />
             </Border>
+            <!-- Группа названия и подзаголовка выбранного чата. -->
+            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+              <!-- Название выбранного чата. -->
+              <TextBlock Text="{Binding SelectedChatName}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="14" FontWeight="SemiBold" />
+              <!-- Подзаголовок выбранного чата. -->
+              <TextBlock Text="{Binding SelectedChatSubtitle}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+            </StackPanel>
+          </Grid>
+        </Button>
+      </Border>
+
+      <!-- Прокручиваемая область сообщений выбранного чата. -->
+      <ScrollViewer Grid.Row="1" Padding="16">
+        <!-- Вертикальная лента сообщений. -->
+        <StackPanel Spacing="12">
+          <!-- Входящее сообщение в переписке. -->
+          <Border MaxWidth="520" Padding="12" HorizontalAlignment="Left" Background="{DynamicResource PanelSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10">
+            <!-- Текст входящего сообщения. -->
+            <TextBlock Text="Добрый день. Нужно согласовать внешний доступ к договору поставки."
+                       Foreground="{DynamicResource PrimaryTextBrush}"
+                       TextWrapping="Wrap" />
+          </Border>
+          <!-- Исходящее сообщение в переписке. -->
+          <Border MaxWidth="520" Padding="12" HorizontalAlignment="Right" Background="{DynamicResource AccentBrush}" CornerRadius="10">
+            <!-- Текст исходящего сообщения. -->
+            <TextBlock Text="Проверю права и срок действия ссылки."
+                       Foreground="White"
+                       TextWrapping="Wrap" />
+          </Border>
+          <!-- Входящее сообщение с действиями согласования. -->
+          <Border MaxWidth="520" Padding="12" HorizontalAlignment="Left" Background="{DynamicResource PanelSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10">
+            <!-- Группа текста сообщения и кнопок решения. -->
+            <StackPanel Spacing="8">
+              <!-- Текст предпросмотра выбранного чата. -->
+              <TextBlock Text="{Binding SelectedChatPreview}" Foreground="{DynamicResource PrimaryTextBrush}" />
+              <!-- Горизонтальная группа кнопок согласования. -->
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <!-- Кнопка одобрения запроса из сообщения. -->
+                <Button Classes="ChatFolderButton" Content="Одобрить" />
+                <!-- Кнопка отклонения запроса из сообщения. -->
+                <Button Classes="ChatFolderButton" Content="Отклонить" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Нижняя панель ввода нового сообщения. -->
+      <Border Grid.Row="2" Padding="16,12" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+        <!-- Сетка поля ввода и кнопки отправки. -->
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <!-- Визуальное поле ввода сообщения с кнопкой вложения. -->
+          <Border Height="38" Background="{DynamicResource PanelSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+            <!-- Сетка кнопки вложения и текстовой подсказки. -->
+            <Grid ColumnDefinitions="34,*">
+              <!-- Кнопка прикрепления файла к сообщению. -->
+              <Button Classes="ChatFolderButton" Padding="6" BorderThickness="0" Background="Transparent" ToolTip.Tip="Прикрепить файл">
+                <!-- Иконка прикрепления файла. -->
+                <Image Source="avares://Client.Styles/Assets/attach.svg" />
+              </Button>
+              <!-- Подсказка поля ввода сообщения. -->
+              <TextBlock Grid.Column="1" Text="Напишите сообщение..."
+                       Foreground="{DynamicResource SubtleTextBrush}"
+                       VerticalAlignment="Center"
+                       Margin="0,0" />
+            </Grid>
+          </Border>
+          <!-- Кнопка отправки сообщения. -->
+          <Button Grid.Column="1" Classes="ChatFolderButton" Width="38" Padding="6" ToolTip.Tip="Отправить сообщение">
+            <!-- Иконка отправки сообщения. -->
+            <Image Source="avares://Client.Styles/Assets/send.svg" />
+          </Button>
         </Grid>
+      </Border>
     </Grid>
+  </Grid>
 </UserControl>

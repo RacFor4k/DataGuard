@@ -6,25 +6,27 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.35.0" />
-		<PackageReference Include="Grpc.Net.Client" Version="2.60.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.81.0"/>
-	</ItemGroup>
-	
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Tools">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
   <ItemGroup>
     <Folder Include="Protos\" />
   </ItemGroup>
 
-	<ItemGroup>
-		<ProtoBuf Include="Protos\auth.proto" GrpcServices="Both" />
+  <ItemGroup>
+    <ProtoBuf Include="Protos\auth.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\security.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\company_manager.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\Client\auth.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\Client\company_manager.proto" GrpcServices="Both" />
     <ProtoBuf Include="Protos\storage.proto" GrpcServices="Both" />
-	</ItemGroup>
-	
+  </ItemGroup>
 
 
 </Project>

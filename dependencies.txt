@@ -1,0 +1,872 @@
+﻿  ╨Ю╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨╡╨║╤В╨╛╨▓ ╨┤╨╗╤П ╨▓╨╛╤Б╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜╨╕╤П...
+D:\Source\DataGuard\Client.Auth\Client.Auth.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Client.Engine.Tests\Client.Engine.Tests.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Client.Engine\Client.Engine.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Client.Manager\Client.Manager.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Server.Storage.Tests\Server.Storage.Tests.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Server.Auth.Tests\Server.Auth.Tests.csproj : warning NU1510: PackageReference Microsoft.Extensions.DependencyInjection ╨╜╨╡ ╨▒╤Г╨┤╨╡╤В ╤Г╤А╨╡╨╖╨░╨╜╨╛. ╨а╨░╤Б╤Б╨╝╨╛╤В╤А╨╕╤В╨╡ ╨▓╨╛╨╖╨╝╨╛╨╢╨╜╨╛╤Б╤В╤М ╤Г╨┤╨░╨╗╨╡╨╜╨╕╤П ╤Н╤В╨╛╨│╨╛ ╨┐╨░╨║╨╡╤В╨░ ╨╕╨╖ ╨╖╨░╨▓╨╕╤Б╨╕╨╝╨╛╤Б╤В╨╡╨╣, ╤В╨░╨║ ╨║╨░╨║ ╨╛╨╜, ╨▓╨╡╤А╨╛╤П╤В╨╜╨╛, ╨╜╨╡ ╤В╤А╨╡╨▒╤Г╨╡╤В╤Б╤П. [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Server.Auth.Tests\Server.Auth.Tests.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+D:\Source\DataGuard\Client.Auth.Tests\Client.Auth.Tests.csproj : warning NU1903: ╨г ╨┐╨░╨║╨╡╤В╨░ "SQLitePCLRaw.lib.e_sqlite3" 2.1.11 ╨╡╤Б╤В╤М ╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П ╤Г╤П╨╖╨▓╨╕╨╝╨╛╤Б╤В╤М https://github.com/advisories/GHSA-2m69-gcr7-jv3q (╤Г╤А╨╛╨▓╨╡╨╜╤М ╤Б╨╡╤А╤М╨╡╨╖╨╜╨╛╤Б╤В╨╕: ╨▓╤Л╤Б╨╛╨║╨╕╨╣ ╤Г╤А╨╛╨▓╨╡╨╜╤М) [D:\Source\DataGuard\DataGuard.slnx]
+  ╨Т╤Б╨╡ ╨┐╤А╨╛╨╡╨║╤В╤Л ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╤Л ╨┤╨╗╤П ╨▓╨╛╤Б╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜╨╕╤П.
+╨Я╤А╨╛╨╡╨║╤В "Client.Auth.Tests" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П            ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Microsoft.NET.Test.Sdk         18.7.0      18.7.0   
+   > xunit                          2.9.3       2.9.3    
+   > xunit.runner.visualstudio      3.1.5       3.1.5    
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛         
+   > Avalonia                                                   12.0.5            
+   > Avalonia.Angle.Windows.Natives                             2.1.27548.20260419
+   > Avalonia.BuildServices                                     11.3.2            
+   > Avalonia.Desktop                                           12.0.5            
+   > Avalonia.Fonts.Inter                                       12.0.5            
+   > Avalonia.FreeDesktop                                       12.0.5            
+   > Avalonia.FreeDesktop.AtSpi                                 12.0.5            
+   > Avalonia.HarfBuzz                                          12.0.5            
+   > Avalonia.Native                                            12.0.5            
+   > Avalonia.Remote.Protocol                                   12.0.5            
+   > Avalonia.Skia                                              12.0.5            
+   > Avalonia.Themes.Fluent                                     12.0.5            
+   > Avalonia.Win32                                             12.0.5            
+   > Avalonia.X11                                               12.0.5            
+   > CommunityToolkit.Mvvm                                      8.4.2             
+   > dotenv.net                                                 4.0.2             
+   > Google.Protobuf                                            3.35.1            
+   > Grpc.AspNetCore                                            2.80.0            
+   > Grpc.AspNetCore.Server                                     2.80.0            
+   > Grpc.AspNetCore.Server.ClientFactory                       2.80.0            
+   > Grpc.Core.Api                                              2.80.0            
+   > Grpc.Net.Client                                            2.80.0            
+   > Grpc.Net.ClientFactory                                     2.80.0            
+   > Grpc.Net.Common                                            2.80.0            
+   > HarfBuzzSharp                                              8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.Linux                           8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.macOS                           8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.WebAssembly                     8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.Win32                           8.3.1.3           
+   > Konscious.Security.Cryptography.Argon2                     1.3.1             
+   > Konscious.Security.Cryptography.Blake2                     1.1.1             
+   > MicroCom.Runtime                                           0.11.4            
+   > Microsoft.Bcl.Cryptography                                 10.0.2            
+   > Microsoft.CodeCoverage                                     18.7.0            
+   > Microsoft.Data.Sqlite.Core                                 10.0.9            
+   > Microsoft.EntityFrameworkCore                              10.0.9            
+   > Microsoft.EntityFrameworkCore.Abstractions                 10.0.9            
+   > Microsoft.EntityFrameworkCore.Analyzers                    10.0.9            
+   > Microsoft.EntityFrameworkCore.Relational                   10.0.9            
+   > Microsoft.EntityFrameworkCore.Sqlite                       10.0.9            
+   > Microsoft.EntityFrameworkCore.Sqlite.Core                  10.0.9            
+   > Microsoft.Extensions.Caching.Abstractions                  10.0.9            
+   > Microsoft.Extensions.Caching.Memory                        10.0.9            
+   > Microsoft.Extensions.Configuration                         10.0.0            
+   > Microsoft.Extensions.Configuration.Abstractions            10.0.9            
+   > Microsoft.Extensions.Configuration.Binder                  10.0.0            
+   > Microsoft.Extensions.DependencyInjection                   10.0.9            
+   > Microsoft.Extensions.DependencyInjection.Abstractions      10.0.9            
+   > Microsoft.Extensions.DependencyModel                       10.0.9            
+   > Microsoft.Extensions.Diagnostics                           8.0.0             
+   > Microsoft.Extensions.Diagnostics.Abstractions              10.0.0            
+   > Microsoft.Extensions.FileProviders.Abstractions            10.0.0            
+   > Microsoft.Extensions.Hosting.Abstractions                  10.0.0            
+   > Microsoft.Extensions.Http                                  8.0.0             
+   > Microsoft.Extensions.Logging                               10.0.9            
+   > Microsoft.Extensions.Logging.Abstractions                  10.0.9            
+   > Microsoft.Extensions.Options                               10.0.9            
+   > Microsoft.Extensions.Options.ConfigurationExtensions       8.0.0             
+   > Microsoft.Extensions.Primitives                            10.0.9            
+   > Microsoft.IdentityModel.Abstractions                       8.19.1            
+   > Microsoft.IdentityModel.JsonWebTokens                      8.19.1            
+   > Microsoft.IdentityModel.Logging                            8.19.1            
+   > Microsoft.IdentityModel.Tokens                             8.19.1            
+   > Microsoft.TestPlatform.ObjectModel                         18.7.0            
+   > Microsoft.TestPlatform.TestHost                            18.7.0            
+   > Newtonsoft.Json                                            13.0.3            
+   > Npgsql                                                     10.0.3            
+   > Npgsql.EntityFrameworkCore.PostgreSQL                      10.0.2            
+   > Serilog                                                    4.3.0             
+   > Serilog.AspNetCore                                         10.0.0            
+   > Serilog.Extensions.Hosting                                 10.0.0            
+   > Serilog.Extensions.Logging                                 10.0.0            
+   > Serilog.Formatting.Compact                                 3.0.0             
+   > Serilog.Settings.Configuration                             10.0.0            
+   > Serilog.Sinks.Console                                      6.1.1             
+   > Serilog.Sinks.Debug                                        3.0.0             
+   > Serilog.Sinks.File                                         7.0.0             
+   > SkiaSharp                                                  3.119.4           
+   > SkiaSharp.NativeAssets.Linux                               3.119.4           
+   > SkiaSharp.NativeAssets.macOS                               3.119.4           
+   > SkiaSharp.NativeAssets.WebAssembly                         3.119.4           
+   > SkiaSharp.NativeAssets.Win32                               3.119.4           
+   > SQLitePCLRaw.bundle_e_sqlite3                              2.1.11            
+   > SQLitePCLRaw.core                                          2.1.11            
+   > SQLitePCLRaw.lib.e_sqlite3                                 2.1.11            
+   > SQLitePCLRaw.provider.e_sqlite3                            2.1.11            
+   > System.IdentityModel.Tokens.Jwt                            8.19.1            
+   > Tmds.DBus.Protocol                                         0.92.0            
+   > xunit.abstractions                                         2.0.3             
+   > xunit.analyzers                                            1.18.0            
+   > xunit.assert                                               2.9.3             
+   > xunit.core                                                 2.9.3             
+   > xunit.extensibility.core                                   2.9.3             
+   > xunit.extensibility.execution                              2.9.3             
+
+╨Я╤А╨╛╨╡╨║╤В "Client.Auth" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                           ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Avalonia                                      12.0.5      12.0.5   
+   > Avalonia.Desktop                              12.0.5      12.0.5   
+   > Avalonia.Fonts.Inter                          12.0.5      12.0.5   
+   > Avalonia.Themes.Fluent                        12.0.5      12.0.5   
+   > CommunityToolkit.Mvvm                         8.4.2       8.4.2    
+   > Google.Protobuf                               3.35.1      3.35.1   
+   > Grpc.Net.Client                               2.80.0      2.80.0   
+   > Grpc.Tools                                    2.81.1      2.81.1   
+   > Microsoft.Extensions.DependencyInjection      10.0.9      10.0.9   
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛         
+   > Avalonia.Angle.Windows.Natives                             2.1.27548.20260419
+   > Avalonia.BuildServices                                     11.3.2            
+   > Avalonia.FreeDesktop                                       12.0.5            
+   > Avalonia.FreeDesktop.AtSpi                                 12.0.5            
+   > Avalonia.HarfBuzz                                          12.0.5            
+   > Avalonia.Native                                            12.0.5            
+   > Avalonia.Remote.Protocol                                   12.0.5            
+   > Avalonia.Skia                                              12.0.5            
+   > Avalonia.Win32                                             12.0.5            
+   > Avalonia.X11                                               12.0.5            
+   > dotenv.net                                                 4.0.2             
+   > Grpc.AspNetCore                                            2.80.0            
+   > Grpc.AspNetCore.Server                                     2.80.0            
+   > Grpc.AspNetCore.Server.ClientFactory                       2.80.0            
+   > Grpc.Core.Api                                              2.80.0            
+   > Grpc.Net.ClientFactory                                     2.80.0            
+   > Grpc.Net.Common                                            2.80.0            
+   > HarfBuzzSharp                                              8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.Linux                           8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.macOS                           8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.WebAssembly                     8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.Win32                           8.3.1.3           
+   > Konscious.Security.Cryptography.Argon2                     1.3.1             
+   > Konscious.Security.Cryptography.Blake2                     1.1.1             
+   > MicroCom.Runtime                                           0.11.4            
+   > Microsoft.Bcl.Cryptography                                 10.0.2            
+   > Microsoft.Data.Sqlite.Core                                 10.0.9            
+   > Microsoft.EntityFrameworkCore                              10.0.9            
+   > Microsoft.EntityFrameworkCore.Abstractions                 10.0.9            
+   > Microsoft.EntityFrameworkCore.Analyzers                    10.0.9            
+   > Microsoft.EntityFrameworkCore.Relational                   10.0.9            
+   > Microsoft.EntityFrameworkCore.Sqlite                       10.0.9            
+   > Microsoft.EntityFrameworkCore.Sqlite.Core                  10.0.9            
+   > Microsoft.Extensions.Caching.Abstractions                  10.0.9            
+   > Microsoft.Extensions.Caching.Memory                        10.0.9            
+   > Microsoft.Extensions.Configuration                         10.0.0            
+   > Microsoft.Extensions.Configuration.Abstractions            10.0.9            
+   > Microsoft.Extensions.Configuration.Binder                  10.0.0            
+   > Microsoft.Extensions.DependencyInjection.Abstractions      10.0.9            
+   > Microsoft.Extensions.DependencyModel                       10.0.9            
+   > Microsoft.Extensions.Diagnostics                           8.0.0             
+   > Microsoft.Extensions.Diagnostics.Abstractions              10.0.0            
+   > Microsoft.Extensions.FileProviders.Abstractions            10.0.0            
+   > Microsoft.Extensions.Hosting.Abstractions                  10.0.0            
+   > Microsoft.Extensions.Http                                  8.0.0             
+   > Microsoft.Extensions.Logging                               10.0.9            
+   > Microsoft.Extensions.Logging.Abstractions                  10.0.9            
+   > Microsoft.Extensions.Options                               10.0.9            
+   > Microsoft.Extensions.Options.ConfigurationExtensions       8.0.0             
+   > Microsoft.Extensions.Primitives                            10.0.9            
+   > Microsoft.IdentityModel.Abstractions                       8.19.1            
+   > Microsoft.IdentityModel.JsonWebTokens                      8.19.1            
+   > Microsoft.IdentityModel.Logging                            8.19.1            
+   > Microsoft.IdentityModel.Tokens                             8.19.1            
+   > Npgsql                                                     10.0.3            
+   > Npgsql.EntityFrameworkCore.PostgreSQL                      10.0.2            
+   > Serilog                                                    4.3.0             
+   > Serilog.AspNetCore                                         10.0.0            
+   > Serilog.Extensions.Hosting                                 10.0.0            
+   > Serilog.Extensions.Logging                                 10.0.0            
+   > Serilog.Formatting.Compact                                 3.0.0             
+   > Serilog.Settings.Configuration                             10.0.0            
+   > Serilog.Sinks.Console                                      6.1.1             
+   > Serilog.Sinks.Debug                                        3.0.0             
+   > Serilog.Sinks.File                                         7.0.0             
+   > SkiaSharp                                                  3.119.4           
+   > SkiaSharp.NativeAssets.Linux                               3.119.4           
+   > SkiaSharp.NativeAssets.macOS                               3.119.4           
+   > SkiaSharp.NativeAssets.WebAssembly                         3.119.4           
+   > SkiaSharp.NativeAssets.Win32                               3.119.4           
+   > SQLitePCLRaw.bundle_e_sqlite3                              2.1.11            
+   > SQLitePCLRaw.core                                          2.1.11            
+   > SQLitePCLRaw.lib.e_sqlite3                                 2.1.11            
+   > SQLitePCLRaw.provider.e_sqlite3                            2.1.11            
+   > System.IdentityModel.Tokens.Jwt                            8.19.1            
+   > Tmds.DBus.Protocol                                         0.92.0            
+
+╨Я╤А╨╛╨╡╨║╤В "Client.Engine.Tests" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                           ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > coverlet.collector                            10.0.1      10.0.1   
+   > FluentAssertions                              8.10.0      8.10.0   
+   > Grpc.Core.Testing                             2.46.6      2.46.6   
+   > Microsoft.EntityFrameworkCore.Sqlite          10.0.9      10.0.9   
+   > Microsoft.Extensions.DependencyInjection      10.0.9      10.0.9   
+   > Microsoft.NET.Test.Sdk                        18.7.0      18.7.0   
+   > Moq                                           4.20.72     4.20.72  
+   > xunit                                         2.9.3       2.9.3    
+   > xunit.runner.visualstudio                     3.1.5       3.1.5    
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Castle.Core                                                5.1.1    
+   > dotenv.net                                                 4.0.2    
+   > Google.Protobuf                                            3.35.1   
+   > Grpc.AspNetCore                                            2.80.0   
+   > Grpc.AspNetCore.Server                                     2.80.0   
+   > Grpc.AspNetCore.Server.ClientFactory                       2.80.0   
+   > Grpc.Core                                                  2.46.6   
+   > Grpc.Core.Api                                              2.80.0   
+   > Grpc.Net.Client                                            2.80.0   
+   > Grpc.Net.ClientFactory                                     2.80.0   
+   > Grpc.Net.Common                                            2.80.0   
+   > Grpc.Tools                                                 2.80.0   
+   > Konscious.Security.Cryptography.Argon2                     1.3.1    
+   > Konscious.Security.Cryptography.Blake2                     1.1.1    
+   > Microsoft.Bcl.Cryptography                                 10.0.2   
+   > Microsoft.CodeCoverage                                     18.7.0   
+   > Microsoft.Data.Sqlite.Core                                 10.0.9   
+   > Microsoft.EntityFrameworkCore                              10.0.9   
+   > Microsoft.EntityFrameworkCore.Abstractions                 10.0.9   
+   > Microsoft.EntityFrameworkCore.Analyzers                    10.0.9   
+   > Microsoft.EntityFrameworkCore.Relational                   10.0.9   
+   > Microsoft.EntityFrameworkCore.Sqlite.Core                  10.0.9   
+   > Microsoft.Extensions.Caching.Abstractions                  10.0.9   
+   > Microsoft.Extensions.Caching.Memory                        10.0.9   
+   > Microsoft.Extensions.Configuration                         10.0.0   
+   > Microsoft.Extensions.Configuration.Abstractions            10.0.9   
+   > Microsoft.Extensions.Configuration.Binder                  10.0.0   
+   > Microsoft.Extensions.DependencyInjection.Abstractions      10.0.9   
+   > Microsoft.Extensions.DependencyModel                       10.0.9   
+   > Microsoft.Extensions.Diagnostics                           8.0.0    
+   > Microsoft.Extensions.Diagnostics.Abstractions              10.0.0   
+   > Microsoft.Extensions.FileProviders.Abstractions            10.0.0   
+   > Microsoft.Extensions.Hosting.Abstractions                  10.0.0   
+   > Microsoft.Extensions.Http                                  8.0.0    
+   > Microsoft.Extensions.Logging                               10.0.9   
+   > Microsoft.Extensions.Logging.Abstractions                  10.0.9   
+   > Microsoft.Extensions.Options                               10.0.9   
+   > Microsoft.Extensions.Options.ConfigurationExtensions       8.0.0    
+   > Microsoft.Extensions.Primitives                            10.0.9   
+   > Microsoft.IdentityModel.Abstractions                       8.19.1   
+   > Microsoft.IdentityModel.JsonWebTokens                      8.19.1   
+   > Microsoft.IdentityModel.Logging                            8.19.1   
+   > Microsoft.IdentityModel.Tokens                             8.19.1   
+   > Microsoft.TestPlatform.ObjectModel                         18.7.0   
+   > Microsoft.TestPlatform.TestHost                            18.7.0   
+   > Newtonsoft.Json                                            13.0.3   
+   > Npgsql                                                     10.0.3   
+   > Npgsql.EntityFrameworkCore.PostgreSQL                      10.0.2   
+   > Serilog                                                    4.3.0    
+   > Serilog.AspNetCore                                         10.0.0   
+   > Serilog.Extensions.Hosting                                 10.0.0   
+   > Serilog.Extensions.Logging                                 10.0.0   
+   > Serilog.Formatting.Compact                                 3.0.0    
+   > Serilog.Settings.Configuration                             10.0.0   
+   > Serilog.Sinks.Console                                      6.1.1    
+   > Serilog.Sinks.Debug                                        3.0.0    
+   > Serilog.Sinks.File                                         7.0.0    
+   > SQLitePCLRaw.bundle_e_sqlite3                              2.1.11   
+   > SQLitePCLRaw.core                                          2.1.11   
+   > SQLitePCLRaw.lib.e_sqlite3                                 2.1.11   
+   > SQLitePCLRaw.provider.e_sqlite3                            2.1.11   
+   > System.Diagnostics.EventLog                                6.0.0    
+   > System.IdentityModel.Tokens.Jwt                            8.19.1   
+   > xunit.abstractions                                         2.0.3    
+   > xunit.analyzers                                            1.18.0   
+   > xunit.assert                                               2.9.3    
+   > xunit.core                                                 2.9.3    
+   > xunit.extensibility.core                                   2.9.3    
+   > xunit.extensibility.execution                              2.9.3    
+
+╨Я╤А╨╛╨╡╨║╤В "Client.Engine" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                         ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Grpc.AspNetCore                             2.80.0      2.80.0   
+   > Grpc.Net.ClientFactory                      2.80.0      2.80.0   
+   > Konscious.Security.Cryptography.Argon2      1.3.1       1.3.1    
+   > Microsoft.EntityFrameworkCore.Sqlite        10.0.9      10.0.9   
+   > Serilog.AspNetCore                          10.0.0      10.0.0   
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > dotenv.net                                      4.0.2    
+   > Google.Protobuf                                 3.35.1   
+   > Grpc.AspNetCore.Server                          2.80.0   
+   > Grpc.AspNetCore.Server.ClientFactory            2.80.0   
+   > Grpc.Core.Api                                   2.80.0   
+   > Grpc.Net.Client                                 2.80.0   
+   > Grpc.Net.Common                                 2.80.0   
+   > Grpc.Tools                                      2.80.0   
+   > Konscious.Security.Cryptography.Blake2          1.1.1    
+   > Microsoft.Bcl.Cryptography                      10.0.2   
+   > Microsoft.Data.Sqlite.Core                      10.0.9   
+   > Microsoft.EntityFrameworkCore                   10.0.9   
+   > Microsoft.EntityFrameworkCore.Abstractions      10.0.9   
+   > Microsoft.EntityFrameworkCore.Analyzers         10.0.9   
+   > Microsoft.EntityFrameworkCore.Relational        10.0.9   
+   > Microsoft.EntityFrameworkCore.Sqlite.Core       10.0.9   
+   > Microsoft.Extensions.DependencyModel            10.0.9   
+   > Microsoft.IdentityModel.Abstractions            8.19.1   
+   > Microsoft.IdentityModel.JsonWebTokens           8.19.1   
+   > Microsoft.IdentityModel.Logging                 8.19.1   
+   > Microsoft.IdentityModel.Tokens                  8.19.1   
+   > Npgsql                                          10.0.3   
+   > Npgsql.EntityFrameworkCore.PostgreSQL           10.0.2   
+   > Serilog                                         4.3.0    
+   > Serilog.Extensions.Hosting                      10.0.0   
+   > Serilog.Extensions.Logging                      10.0.0   
+   > Serilog.Formatting.Compact                      3.0.0    
+   > Serilog.Settings.Configuration                  10.0.0   
+   > Serilog.Sinks.Console                           6.1.1    
+   > Serilog.Sinks.Debug                             3.0.0    
+   > Serilog.Sinks.File                              7.0.0    
+   > SQLitePCLRaw.bundle_e_sqlite3                   2.1.11   
+   > SQLitePCLRaw.core                               2.1.11   
+   > SQLitePCLRaw.lib.e_sqlite3                      2.1.11   
+   > SQLitePCLRaw.provider.e_sqlite3                 2.1.11   
+   > System.IdentityModel.Tokens.Jwt                 8.19.1   
+
+╨Я╤А╨╛╨╡╨║╤В "Client.Manager" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                           ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Avalonia                                      12.0.5      12.0.5   
+   > Avalonia.Desktop                              12.0.5      12.0.5   
+   > Avalonia.Fonts.Inter                          12.0.5      12.0.5   
+   > Avalonia.Themes.Fluent                        12.0.5      12.0.5   
+   > CommunityToolkit.Mvvm                         8.4.2       8.4.2    
+   > Google.Protobuf                               3.35.1      3.35.1   
+   > Grpc.Net.Client                               2.80.0      2.80.0   
+   > Grpc.Tools                                    2.81.1      2.81.1   
+   > Microsoft.Extensions.DependencyInjection      10.0.9      10.0.9   
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛         
+   > Avalonia.Angle.Windows.Natives                             2.1.27548.20260419
+   > Avalonia.BuildServices                                     11.3.2            
+   > Avalonia.FreeDesktop                                       12.0.5            
+   > Avalonia.FreeDesktop.AtSpi                                 12.0.5            
+   > Avalonia.HarfBuzz                                          12.0.5            
+   > Avalonia.Native                                            12.0.5            
+   > Avalonia.Remote.Protocol                                   12.0.5            
+   > Avalonia.Skia                                              12.0.5            
+   > Avalonia.Win32                                             12.0.5            
+   > Avalonia.X11                                               12.0.5            
+   > dotenv.net                                                 4.0.2             
+   > Grpc.AspNetCore                                            2.80.0            
+   > Grpc.AspNetCore.Server                                     2.80.0            
+   > Grpc.AspNetCore.Server.ClientFactory                       2.80.0            
+   > Grpc.Core.Api                                              2.80.0            
+   > Grpc.Net.ClientFactory                                     2.80.0            
+   > Grpc.Net.Common                                            2.80.0            
+   > HarfBuzzSharp                                              8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.Linux                           8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.macOS                           8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.WebAssembly                     8.3.1.3           
+   > HarfBuzzSharp.NativeAssets.Win32                           8.3.1.3           
+   > Konscious.Security.Cryptography.Argon2                     1.3.1             
+   > Konscious.Security.Cryptography.Blake2                     1.1.1             
+   > MicroCom.Runtime                                           0.11.4            
+   > Microsoft.Bcl.Cryptography                                 10.0.2            
+   > Microsoft.Data.Sqlite.Core                                 10.0.9            
+   > Microsoft.EntityFrameworkCore                              10.0.9            
+   > Microsoft.EntityFrameworkCore.Abstractions                 10.0.9            
+   > Microsoft.EntityFrameworkCore.Analyzers                    10.0.9            
+   > Microsoft.EntityFrameworkCore.Relational                   10.0.9            
+   > Microsoft.EntityFrameworkCore.Sqlite                       10.0.9            
+   > Microsoft.EntityFrameworkCore.Sqlite.Core                  10.0.9            
+   > Microsoft.Extensions.Caching.Abstractions                  10.0.9            
+   > Microsoft.Extensions.Caching.Memory                        10.0.9            
+   > Microsoft.Extensions.Configuration                         10.0.0            
+   > Microsoft.Extensions.Configuration.Abstractions            10.0.9            
+   > Microsoft.Extensions.Configuration.Binder                  10.0.0            
+   > Microsoft.Extensions.DependencyInjection.Abstractions      10.0.9            
+   > Microsoft.Extensions.DependencyModel                       10.0.9            
+   > Microsoft.Extensions.Diagnostics                           8.0.0             
+   > Microsoft.Extensions.Diagnostics.Abstractions              10.0.0            
+   > Microsoft.Extensions.FileProviders.Abstractions            10.0.0            
+   > Microsoft.Extensions.Hosting.Abstractions                  10.0.0            
+   > Microsoft.Extensions.Http                                  8.0.0             
+   > Microsoft.Extensions.Logging                               10.0.9            
+   > Microsoft.Extensions.Logging.Abstractions                  10.0.9            
+   > Microsoft.Extensions.Options                               10.0.9            
+   > Microsoft.Extensions.Options.ConfigurationExtensions       8.0.0             
+   > Microsoft.Extensions.Primitives                            10.0.9            
+   > Microsoft.IdentityModel.Abstractions                       8.19.1            
+   > Microsoft.IdentityModel.JsonWebTokens                      8.19.1            
+   > Microsoft.IdentityModel.Logging                            8.19.1            
+   > Microsoft.IdentityModel.Tokens                             8.19.1            
+   > Npgsql                                                     10.0.3            
+   > Npgsql.EntityFrameworkCore.PostgreSQL                      10.0.2            
+   > Serilog                                                    4.3.0             
+   > Serilog.AspNetCore                                         10.0.0            
+   > Serilog.Extensions.Hosting                                 10.0.0            
+   > Serilog.Extensions.Logging                                 10.0.0            
+   > Serilog.Formatting.Compact                                 3.0.0             
+   > Serilog.Settings.Configuration                             10.0.0            
+   > Serilog.Sinks.Console                                      6.1.1             
+   > Serilog.Sinks.Debug                                        3.0.0             
+   > Serilog.Sinks.File                                         7.0.0             
+   > SkiaSharp                                                  3.119.4           
+   > SkiaSharp.NativeAssets.Linux                               3.119.4           
+   > SkiaSharp.NativeAssets.macOS                               3.119.4           
+   > SkiaSharp.NativeAssets.WebAssembly                         3.119.4           
+   > SkiaSharp.NativeAssets.Win32                               3.119.4           
+   > SQLitePCLRaw.bundle_e_sqlite3                              2.1.11            
+   > SQLitePCLRaw.core                                          2.1.11            
+   > SQLitePCLRaw.lib.e_sqlite3                                 2.1.11            
+   > SQLitePCLRaw.provider.e_sqlite3                            2.1.11            
+   > System.IdentityModel.Tokens.Jwt                            8.19.1            
+   > Tmds.DBus.Protocol                                         0.92.0            
+
+╨Я╤А╨╛╨╡╨║╤В "Common.Tests" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П            ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > coverlet.collector             10.0.1      10.0.1   
+   > FluentAssertions               8.10.0      8.10.0   
+   > Microsoft.NET.Test.Sdk         18.7.0      18.7.0   
+   > xunit                          2.9.3       2.9.3    
+   > xunit.runner.visualstudio      3.1.5       3.1.5    
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > dotenv.net                                                 4.0.2    
+   > Microsoft.Bcl.Cryptography                                 10.0.2   
+   > Microsoft.CodeCoverage                                     18.7.0   
+   > Microsoft.EntityFrameworkCore                              10.0.9   
+   > Microsoft.EntityFrameworkCore.Abstractions                 10.0.9   
+   > Microsoft.EntityFrameworkCore.Analyzers                    10.0.9   
+   > Microsoft.EntityFrameworkCore.Relational                   10.0.4   
+   > Microsoft.Extensions.Caching.Abstractions                  10.0.9   
+   > Microsoft.Extensions.Caching.Memory                        10.0.9   
+   > Microsoft.Extensions.Configuration.Abstractions            10.0.4   
+   > Microsoft.Extensions.DependencyInjection                   10.0.9   
+   > Microsoft.Extensions.DependencyInjection.Abstractions      10.0.9   
+   > Microsoft.Extensions.Logging                               10.0.9   
+   > Microsoft.Extensions.Logging.Abstractions                  10.0.9   
+   > Microsoft.Extensions.Options                               10.0.9   
+   > Microsoft.Extensions.Primitives                            10.0.9   
+   > Microsoft.IdentityModel.Abstractions                       8.19.1   
+   > Microsoft.IdentityModel.JsonWebTokens                      8.19.1   
+   > Microsoft.IdentityModel.Logging                            8.19.1   
+   > Microsoft.IdentityModel.Tokens                             8.19.1   
+   > Microsoft.TestPlatform.ObjectModel                         18.7.0   
+   > Microsoft.TestPlatform.TestHost                            18.7.0   
+   > Newtonsoft.Json                                            13.0.3   
+   > Npgsql                                                     10.0.3   
+   > Npgsql.EntityFrameworkCore.PostgreSQL                      10.0.2   
+   > System.IdentityModel.Tokens.Jwt                            8.19.1   
+   > xunit.abstractions                                         2.0.3    
+   > xunit.analyzers                                            1.18.0   
+   > xunit.assert                                               2.9.3    
+   > xunit.core                                                 2.9.3    
+   > xunit.extensibility.core                                   2.9.3    
+   > xunit.extensibility.execution                              2.9.3    
+
+╨Я╤А╨╛╨╡╨║╤В "Common" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                        ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > dotenv.net                                 4.0.2       4.0.2    
+   > Microsoft.EntityFrameworkCore              10.0.9      10.0.9   
+   > Microsoft.EntityFrameworkCore.Design       10.0.9      10.0.9   
+   > Npgsql.EntityFrameworkCore.PostgreSQL      10.0.2      10.0.2   
+   > System.IdentityModel.Tokens.Jwt            8.19.1      8.19.1   
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Humanizer.Core                                             2.14.1   
+   > Microsoft.Bcl.Cryptography                                 10.0.2   
+   > Microsoft.Build.Framework                                  18.0.2   
+   > Microsoft.CodeAnalysis.Analyzers                           3.11.0   
+   > Microsoft.CodeAnalysis.Common                              5.0.0    
+   > Microsoft.CodeAnalysis.CSharp                              5.0.0    
+   > Microsoft.CodeAnalysis.CSharp.Workspaces                   5.0.0    
+   > Microsoft.CodeAnalysis.Workspaces.Common                   5.0.0    
+   > Microsoft.CodeAnalysis.Workspaces.MSBuild                  5.0.0    
+   > Microsoft.EntityFrameworkCore.Abstractions                 10.0.9   
+   > Microsoft.EntityFrameworkCore.Analyzers                    10.0.9   
+   > Microsoft.EntityFrameworkCore.Relational                   10.0.9   
+   > Microsoft.Extensions.Caching.Abstractions                  10.0.9   
+   > Microsoft.Extensions.Caching.Memory                        10.0.9   
+   > Microsoft.Extensions.Configuration.Abstractions            10.0.9   
+   > Microsoft.Extensions.DependencyInjection                   10.0.9   
+   > Microsoft.Extensions.DependencyInjection.Abstractions      10.0.9   
+   > Microsoft.Extensions.DependencyModel                       10.0.9   
+   > Microsoft.Extensions.Logging                               10.0.9   
+   > Microsoft.Extensions.Logging.Abstractions                  10.0.9   
+   > Microsoft.Extensions.Options                               10.0.9   
+   > Microsoft.Extensions.Primitives                            10.0.9   
+   > Microsoft.IdentityModel.Abstractions                       8.19.1   
+   > Microsoft.IdentityModel.JsonWebTokens                      8.19.1   
+   > Microsoft.IdentityModel.Logging                            8.19.1   
+   > Microsoft.IdentityModel.Tokens                             8.19.1   
+   > Microsoft.VisualStudio.SolutionPersistence                 1.0.52   
+   > Mono.TextTemplating                                        3.0.0    
+   > Newtonsoft.Json                                            13.0.3   
+   > Npgsql                                                     10.0.3   
+   > System.CodeDom                                             6.0.0    
+   > System.Composition                                         9.0.0    
+   > System.Composition.AttributedModel                         9.0.0    
+   > System.Composition.Convention                              9.0.0    
+   > System.Composition.Hosting                                 9.0.0    
+   > System.Composition.Runtime                                 9.0.0    
+   > System.Composition.TypedParts                              9.0.0    
+
+╨Я╤А╨╛╨╡╨║╤В "Contracts" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П      ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Google.Protobuf          3.35.1      3.35.1   
+   > Grpc.Net.Client          2.80.0      2.80.0   
+   > Grpc.Tools               2.81.1      2.81.1   
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                           ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > Grpc.Core.Api                                              2.80.0   
+   > Grpc.Net.Common                                            2.80.0   
+   > Microsoft.Extensions.DependencyInjection.Abstractions      8.0.0    
+   > Microsoft.Extensions.Logging.Abstractions                  8.0.0    
+
+╨Я╤А╨╛╨╡╨║╤В "Server.Auth.Tests" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                           ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > coverlet.collector                            10.0.1      10.0.1   
+   > FluentAssertions                              8.10.0      8.10.0   
+   > Grpc.Core.Testing                             2.46.6      2.46.6   
+   > Microsoft.EntityFrameworkCore.Sqlite          10.0.9      10.0.9   
+   > Microsoft.Extensions.DependencyInjection      10.0.9      10.0.9   
+   > Microsoft.NET.Test.Sdk                        18.7.0      18.7.0   
+   > Moq                                           4.20.72     4.20.72  
+   > xunit                                         2.9.3       2.9.3    
+   > xunit.runner.visualstudio                     3.1.5       3.1.5    
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛             
+   > AspNetCoreRateLimit                             5.0.0                 
+   > Castle.Core                                     5.1.1                 
+   > dotenv.net                                      4.0.2                 
+   > EFCore.NamingConventions                        10.0.1                
+   > Google.Protobuf                                 3.35.1                
+   > Grpc.AspNetCore                                 2.80.0                
+   > Grpc.AspNetCore.Server                          2.80.0                
+   > Grpc.AspNetCore.Server.ClientFactory            2.80.0                
+   > Grpc.Core                                       2.46.6                
+   > Grpc.Core.Api                                   2.80.0                
+   > Grpc.Net.Client                                 2.80.0                
+   > Grpc.Net.ClientFactory                          2.80.0                
+   > Grpc.Net.Common                                 2.80.0                
+   > Konscious.Security.Cryptography.Argon2          1.3.1                 
+   > Konscious.Security.Cryptography.Blake2          1.1.1                 
+   > Microsoft.AspNetCore.OpenApi                    10.0.9                
+   > Microsoft.Bcl.Cryptography                      10.0.2                
+   > Microsoft.CodeCoverage                          18.7.0                
+   > Microsoft.Data.Sqlite.Core                      10.0.9                
+   > Microsoft.EntityFrameworkCore                   10.0.9                
+   > Microsoft.EntityFrameworkCore.Abstractions      10.0.9                
+   > Microsoft.EntityFrameworkCore.Analyzers         10.0.9                
+   > Microsoft.EntityFrameworkCore.Relational        10.0.9                
+   > Microsoft.EntityFrameworkCore.Sqlite.Core       10.0.9                
+   > Microsoft.Extensions.DependencyModel            10.0.9                
+   > Microsoft.IdentityModel.Abstractions            8.19.1                
+   > Microsoft.IdentityModel.JsonWebTokens           8.19.1                
+   > Microsoft.IdentityModel.Logging                 8.19.1                
+   > Microsoft.IdentityModel.Tokens                  8.19.1                
+   > Microsoft.OpenApi                               2.0.0                 
+   > Microsoft.TestPlatform.ObjectModel              18.7.0                
+   > Microsoft.TestPlatform.TestHost                 18.7.0                
+   > Nanoid                                          3.1.0                 
+   > Newtonsoft.Json                                 13.0.3                
+   > Npgsql                                          10.0.3                
+   > Npgsql.EntityFrameworkCore.PostgreSQL           10.0.2                
+   > RESPite                                         3.0.7                 
+   > Serilog                                         4.3.0                 
+   > Serilog.AspNetCore                              10.0.0                
+   > Serilog.Extensions.Hosting                      10.0.0                
+   > Serilog.Extensions.Logging                      10.0.0                
+   > Serilog.Formatting.Compact                      3.0.0                 
+   > Serilog.Settings.Configuration                  10.0.0                
+   > Serilog.Sinks.Console                           6.1.1                 
+   > Serilog.Sinks.Debug                             3.0.0                 
+   > Serilog.Sinks.File                              8.0.0-nblumhardt-02322
+   > SQLitePCLRaw.bundle_e_sqlite3                   2.1.11                
+   > SQLitePCLRaw.core                               2.1.11                
+   > SQLitePCLRaw.lib.e_sqlite3                      2.1.11                
+   > SQLitePCLRaw.provider.e_sqlite3                 2.1.11                
+   > StackExchange.Redis                             3.0.7                 
+   > System.IdentityModel.Tokens.Jwt                 8.19.1                
+   > System.IO.Hashing                               10.0.5                
+   > xunit.abstractions                              2.0.3                 
+   > xunit.analyzers                                 1.18.0                
+   > xunit.assert                                    2.9.3                 
+   > xunit.core                                      2.9.3                 
+   > xunit.extensibility.core                        2.9.3                 
+   > xunit.extensibility.execution                   2.9.3                 
+
+╨Я╤А╨╛╨╡╨║╤В "Server.Auth" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                         ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛                ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛             
+   > AspNetCoreRateLimit                         5.0.0                    5.0.0                 
+   > EFCore.NamingConventions                    10.0.1                   10.0.1                
+   > Google.Protobuf                             3.35.1                   3.35.1                
+   > Grpc.AspNetCore                             2.80.0                   2.80.0                
+   > Grpc.Tools                                  2.81.1                   2.81.1                
+   > Konscious.Security.Cryptography.Argon2      1.3.1                    1.3.1                 
+   > Microsoft.AspNetCore.OpenApi                10.0.9                   10.0.9                
+   > Microsoft.EntityFrameworkCore               10.0.9                   10.0.9                
+   > Microsoft.EntityFrameworkCore.Design        10.0.9                   10.0.9                
+   > Microsoft.EntityFrameworkCore.Tools         10.0.9                   10.0.9                
+   > Nanoid                                      3.1.0                    3.1.0                 
+   > Npgsql.EntityFrameworkCore.PostgreSQL       10.0.2                   10.0.2                
+   > Serilog.AspNetCore                          10.0.0                   10.0.0                
+   > Serilog.Sinks.Console                       6.1.1                    6.1.1                 
+   > Serilog.Sinks.File                          8.0.0-nblumhardt-02322   8.0.0-nblumhardt-02322
+   > StackExchange.Redis                         3.0.7                    3.0.7                 
+   > System.IdentityModel.Tokens.Jwt             8.19.1                   8.19.1                
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > dotenv.net                                      4.0.2    
+   > Grpc.AspNetCore.Server                          2.80.0   
+   > Grpc.AspNetCore.Server.ClientFactory            2.80.0   
+   > Grpc.Core.Api                                   2.80.0   
+   > Grpc.Net.Client                                 2.80.0   
+   > Grpc.Net.ClientFactory                          2.80.0   
+   > Grpc.Net.Common                                 2.80.0   
+   > Humanizer.Core                                  2.14.1   
+   > Konscious.Security.Cryptography.Blake2          1.1.1    
+   > Microsoft.Bcl.Cryptography                      10.0.2   
+   > Microsoft.Build.Framework                       18.0.2   
+   > Microsoft.CodeAnalysis.Analyzers                3.11.0   
+   > Microsoft.CodeAnalysis.Common                   5.0.0    
+   > Microsoft.CodeAnalysis.CSharp                   5.0.0    
+   > Microsoft.CodeAnalysis.CSharp.Workspaces        5.0.0    
+   > Microsoft.CodeAnalysis.Workspaces.Common        5.0.0    
+   > Microsoft.CodeAnalysis.Workspaces.MSBuild       5.0.0    
+   > Microsoft.EntityFrameworkCore.Abstractions      10.0.9   
+   > Microsoft.EntityFrameworkCore.Analyzers         10.0.9   
+   > Microsoft.EntityFrameworkCore.Relational        10.0.9   
+   > Microsoft.Extensions.DependencyModel            10.0.9   
+   > Microsoft.IdentityModel.Abstractions            8.19.1   
+   > Microsoft.IdentityModel.JsonWebTokens           8.19.1   
+   > Microsoft.IdentityModel.Logging                 8.19.1   
+   > Microsoft.IdentityModel.Tokens                  8.19.1   
+   > Microsoft.OpenApi                               2.0.0    
+   > Microsoft.VisualStudio.SolutionPersistence      1.0.52   
+   > Mono.TextTemplating                             3.0.0    
+   > Newtonsoft.Json                                 13.0.3   
+   > Npgsql                                          10.0.3   
+   > RESPite                                         3.0.7    
+   > Serilog                                         4.3.0    
+   > Serilog.Extensions.Hosting                      10.0.0   
+   > Serilog.Extensions.Logging                      10.0.0   
+   > Serilog.Formatting.Compact                      3.0.0    
+   > Serilog.Settings.Configuration                  10.0.0   
+   > Serilog.Sinks.Debug                             3.0.0    
+   > System.CodeDom                                  6.0.0    
+   > System.Composition                              9.0.0    
+   > System.Composition.AttributedModel              9.0.0    
+   > System.Composition.Convention                   9.0.0    
+   > System.Composition.Hosting                      9.0.0    
+   > System.Composition.Runtime                      9.0.0    
+   > System.Composition.TypedParts                   9.0.0    
+   > System.IO.Hashing                               10.0.5   
+
+╨Я╤А╨╛╨╡╨║╤В "Server.Storage.Tests" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                       ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > coverlet.collector                        10.0.1      10.0.1   
+   > FluentAssertions                          8.10.0      8.10.0   
+   > Grpc.Core.Testing                         2.46.6      2.46.6   
+   > Microsoft.AspNetCore.Mvc.Testing          10.0.9      10.0.9   
+   > Microsoft.EntityFrameworkCore.Sqlite      10.0.9      10.0.9   
+   > Microsoft.NET.Test.Sdk                    18.7.0      18.7.0   
+   > Moq                                       4.20.72     4.20.72  
+   > xunit                                     2.9.3       2.9.3    
+   > xunit.runner.visualstudio                 3.1.5       3.1.5    
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                                ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛             
+   > AspNetCore.HealthChecks.NpgSql                                  9.0.0                 
+   > AspNetCore.HealthChecks.Redis                                   9.0.0                 
+   > AspNetCore.HealthChecks.UI.Client                               9.0.0                 
+   > AspNetCore.HealthChecks.UI.Core                                 9.0.0                 
+   > AspNetCoreRateLimit                                             5.0.0                 
+   > Castle.Core                                                     5.1.1                 
+   > CommunityToolkit.HighPerformance                                8.4.0                 
+   > dotenv.net                                                      4.0.2                 
+   > EFCore.NamingConventions                                        10.0.1                
+   > Google.Protobuf                                                 3.35.1                
+   > Grpc.AspNetCore                                                 2.80.0                
+   > Grpc.AspNetCore.Server                                          2.80.0                
+   > Grpc.AspNetCore.Server.ClientFactory                            2.80.0                
+   > Grpc.Core                                                       2.46.6                
+   > Grpc.Core.Api                                                   2.80.0                
+   > Grpc.Net.Client                                                 2.80.0                
+   > Grpc.Net.ClientFactory                                          2.80.0                
+   > Grpc.Net.Common                                                 2.80.0                
+   > Konscious.Security.Cryptography.Argon2                          1.3.1                 
+   > Konscious.Security.Cryptography.Blake2                          1.1.1                 
+   > Microsoft.AspNetCore.Authentication.JwtBearer                   10.0.9                
+   > Microsoft.AspNetCore.Authentication.Negotiate                   10.0.9                
+   > Microsoft.AspNetCore.Connections.Abstractions                   10.0.9                
+   > Microsoft.AspNetCore.OpenApi                                    10.0.9                
+   > Microsoft.AspNetCore.TestHost                                   10.0.9                
+   > Microsoft.Bcl.Cryptography                                      10.0.2                
+   > Microsoft.CodeCoverage                                          18.7.0                
+   > Microsoft.Data.Sqlite.Core                                      10.0.9                
+   > Microsoft.EntityFrameworkCore                                   10.0.9                
+   > Microsoft.EntityFrameworkCore.Abstractions                      10.0.9                
+   > Microsoft.EntityFrameworkCore.Analyzers                         10.0.9                
+   > Microsoft.EntityFrameworkCore.Relational                        10.0.9                
+   > Microsoft.EntityFrameworkCore.Sqlite.Core                       10.0.9                
+   > Microsoft.Extensions.Caching.Abstractions                       10.0.9                
+   > Microsoft.Extensions.Caching.Memory                             10.0.9                
+   > Microsoft.Extensions.Configuration                              10.0.9                
+   > Microsoft.Extensions.Configuration.Abstractions                 10.0.9                
+   > Microsoft.Extensions.Configuration.Binder                       10.0.9                
+   > Microsoft.Extensions.Configuration.CommandLine                  10.0.9                
+   > Microsoft.Extensions.Configuration.EnvironmentVariables         10.0.9                
+   > Microsoft.Extensions.Configuration.FileExtensions               10.0.9                
+   > Microsoft.Extensions.Configuration.Json                         10.0.9                
+   > Microsoft.Extensions.Configuration.UserSecrets                  10.0.9                
+   > Microsoft.Extensions.DependencyInjection                        10.0.9                
+   > Microsoft.Extensions.DependencyInjection.Abstractions           10.0.9                
+   > Microsoft.Extensions.DependencyModel                            10.0.9                
+   > Microsoft.Extensions.Diagnostics                                10.0.9                
+   > Microsoft.Extensions.Diagnostics.Abstractions                   10.0.9                
+   > Microsoft.Extensions.Diagnostics.HealthChecks                   8.0.11                
+   > Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions      8.0.11                
+   > Microsoft.Extensions.Features                                   10.0.9                
+   > Microsoft.Extensions.FileProviders.Abstractions                 10.0.9                
+   > Microsoft.Extensions.FileProviders.Physical                     10.0.9                
+   > Microsoft.Extensions.FileSystemGlobbing                         10.0.9                
+   > Microsoft.Extensions.Hosting                                    10.0.9                
+   > Microsoft.Extensions.Hosting.Abstractions                       10.0.9                
+   > Microsoft.Extensions.Http                                       8.0.0                 
+   > Microsoft.Extensions.Logging                                    10.0.9                
+   > Microsoft.Extensions.Logging.Abstractions                       10.0.9                
+   > Microsoft.Extensions.Logging.Configuration                      10.0.9                
+   > Microsoft.Extensions.Logging.Console                            10.0.9                
+   > Microsoft.Extensions.Logging.Debug                              10.0.9                
+   > Microsoft.Extensions.Logging.EventLog                           10.0.9                
+   > Microsoft.Extensions.Logging.EventSource                        10.0.9                
+   > Microsoft.Extensions.Options                                    10.0.9                
+   > Microsoft.Extensions.Options.ConfigurationExtensions            10.0.9                
+   > Microsoft.Extensions.Primitives                                 10.0.9                
+   > Microsoft.IdentityModel.Abstractions                            8.19.1                
+   > Microsoft.IdentityModel.JsonWebTokens                           8.19.1                
+   > Microsoft.IdentityModel.Logging                                 8.19.1                
+   > Microsoft.IdentityModel.Protocols                               8.0.1                 
+   > Microsoft.IdentityModel.Protocols.OpenIdConnect                 8.0.1                 
+   > Microsoft.IdentityModel.Tokens                                  8.19.1                
+   > Microsoft.OpenApi                                               2.0.0                 
+   > Microsoft.TestPlatform.ObjectModel                              18.7.0                
+   > Microsoft.TestPlatform.TestHost                                 18.7.0                
+   > Microsoft.VisualStudio.Azure.Containers.Tools.Targets           1.23.0                
+   > Minio                                                           7.0.0                 
+   > Nanoid                                                          3.1.0                 
+   > Newtonsoft.Json                                                 13.0.3                
+   > Npgsql                                                          10.0.3                
+   > Npgsql.EntityFrameworkCore.PostgreSQL                           10.0.2                
+   > RESPite                                                         3.0.7                 
+   > Serilog                                                         4.3.0                 
+   > Serilog.AspNetCore                                              10.0.0                
+   > Serilog.Extensions.Hosting                                      10.0.0                
+   > Serilog.Extensions.Logging                                      10.0.0                
+   > Serilog.Formatting.Compact                                      3.0.0                 
+   > Serilog.Settings.Configuration                                  10.0.0                
+   > Serilog.Sinks.Console                                           6.1.1                 
+   > Serilog.Sinks.Debug                                             3.0.0                 
+   > Serilog.Sinks.File                                              8.0.0-nblumhardt-02322
+   > SQLitePCLRaw.bundle_e_sqlite3                                   2.1.11                
+   > SQLitePCLRaw.core                                               2.1.11                
+   > SQLitePCLRaw.lib.e_sqlite3                                      2.1.11                
+   > SQLitePCLRaw.provider.e_sqlite3                                 2.1.11                
+   > StackExchange.Redis                                             3.0.7                 
+   > System.Diagnostics.EventLog                                     10.0.9                
+   > System.DirectoryServices.Protocols                              10.0.9                
+   > System.IdentityModel.Tokens.Jwt                                 8.19.1                
+   > System.IO.Hashing                                               10.0.5                
+   > System.Reactive                                                 6.0.1                 
+   > xunit.abstractions                                              2.0.3                 
+   > xunit.analyzers                                                 1.18.0                
+   > xunit.assert                                                    2.9.3                 
+   > xunit.core                                                      2.9.3                 
+   > xunit.extensibility.core                                        2.9.3                 
+   > xunit.extensibility.execution                                   2.9.3                 
+
+╨Я╤А╨╛╨╡╨║╤В "Server.Storage" ╤Б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╡ ╤Б╤Б╤Л╨╗╨║╨╕ ╨╜╨░ ╨┐╨░╨║╨╡╤В╤Л
+   [net10.0]: 
+   ╨Я╨░╨║╨╡╤В ╨▓╨╡╤А╤Е╨╜╨╡╨│╨╛ ╤Г╤А╨╛╨▓╨╜╤П                                        ╨Ч╨░╨┐╤А╨╛╤И╨╡╨╜╨╛   ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > AspNetCore.HealthChecks.NpgSql                             9.0.0       9.0.0    
+   > AspNetCore.HealthChecks.Redis                              9.0.0       9.0.0    
+   > AspNetCore.HealthChecks.UI.Client                          9.0.0       9.0.0    
+   > AspNetCoreRateLimit                                        5.0.0       5.0.0    
+   > EFCore.NamingConventions                                   10.0.1      10.0.1   
+   > Google.Protobuf                                            3.35.1      3.35.1   
+   > Grpc.AspNetCore                                            2.80.0      2.80.0   
+   > Grpc.Tools                                                 2.81.1      2.81.1   
+   > Microsoft.AspNetCore.Authentication.JwtBearer              10.0.9      10.0.9   
+   > Microsoft.AspNetCore.Authentication.Negotiate              10.0.9      10.0.9   
+   > Microsoft.EntityFrameworkCore                              10.0.9      10.0.9   
+   > Microsoft.EntityFrameworkCore.Design                       10.0.9      10.0.9   
+   > Microsoft.EntityFrameworkCore.Tools                        10.0.9      10.0.9   
+   > Microsoft.VisualStudio.Azure.Containers.Tools.Targets      1.23.0      1.23.0   
+   > Minio                                                      7.0.0       7.0.0    
+   > Nanoid                                                     3.1.0       3.1.0    
+   > Npgsql.EntityFrameworkCore.PostgreSQL                      10.0.2      10.0.2   
+   > Serilog.AspNetCore                                         10.0.0      10.0.0   
+   > StackExchange.Redis                                        3.0.7       3.0.7    
+   > System.IdentityModel.Tokens.Jwt                            8.19.1      8.19.1   
+
+   ╨в╤А╨░╨╜╨╖╨╕╤В╨╕╨▓╨╜╤Л╨╣ ╨┐╨░╨║╨╡╤В                                     ╨а╨░╨╖╤А╨╡╤И╨╡╨╜╨╛
+   > AspNetCore.HealthChecks.UI.Core                      9.0.0    
+   > CommunityToolkit.HighPerformance                     8.4.0    
+   > dotenv.net                                           4.0.2    
+   > Grpc.AspNetCore.Server                               2.80.0   
+   > Grpc.AspNetCore.Server.ClientFactory                 2.80.0   
+   > Grpc.Core.Api                                        2.80.0   
+   > Grpc.Net.Client                                      2.80.0   
+   > Grpc.Net.ClientFactory                               2.80.0   
+   > Grpc.Net.Common                                      2.80.0   
+   > Humanizer.Core                                       2.14.1   
+   > Microsoft.Bcl.Cryptography                           10.0.2   
+   > Microsoft.Build.Framework                            18.0.2   
+   > Microsoft.CodeAnalysis.Analyzers                     3.11.0   
+   > Microsoft.CodeAnalysis.Common                        5.0.0    
+   > Microsoft.CodeAnalysis.CSharp                        5.0.0    
+   > Microsoft.CodeAnalysis.CSharp.Workspaces             5.0.0    
+   > Microsoft.CodeAnalysis.Workspaces.Common             5.0.0    
+   > Microsoft.CodeAnalysis.Workspaces.MSBuild            5.0.0    
+   > Microsoft.EntityFrameworkCore.Abstractions           10.0.9   
+   > Microsoft.EntityFrameworkCore.Analyzers              10.0.9   
+   > Microsoft.EntityFrameworkCore.Relational             10.0.9   
+   > Microsoft.Extensions.DependencyModel                 10.0.9   
+   > Microsoft.IdentityModel.Abstractions                 8.19.1   
+   > Microsoft.IdentityModel.JsonWebTokens                8.19.1   
+   > Microsoft.IdentityModel.Logging                      8.19.1   
+   > Microsoft.IdentityModel.Protocols                    8.0.1    
+   > Microsoft.IdentityModel.Protocols.OpenIdConnect      8.0.1    
+   > Microsoft.IdentityModel.Tokens                       8.19.1   
+   > Microsoft.VisualStudio.SolutionPersistence           1.0.52   
+   > Mono.TextTemplating                                  3.0.0    
+   > Newtonsoft.Json                                      13.0.3   
+   > Npgsql                                               10.0.3   
+   > RESPite                                              3.0.7    
+   > Serilog                                              4.3.0    
+   > Serilog.Extensions.Hosting                           10.0.0   
+   > Serilog.Extensions.Logging                           10.0.0   
+   > Serilog.Formatting.Compact                           3.0.0    
+   > Serilog.Settings.Configuration                       10.0.0   
+   > Serilog.Sinks.Console                                6.1.1    
+   > Serilog.Sinks.Debug                                  3.0.0    
+   > Serilog.Sinks.File                                   7.0.0    
+   > System.CodeDom                                       6.0.0    
+   > System.Composition                                   9.0.0    
+   > System.Composition.AttributedModel                   9.0.0    
+   > System.Composition.Convention                        9.0.0    
+   > System.Composition.Hosting                           9.0.0    
+   > System.Composition.Runtime                           9.0.0    
+   > System.Composition.TypedParts                        9.0.0    
+   > System.DirectoryServices.Protocols                   10.0.9   
+   > System.IO.Hashing                                    10.0.5   
+   > System.Reactive                                      6.0.1    
+

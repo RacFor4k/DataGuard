@@ -1,0 +1,187 @@
+<!-- Главное окно приложения. -->
+<Window
+  x:Class="Client.Manager.Views.MainWindow"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="using:Client.Manager.ViewModels"
+  Title="DataGuard Manager"
+  Width="1280"
+  Height="760"
+  MinWidth="960"
+  MinHeight="600"
+  Background="{DynamicResource AppBackgroundBrush}"
+  FontFamily="Inter"
+  x:DataType="vm:MainWindowViewModel"
+  mc:Ignorable="d">
+
+	<!-- Основная сетка главного окна с боковой панелью и рабочей областью. -->
+	<Grid ColumnDefinitions="52,*" Background="{DynamicResource AppBackgroundBrush}">
+		<!-- Левая боковая панель навигации приложения. -->
+		<Border Grid.Column="0"
+				Background="{DynamicResource SidebarBackgroundBrush}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="0,0,1,0">
+			<!-- Сетка верхней, основной и нижней зон навигации. -->
+			<Grid RowDefinitions="Auto,*,Auto">
+				<!-- Кнопка перехода на домашнюю страницу панели управления. -->
+				<Button Grid.Row="0"
+						Width="32"
+						Height="32"
+						Margin="0,12,0,16"
+						Padding="0"
+						HorizontalAlignment="Center"
+						Background="{DynamicResource AccentBrush}"
+						BorderBrush="{DynamicResource AccentBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Classes.active="{Binding IsDashboardSelected}"
+						Command="{Binding ShowDashboardViewCommand}"
+						ToolTip.Tip="Домашняя страница">
+					<!-- Иконка домашней страницы панели управления. -->
+					<Image Classes="NavIcon"
+						   Width="20"
+						   Height="20"
+						   Source="avares://Client.Styles/Assets/dashboard.svg" />
+				</Button>
+
+				<!-- Основная группа кнопок разделов приложения. -->
+				<StackPanel Grid.Row="1" HorizontalAlignment="Center">
+					<!-- Кнопка перехода к файловому разделу. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsHomeSelected}"
+							Command="{Binding ShowHomeViewCommand}"
+							ToolTip.Tip="Файлы">
+						<!-- Иконка файлового раздела. -->
+						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/folder.svg" />
+					</Button>
+
+					<!-- Кнопка перехода к разделу чата. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsMessengerSelected}"
+							Command="{Binding ShowMessengerViewCommand}"
+							IsEnabled="{Binding IsSideBarEnabled}"
+							ToolTip.Tip="Чат">
+						<!-- Сетка иконки чата и бейджа уведомлений. -->
+						<Grid>
+							<!-- Иконка раздела чата. -->
+							<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/chat.svg" />
+							<!-- Бейдж уведомлений раздела чата. -->
+							<Border MinWidth="16"
+									Height="16"
+									Padding="3,0"
+									HorizontalAlignment="Right"
+									VerticalAlignment="Top"
+									Margin="0,-6,-6,0"
+									Background="{DynamicResource DangerBrush}"
+									CornerRadius="8"
+									IsVisible="{Binding HasMessengerNotifications}">
+								<!-- Текст количества уведомлений чата. -->
+								<TextBlock Text="{Binding MessengerNotificationBadgeText}"
+										   Foreground="White"
+										   FontSize="9"
+										   FontWeight="SemiBold"
+										   HorizontalAlignment="Center"
+										   VerticalAlignment="Center" />
+							</Border>
+						</Grid>
+					</Button>
+
+					<!-- Кнопка перехода к группам доступа. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsGroupsSelected}"
+							Command="{Binding ShowGroupsViewCommand}"
+							IsEnabled="{Binding IsSideBarEnabled}"
+							ToolTip.Tip="Группы доступа">
+						<!-- Иконка групп доступа. -->
+						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/groups.svg" />
+					</Button>
+
+					<!-- Кнопка перехода к внешнему доступу. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsExternalAccessSelected}"
+							Command="{Binding ShowExternalAccessViewCommand}"
+							IsEnabled="{Binding IsSideBarEnabled}"
+							ToolTip.Tip="Внешний доступ">
+						<!-- Иконка раздела внешнего доступа. -->
+						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/external-access.svg" />
+					</Button>
+
+					<!-- Кнопка перехода к аудиту событий. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsAuditSelected}"
+							Command="{Binding ShowAuditViewCommand}"
+							IsEnabled="{Binding IsSideBarEnabled}"
+							ToolTip.Tip="Аудит событий">
+						<!-- Сетка иконки аудита и бейджа уведомлений. -->
+						<Grid>
+							<!-- Иконка раздела аудита событий. -->
+							<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/audit.svg" />
+							<!-- Бейдж уведомлений аудита событий. -->
+							<Border MinWidth="16"
+									Height="16"
+									Padding="3,0"
+									HorizontalAlignment="Right"
+									VerticalAlignment="Top"
+									Margin="0,-6,-6,0"
+									Background="{DynamicResource DangerBrush}"
+									CornerRadius="8"
+									IsVisible="{Binding HasAuditNotifications}">
+								<!-- Текст количества уведомлений аудита. -->
+								<TextBlock Text="{Binding AuditNotificationBadgeText}"
+										   Foreground="White"
+										   FontSize="9"
+										   FontWeight="SemiBold"
+										   HorizontalAlignment="Center"
+										   VerticalAlignment="Center" />
+							</Border>
+						</Grid>
+					</Button>
+				</StackPanel>
+
+				<!-- Нижняя группа кнопок настроек и аккаунта. -->
+				<StackPanel Grid.Row="2"
+							Margin="0,0,0,12"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Bottom">
+					<!-- Кнопка перехода к настройкам приложения. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsSettingsSelected}"
+							Command="{Binding ShowSettingsViewCommand}"
+							IsEnabled="{Binding IsSideBarEnabled}"
+							ToolTip.Tip="Настройки приложения">
+						<!-- Иконка настроек приложения. -->
+						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/settings.svg" />
+					</Button>
+
+					<!-- Кнопка перехода к аккаунту пользователя. -->
+					<Button Classes.NavButton="True"
+							Classes.active="{Binding IsAccountSelected}"
+							Command="{Binding ShowAccountViewCommand}"
+							ToolTip.Tip="Аккаунт пользователя">
+						<!-- Круглый контейнер аватара аккаунта пользователя. -->
+						<Border Width="28"
+								Height="28"
+								Background="{DynamicResource AccentSoftBrush}"
+								BorderBrush="{DynamicResource AccentBrush}"
+								BorderThickness="1"
+								CornerRadius="14">
+							<!-- Иконка аватара аккаунта пользователя. -->
+							<Image Width="16"
+								   Height="16"
+								   Stretch="Uniform"
+								   Source="avares://Client.Styles/Assets/user.svg" />
+						</Border>
+					</Button>
+				</StackPanel>
+			</Grid>
+		</Border>
+
+		<!-- Правая рабочая область выбранного раздела приложения. -->
+		<Border Grid.Column="1" Background="{DynamicResource AppBackgroundBrush}">
+			<!-- Контейнер текущего представления приложения. -->
+			<ContentControl Content="{Binding CurrentViewModel}" />
+		</Border>
+	</Grid>
+</Window>

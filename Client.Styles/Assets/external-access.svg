@@ -1,0 +1,11 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    :root { color: #5E687A; --accent: #1079CE; --soft: #DCEEFF; }
+    @media (prefers-color-scheme: dark) { :root { color: #8B92A8; --accent: #1079CE; --soft: #1F2636; } }
+  </style>
+  <rect x="3" y="5" width="13" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M11 12H21" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M17 8L21 12L17 16" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7.5 9.5H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M7.5 14.5H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

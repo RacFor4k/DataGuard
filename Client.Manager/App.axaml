@@ -1,9 +1,18 @@
+<!-- Корневое описание Avalonia Application для клиентского приложения менеджера. -->
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Client.Manager.App"
-             RequestedThemeVariant="Dark">
+             xmlns:local="using:Client.Manager"
+             RequestedThemeVariant="Default">
+
+    <!-- Application.DataTemplates регистрирует шаблоны, которые связывают модели представлений с их визуальными представлениями. -->
+    <Application.DataTemplates>
+        <!-- ViewLocator отвечает за выбор нужного представления для переданной модели представления. -->
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <!-- Application.Styles содержит глобальные стили и темы, применяемые ко всему приложению. -->
     <Application.Styles>
-        <FluentTheme />
-        <StyleInclude Source="avares://Client.Manager/Assets/AppStyles.axaml"/>
+        <StyleInclude Source="avares://Client.Styles/Themes/DataGuardTheme.axaml" />
     </Application.Styles>
 </Application>

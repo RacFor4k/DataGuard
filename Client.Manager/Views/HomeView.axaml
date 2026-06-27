@@ -1,0 +1,310 @@
+<!-- Корневой элемент пользовательского представления. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Client.Manager.ViewModels"
+             x:Class="Client.Manager.Views.HomeView"
+             x:DataType="vm:HomeViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="640">
+
+  <!-- Основная сетка домашнего экрана с деревом папок, разделителем и областью файлов. -->
+  <Grid ColumnDefinitions="320,5,*" Background="{DynamicResource AppBackgroundBrush}">
+    <!-- Левая панель дерева папок корпоративного хранилища. -->
+    <Border Grid.Column="0"
+            Background="{DynamicResource PanelBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="0,0,1,0"
+            ClipToBounds="True">
+      <!-- Сетка заголовка папок и прокручиваемого дерева. -->
+      <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок левой панели папок. -->
+        <Border Grid.Row="0" Padding="14,12" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+          <!-- Сетка названий панели и кнопки создания папки. -->
+          <Grid ColumnDefinitions="*,Auto">
+            <!-- Текстовый блок с названием раздела папок. -->
+            <StackPanel>
+              <!-- Подпись раздела папок. -->
+              <TextBlock Text="Папки"
+                         Foreground="{DynamicResource SecondaryTextBrush}"
+                         FontSize="12"
+                         FontWeight="SemiBold" />
+              <!-- Название текущего корпоративного хранилища. -->
+              <TextBlock Text="Корпоративное хранилище"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
+                         FontSize="15"
+                         FontWeight="SemiBold" />
+            </StackPanel>
+            <!-- Кнопка создания новой папки в дереве. -->
+            <Button Grid.Column="1" Classes="ToolbarButton" Content="+" ToolTip.Tip="Создать папку" />
+          </Grid>
+        </Border>
+
+        <!-- Прокручиваемая область дерева видимых папок. -->
+        <ScrollViewer Grid.Row="1" Margin="4,6">
+          <!-- Список узлов дерева папок. -->
+          <ItemsControl ItemsSource="{Binding VisibleFolderNodes}">
+            <!-- Шаблон отдельного элемента списка. -->
+            <ItemsControl.ItemTemplate>
+            <!-- Шаблон строки узла папки. -->
+            <DataTemplate DataType="vm:FolderNodePlaceholder">
+              <!-- Кнопка выбора узла папки. -->
+              <Button Classes.TreeItemButton="True"
+                      Classes.selected="{Binding IsSelected}"
+                      Command="{Binding $parent[UserControl].DataContext.SelectFolderNodeCommand}"
+                      CommandParameter="{Binding}">
+                <!-- Сетка отступа, раскрытия, иконки и имени папки. -->
+                <Grid ColumnDefinitions="Auto,14,20,*" ClipToBounds="True">
+                  <!-- Отступ для отображения уровня вложенности папки. -->
+                  <Border Width="{Binding IndentWidth}" />
+                  <!-- Текстовый индикатор раскрытия папки. -->
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding ExpanderText}"
+                             Foreground="{DynamicResource SecondaryTextBrush}"
+                             FontSize="12"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center" />
+                  <!-- Иконка папки в дереве. -->
+                  <Image Grid.Column="2"
+                         Width="15"
+                         Height="15"
+                         Source="avares://Client.Styles/Assets/folder.svg" />
+                  <!-- Название папки в дереве. -->
+                  <TextBlock Grid.Column="3"
+                             Text="{Binding Name}"
+                             Foreground="{DynamicResource PrimaryTextBrush}"
+                             FontSize="12"
+                             VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+            </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+
+    <!-- Вертикальный разделитель между деревом папок и областью файлов. -->
+    <GridSplitter Grid.Column="1"
+                  Width="5"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Background="{DynamicResource BorderBrush}"
+                  ResizeDirection="Columns" />
+
+    <!-- Правая рабочая область со списком файлов и переключателем вида. -->
+    <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*,Auto">
+      <!-- Верхняя панель действий над текущей папкой. -->
+      <Border Grid.Row="0" Padding="16,12" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+        <!-- Сетка кнопок действий и поля поиска файлов. -->
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+          <!-- Кнопка загрузки файла в текущую папку. -->
+          <Button Classes="ToolbarButton" Content="Загрузить" ToolTip.Tip="Добавить файл в текущую папку" />
+          <!-- Кнопка создания новой папки в текущем разделе. -->
+          <Button Grid.Column="1" Margin="8,0,0,0" Classes="ToolbarButton" Content="Новая папка" ToolTip.Tip="Создать новую папку" />
+          <!-- Визуальное поле поиска файлов. -->
+          <Border Grid.Column="3" Width="240" Height="30" Background="{DynamicResource PanelSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+            <!-- Подсказка поля поиска файлов. -->
+            <TextBlock Text="Поиск файлов..."
+                       Foreground="{DynamicResource SubtleTextBrush}"
+                       VerticalAlignment="Center"
+                       Margin="12,0" />
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- Панель хлебных крошек текущего расположения. -->
+      <Border Grid.Row="1" Padding="16,9" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+        <!-- Текстовая цепочка пути к текущей папке. -->
+        <TextBlock Foreground="{DynamicResource SubtleTextBrush}" FontSize="12">
+          <!-- Элемент интерфейса Run. -->
+          <Run Text="DataGuard" />
+          <!-- Элемент интерфейса Run. -->
+          <Run Text=" / " />
+          <!-- Элемент интерфейса Run. -->
+          <Run Text="Корпоративные файлы" />
+        </TextBlock>
+      </Border>
+
+      <!-- Область контента файлов с табличным и плиточным представлениями. -->
+      <Grid Grid.Row="2">
+        <!-- Табличное представление файлов. -->
+        <Grid RowDefinitions="Auto,*" IsVisible="{Binding IsListView}">
+          <!-- Заголовок таблицы файлов с кнопками сортировки. -->
+          <Border Grid.Row="0"
+                  Padding="16,0"
+                  Background="{DynamicResource PanelBrush}"
+                  BorderBrush="{DynamicResource BorderBrush}"
+                  BorderThickness="0,0,0,1">
+            <!-- Сетка колонок заголовка таблицы файлов. -->
+            <Grid ColumnDefinitions="*,120,120,140,150">
+              <!-- Кнопка сортировки файлов по имени. -->
+              <Button Grid.Column="0" Classes="FileHeaderButton" Command="{Binding SortFilesCommand}" CommandParameter="Name">
+                <!-- Заголовок колонки имени и индикатор направления сортировки. -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <!-- Текстовый элемент: Имя. -->
+                  <TextBlock Text="Имя" VerticalAlignment="Center" />
+                  <!-- Текстовый элемент: {Binding NameSortArrow}. -->
+                  <TextBlock Grid.Column="1" Text="{Binding NameSortArrow}" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+              <!-- Кнопка сортировки файлов по типу. -->
+              <Button Grid.Column="1" Classes="FileHeaderButton" Command="{Binding SortFilesCommand}" CommandParameter="Type">
+                <!-- Заголовок колонки типа и индикатор направления сортировки. -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <!-- Текстовый элемент: Тип. -->
+                  <TextBlock Text="Тип" VerticalAlignment="Center" />
+                  <!-- Текстовый элемент: {Binding TypeSortArrow}. -->
+                  <TextBlock Grid.Column="1" Text="{Binding TypeSortArrow}" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+              <!-- Кнопка сортировки файлов по размеру. -->
+              <Button Grid.Column="2" Classes="FileHeaderButton" Command="{Binding SortFilesCommand}" CommandParameter="Size">
+                <!-- Заголовок колонки размера и индикатор направления сортировки. -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <!-- Текстовый элемент: Размер. -->
+                  <TextBlock Text="Размер" VerticalAlignment="Center" />
+                  <!-- Текстовый элемент: {Binding SizeSortArrow}. -->
+                  <TextBlock Grid.Column="1" Text="{Binding SizeSortArrow}" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+              <!-- Кнопка сортировки файлов по дате изменения. -->
+              <Button Grid.Column="3" Classes="FileHeaderButton" Command="{Binding SortFilesCommand}" CommandParameter="UpdatedAt">
+                <!-- Заголовок колонки изменения и индикатор направления сортировки. -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <!-- Текстовый элемент: Изменен. -->
+                  <TextBlock Text="Изменен" VerticalAlignment="Center" />
+                  <!-- Текстовый элемент: {Binding UpdatedAtSortArrow}. -->
+                  <TextBlock Grid.Column="1" Text="{Binding UpdatedAtSortArrow}" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+              <!-- Кнопка сортировки файлов по статусу. -->
+              <Button Grid.Column="4" Classes="FileHeaderButton" Command="{Binding SortFilesCommand}" CommandParameter="Status">
+                <!-- Заголовок колонки статуса и индикатор направления сортировки. -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <!-- Текстовый элемент: Статус. -->
+                  <TextBlock Text="Статус" VerticalAlignment="Center" />
+                  <!-- Текстовый элемент: {Binding StatusSortArrow}. -->
+                  <TextBlock Grid.Column="1" Text="{Binding StatusSortArrow}" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+            </Grid>
+          </Border>
+
+          <!-- Прокручиваемая таблица файлов. -->
+          <ScrollViewer Grid.Row="1">
+            <!-- Список файлов в табличном представлении. -->
+            <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Files}">
+              <!-- Шаблон отдельного элемента списка. -->
+              <ItemsControl.ItemTemplate>
+                <!-- Шаблон строки файла. -->
+                <DataTemplate DataType="vm:FilePlaceholder">
+                  <!-- Кнопка выбора файла в таблице. -->
+                  <Button Classes.FileItemButton="True"
+                          HorizontalAlignment="Stretch"
+                          Classes.selected="{Binding IsSelected}"
+                          Command="{Binding $parent[UserControl].DataContext.SelectFileCommand}"
+                          CommandParameter="{Binding}">
+                    <!-- Контейнер строки файла с нижней границей. -->
+                    <Border Padding="16,11"
+                            HorizontalAlignment="Stretch"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,0,1">
+                      <!-- Сетка значений строки файла по колонкам. -->
+                      <Grid ColumnDefinitions="*,120,120,140,150" VerticalAlignment="Center">
+                        <!-- Группа иконки и имени файла. -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                          <!-- Иконка файла в строке таблицы. -->
+                          <Image Width="18" Height="18" Source="avares://Client.Styles/Assets/file.svg" />
+                          <!-- Название файла в строке таблицы. -->
+                          <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <!-- Тип файла в строке таблицы. -->
+                        <TextBlock Grid.Column="1" Text="{Binding Type}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <!-- Размер файла в строке таблицы. -->
+                        <TextBlock Grid.Column="2" Text="{Binding Size}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <!-- Дата изменения файла в строке таблицы. -->
+                        <TextBlock Grid.Column="3" Text="{Binding UpdatedAt}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <!-- Статус файла в строке таблицы. -->
+                        <TextBlock Grid.Column="4" Text="{Binding Status}" Foreground="{DynamicResource AccentBrush}" />
+                      </Grid>
+                    </Border>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- Плиточное представление файлов. -->
+        <ItemsControl Margin="16"
+                      HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding Files}"
+                      IsVisible="{Binding IsTilesView}">
+          <!-- Панель расположения элементов списка. -->
+          <ItemsControl.ItemsPanel>
+            <!-- Шаблон панели для коллекции элементов. -->
+            <ItemsPanelTemplate>
+              <!-- Панель переноса плиток файлов. -->
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <!-- Шаблон отдельного элемента списка. -->
+          <ItemsControl.ItemTemplate>
+            <!-- Шаблон плитки файла. -->
+            <DataTemplate DataType="vm:FilePlaceholder">
+              <!-- Кнопка выбора файла в плиточном представлении. -->
+              <Button Classes.FileItemButton="True"
+                      HorizontalAlignment="Stretch"
+                      Classes.selected="{Binding IsSelected}"
+                      Command="{Binding $parent[UserControl].DataContext.SelectFileCommand}"
+                      CommandParameter="{Binding}">
+                <!-- Контейнер плитки файла. -->
+                <Border Width="180"
+                        Height="132"
+                        Margin="0,0,12,12"
+                        Padding="14"
+                        HorizontalAlignment="Stretch"
+                        Background="{DynamicResource PanelBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                  <!-- Вертикальная группа данных плитки файла. -->
+                  <StackPanel Spacing="8">
+                    <!-- Крупная иконка файла в плитке. -->
+                    <Image Width="28" Height="28" HorizontalAlignment="Left" Source="avares://Client.Styles/Assets/file.svg" />
+                    <!-- Название файла в плитке. -->
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="36" />
+                    <!-- Размер файла в плитке. -->
+                    <TextBlock Text="{Binding Size}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                    <!-- Статус файла в плитке. -->
+                    <TextBlock Text="{Binding Status}" Foreground="{DynamicResource AccentBrush}" FontSize="12" />
+                  </StackPanel>
+                </Border>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+
+      <!-- Нижняя панель переключения режима отображения файлов. -->
+      <Border Grid.Row="3" Padding="16,10" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+        <!-- Группа кнопок переключения вида. -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6">
+          <!-- Кнопка включения табличного вида файлов. -->
+          <Button Classes="ViewSwitchButton" Command="{Binding ShowListViewCommand}" ToolTip.Tip="Показать списком">
+            <!-- Иконка табличного вида файлов. -->
+            <Image Width="15" Height="15" Source="avares://Client.Styles/Assets/list-view.svg" />
+          </Button>
+          <!-- Кнопка включения плиточного вида файлов. -->
+          <Button Classes="ViewSwitchButton" Command="{Binding ShowTilesViewCommand}" ToolTip.Tip="Показать плитками">
+            <!-- Иконка плиточного вида файлов. -->
+            <Image Width="15" Height="15" Source="avares://Client.Styles/Assets/tiles-view.svg" />
+          </Button>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>
