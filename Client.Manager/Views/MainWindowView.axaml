@@ -6,6 +6,7 @@
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:vm="using:Client.Manager.ViewModels"
+  xmlns:svg="using:Avalonia.Svg.Skia"
   Title="DataGuard Manager"
   Width="1280"
   Height="760"
@@ -39,11 +40,11 @@
 						Classes.active="{Binding IsDashboardSelected}"
 						Command="{Binding ShowDashboardViewCommand}"
 						ToolTip.Tip="Домашняя страница">
-					<!-- Иконка домашней страницы панели управления. -->
-					<Image Classes="NavIcon"
-						   Width="20"
-						   Height="20"
-						   Source="avares://Client.Styles/Assets/dashboard.svg" />
+						<!-- Иконка домашней страницы панели управления. -->
+						<svg:SvgImage Classes="NavIcon"
+							   Width="20"
+							   Height="20"
+							   UriSource="avares://Client.Styles/Assets/dashboard.svg" />
 				</Button>
 
 				<!-- Основная группа кнопок разделов приложения. -->
@@ -53,8 +54,8 @@
 							Classes.active="{Binding IsHomeSelected}"
 							Command="{Binding ShowHomeViewCommand}"
 							ToolTip.Tip="Файлы">
-						<!-- Иконка файлового раздела. -->
-						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/folder.svg" />
+							<!-- Иконка файлового раздела. -->
+							<svg:SvgImage Classes="NavIcon" UriSource="avares://Client.Styles/Assets/folder.svg" />
 					</Button>
 
 					<!-- Кнопка перехода к разделу чата. -->
@@ -65,8 +66,8 @@
 							ToolTip.Tip="Чат">
 						<!-- Сетка иконки чата и бейджа уведомлений. -->
 						<Grid>
-							<!-- Иконка раздела чата. -->
-							<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/chat.svg" />
+								<!-- Иконка раздела чата. -->
+								<svg:SvgImage Classes="NavIcon" UriSource="avares://Client.Styles/Assets/chat.svg" />
 							<!-- Бейдж уведомлений раздела чата. -->
 							<Border MinWidth="16"
 									Height="16"
@@ -94,8 +95,8 @@
 							Command="{Binding ShowGroupsViewCommand}"
 							IsEnabled="{Binding IsSideBarEnabled}"
 							ToolTip.Tip="Группы доступа">
-						<!-- Иконка групп доступа. -->
-						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/groups.svg" />
+							<!-- Иконка групп доступа. -->
+							<svg:SvgImage Classes="NavIcon" UriSource="avares://Client.Styles/Assets/groups.svg" />
 					</Button>
 
 					<!-- Кнопка перехода к внешнему доступу. -->
@@ -104,8 +105,8 @@
 							Command="{Binding ShowExternalAccessViewCommand}"
 							IsEnabled="{Binding IsSideBarEnabled}"
 							ToolTip.Tip="Внешний доступ">
-						<!-- Иконка раздела внешнего доступа. -->
-						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/external-access.svg" />
+							<!-- Иконка раздела внешнего доступа. -->
+							<svg:SvgImage Classes="NavIcon" UriSource="avares://Client.Styles/Assets/external-access.svg" />
 					</Button>
 
 					<!-- Кнопка перехода к аудиту событий. -->
@@ -116,8 +117,8 @@
 							ToolTip.Tip="Аудит событий">
 						<!-- Сетка иконки аудита и бейджа уведомлений. -->
 						<Grid>
-							<!-- Иконка раздела аудита событий. -->
-							<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/audit.svg" />
+								<!-- Иконка раздела аудита событий. -->
+								<svg:SvgImage Classes="NavIcon" UriSource="avares://Client.Styles/Assets/audit.svg" />
 							<!-- Бейдж уведомлений аудита событий. -->
 							<Border MinWidth="16"
 									Height="16"
@@ -151,8 +152,8 @@
 							Command="{Binding ShowSettingsViewCommand}"
 							IsEnabled="{Binding IsSideBarEnabled}"
 							ToolTip.Tip="Настройки приложения">
-						<!-- Иконка настроек приложения. -->
-						<Image Classes="NavIcon" Source="avares://Client.Styles/Assets/settings.svg" />
+							<!-- Иконка настроек приложения. -->
+							<svg:SvgImage Classes="NavIcon" UriSource="avares://Client.Styles/Assets/settings.svg" />
 					</Button>
 
 					<!-- Кнопка перехода к аккаунту пользователя. -->
@@ -167,11 +168,11 @@
 								BorderBrush="{DynamicResource AccentBrush}"
 								BorderThickness="1"
 								CornerRadius="14">
-							<!-- Иконка аватара аккаунта пользователя. -->
-							<Image Width="16"
-								   Height="16"
-								   Stretch="Uniform"
-								   Source="avares://Client.Styles/Assets/user.svg" />
+								<!-- Иконка аватара аккаунта пользователя. -->
+								<svg:SvgImage Width="16"
+									   Height="16"
+									   Stretch="Uniform"
+									   UriSource="avares://Client.Styles/Assets/user.svg" />
 						</Border>
 					</Button>
 				</StackPanel>

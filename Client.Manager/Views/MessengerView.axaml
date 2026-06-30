@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:Client.Manager.ViewModels"
+	             xmlns:vm="using:Client.Manager.ViewModels"
+	             xmlns:svg="using:Avalonia.Svg.Skia"
              x:Class="Client.Manager.Views.MessengerView"
              x:DataType="vm:MessengerViewModel"
              mc:Ignorable="d"
@@ -105,7 +106,7 @@
                     <!-- Круглый контейнер аватара диалога. -->
                     <Border Width="30" Height="30" Background="{DynamicResource PanelSecondaryBrush}" CornerRadius="15">
                       <!-- Иконка аватара диалога. -->
-                      <Image Width="16" Height="16" Source="avares://Client.Styles/Assets/user.svg" />
+	                      <svg:SvgImage Width="16" Height="16" UriSource="avares://Client.Styles/Assets/user.svg" />
                     </Border>
                     <!-- Группа названия и предпросмотра последнего сообщения. -->
                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
@@ -144,7 +145,7 @@
             <!-- Круглый контейнер аватара выбранного чата. -->
             <Border Width="34" Height="34" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="17">
               <!-- Иконка аватара выбранного чата. -->
-              <Image Width="18" Height="18" Source="avares://Client.Styles/Assets/user.svg" />
+	              <svg:SvgImage Width="18" Height="18" UriSource="avares://Client.Styles/Assets/user.svg" />
             </Border>
             <!-- Группа названия и подзаголовка выбранного чата. -->
             <StackPanel Grid.Column="1" Margin="10,0,0,0">
@@ -203,8 +204,8 @@
             <Grid ColumnDefinitions="34,*">
               <!-- Кнопка прикрепления файла к сообщению. -->
               <Button Classes="ChatFolderButton" Padding="6" BorderThickness="0" Background="Transparent" ToolTip.Tip="Прикрепить файл">
-                <!-- Иконка прикрепления файла. -->
-                <Image Source="avares://Client.Styles/Assets/attach.svg" />
+	                <!-- Иконка прикрепления файла. -->
+	                <svg:SvgImage UriSource="avares://Client.Styles/Assets/attach.svg" />
               </Button>
               <!-- Подсказка поля ввода сообщения. -->
               <TextBlock Grid.Column="1" Text="Напишите сообщение..."
@@ -215,8 +216,8 @@
           </Border>
           <!-- Кнопка отправки сообщения. -->
           <Button Grid.Column="1" Classes="ChatFolderButton" Width="38" Padding="6" ToolTip.Tip="Отправить сообщение">
-            <!-- Иконка отправки сообщения. -->
-            <Image Source="avares://Client.Styles/Assets/send.svg" />
+	            <!-- Иконка отправки сообщения. -->
+	            <svg:SvgImage UriSource="avares://Client.Styles/Assets/send.svg" />
           </Button>
         </Grid>
       </Border>

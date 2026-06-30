@@ -1,0 +1,8 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    :root { color: #5E687A; --accent: #1079CE; --soft: #DCEEFF; }
+    @media (prefers-color-scheme: dark) { :root { color: #8B92A8; --accent: #1079CE; --soft: #1F2636; } }
+  </style>
+  <path d="M20.5 11.5L12.2 19.8C9.86 22.14 6.06 22.14 3.72 19.8C1.38 17.46 1.38 13.66 3.72 11.32L12.73 2.31C14.29 0.75 16.82 0.75 18.38 2.31C19.94 3.87 19.94 6.4 18.38 7.96L9.37 16.97C8.59 17.75 7.32 17.75 6.54 16.97C5.76 16.19 5.76 14.92 6.54 14.14L14.15 6.53" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M14.15 6.53L16.27 4.41" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

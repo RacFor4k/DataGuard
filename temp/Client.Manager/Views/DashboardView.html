@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  Корневое представление главной страницы.
+  Перенос DashboardView.axaml — карточка-плейсхолдер: логотип, заголовок, описания.
+-->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Главная — DataGuard Manager</title>
+  <link rel="stylesheet" href="../../Client.Styles/Themes/DataGuardTheme.css" />
+  <style>
+    /* Grid Background=AppBackgroundBrush. */
+    .dashboard-grid { display: block; background: var(--app-background-brush); height: 100vh; }
+    /* Карточка: Margin=24, Padding=28, Panel, Border 1px, CornerRadius 16. */
+    .dashboard-card {
+      margin: 24px; padding: 28px;
+      background: var(--panel-brush); border: 1px solid var(--border-brush);
+      border-radius: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+      height: calc(100vh - 48px);
+    }
+    .dashboard-logo { width: 44px; height: 44px; object-fit: contain; align-self: flex-start; }
+    .dashboard-title { font-size: 28px; font-weight: 600; color: var(--primary-text-brush); }
+    .dashboard-subtitle { font-size: 14px; color: var(--secondary-text-brush); }
+    .dashboard-note { font-size: 13px; color: var(--secondary-text-brush); }
+  </style>
+</head>
+<body class="user-control">
+
+  <!-- Корневая сетка главной страницы с фоном приложения. -->
+  <div class="dashboard-grid">
+
+    <!-- Карточка содержимого главной панели со скруглением, рамкой и отступами. -->
+    <div class="dashboard-card">
+
+      <!-- Логотип приложения DataGuard. -->
+      <img class="dashboard-logo" src="../../Client.Styles/Assets/logo.svg" alt="DataGuard" />
+
+      <!-- Основной заголовок главной страницы приложения. -->
+      <div class="dashboard-title">Главная</div>
+
+      <!-- Краткое описание назначения домашней страницы DataGuard. -->
+      <div class="dashboard-subtitle">Домашняя страница DataGuard</div>
+
+      <!-- Дополнительное пояснение будущего наполнения главного экрана. -->
+      <div class="dashboard-note">Здесь будут сводка безопасности, быстрые действия и последние события.</div>
+    </div>
+  </div>
+
+</body>
+</html>

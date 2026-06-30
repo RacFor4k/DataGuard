@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:Client.Manager.ViewModels"
+	             xmlns:vm="using:Client.Manager.ViewModels"
+	             xmlns:svg="using:Avalonia.Svg.Skia"
              x:Class="Client.Manager.Views.DashboardView"
              x:DataType="vm:DashboardViewModel"
              mc:Ignorable="d"
@@ -22,10 +23,10 @@
       <!-- Вертикальная панель, объединяющая логотип, заголовок и описания главного экрана. -->
       <StackPanel Spacing="12">
         <!-- Логотип приложения DataGuard, визуально обозначающий главную страницу. -->
-        <Image Width="44"
-               Height="44"
-               HorizontalAlignment="Left"
-               Source="avares://Client.Styles/Assets/logo.svg" />
+	        <svg:SvgImage Width="44"
+	               Height="44"
+	               HorizontalAlignment="Left"
+	               UriSource="avares://Client.Styles/Assets/logo.svg" />
         <!-- Основной заголовок главной страницы приложения. -->
         <TextBlock Text="Главная"
                    Foreground="{DynamicResource PrimaryTextBrush}"

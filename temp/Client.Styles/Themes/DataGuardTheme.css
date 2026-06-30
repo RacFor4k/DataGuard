@@ -1,0 +1,279 @@
+/*
+ * DataGuardTheme.css
+ * Перенос темы DataGuardTheme.axaml (Avalonia) в CSS.
+ * Палитра Light/Dark повторяет ThemeDictionaries оригинала;
+ * тёмная тема следует системной (prefers-color-scheme: dark), как и FluentTheme.
+ */
+
+/* =========================================================================
+   Дизайн-токены — Light (ResourceDictionary x:Key="Light")
+   Длинные ключи (...Brush) и короткие (... ) дублированы как в XAML.
+   ========================================================================= */
+:root {
+  --app-background-brush: #F6F8FB;
+  --sidebar-background-brush: #FFFFFF;
+  --panel-brush: #FFFFFF;
+  --panel-secondary-brush: #EEF2F7;
+  --panel-hover-brush: #E5EBF3;
+  --border-brush: #D5DCE8;
+  --primary-text-brush: #1E2532;
+  --secondary-text-brush: #5E687A;
+  --subtle-text-brush: #7B8496;
+  --accent-brush: #1079CE;
+  --accent-soft-brush: #DCEEFF;
+  --danger-brush: #D94040;
+
+  /* Короткие алиасы ключей (Bg/Panel/Panel2/Hover/Border/Text/Muted/Subtle/Accent/AccentSoft/Danger) */
+  --bg: #F6F8FB;
+  --panel: #FFFFFF;
+  --panel2: #EEF2F7;
+  --hover: #E5EBF3;
+  --border: #D5DCE8;
+  --text: #1E2532;
+  --muted: #5E687A;
+  --subtle: #7B8496;
+  --accent: #1079CE;
+  --accent-soft: #DCEEFF;
+  --danger: #D94040;
+
+  /* Единый системный шрифт — Inter (как Avalonia.Fonts.Inter в XAML). */
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* =========================================================================
+   Дизайн-токены — Dark (ResourceDictionary x:Key="Dark")
+   ========================================================================= */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-background-brush: #0D0F14;
+    --sidebar-background-brush: #141720;
+    --panel-brush: #141720;
+    --panel-secondary-brush: #1C1F2A;
+    --panel-hover-brush: #242836;
+    --border-brush: #2A2F3D;
+    --primary-text-brush: #E8EAF0;
+    --secondary-text-brush: #8B92A8;
+    --subtle-text-brush: #555D75;
+    --accent-brush: #1079CE;
+    --accent-soft-brush: #1F2636;
+    --danger-brush: #D94040;
+
+    --bg: #0D0F14;
+    --panel: #141720;
+    --panel2: #1C1F2A;
+    --hover: #242836;
+    --border: #2A2F3D;
+    --text: #E8EAF0;
+    --muted: #8B92A8;
+    --subtle: #555D75;
+    --accent: #1079CE;
+    --accent-soft: #1F2636;
+    --danger: #D94040;
+  }
+}
+
+/* =========================================================================
+   Базовые правила — аналоги Style Selector="Window" / "UserControl".
+   ========================================================================= */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font);
+  background: var(--app-background-brush);
+  color: var(--primary-text-brush);
+}
+
+.window,
+.user-control {
+  font-family: var(--font);
+  background: var(--app-background-brush);
+  color: var(--primary-text-brush);
+}
+
+/* Унификация кнопок (как Button в Avalonia — без дефолтного браузерного стиля). */
+button {
+  font-family: var(--font);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--primary-text-brush);
+}
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+/* =========================================================================
+   Навигация — Button.NavButton / Image.NavIcon.
+   ========================================================================= */
+.nav-button {
+  width: 38px;
+  height: 38px;
+  margin: 2px 0;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-button:hover {
+  background: var(--panel-hover-brush);
+  border-color: var(--border-brush);
+}
+
+.nav-button.active {
+  background: var(--accent-soft-brush);
+  border-color: var(--accent-brush);
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;       /* Stretch=Uniform */
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+/* =========================================================================
+   Тулбар / папки чата — Button.ToolbarButton, Button.ChatFolderButton.
+   ========================================================================= */
+.toolbar-button,
+.chat-folder-button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--panel-secondary-brush);
+  border: 1px solid var(--border-brush);
+  color: var(--secondary-text-brush);
+  white-space: nowrap;
+}
+
+.toolbar-button:hover,
+.chat-folder-button:hover {
+  background: var(--panel-hover-brush);
+  border-color: var(--accent-brush);
+  color: var(--primary-text-brush);
+}
+
+.chat-folder-button.active {
+  background: var(--accent-soft-brush);
+  border-color: var(--accent-brush);
+  color: var(--accent-brush);
+}
+
+/* =========================================================================
+   Переключатель вида — Button.ViewSwitchButton.
+   ========================================================================= */
+.view-switch-button {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  background: var(--panel-secondary-brush);
+  border: 1px solid var(--border-brush);
+}
+
+.view-switch-button:hover {
+  background: var(--panel-hover-brush);
+  border-color: var(--accent-brush);
+}
+
+/* =========================================================================
+   Узел дерева папок — Button.TreeItemButton.
+   ========================================================================= */
+.tree-item-button {
+  width: 100%;
+  height: 30px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.tree-item-button:hover,
+.file-row-button:hover,
+.chat-item-button:hover {
+  background: var(--panel-hover-brush);
+  border-color: var(--border-brush);
+}
+
+.tree-item-button.selected,
+.file-row-button.selected,
+.chat-item-button.selected {
+  background: var(--accent-soft-brush);
+  border-color: var(--accent-brush);
+}
+
+/* =========================================================================
+   Строки/плитки файлов, элементы чатов — Button.FileRowButton / ChatItemButton / FileItemButton.
+   ========================================================================= */
+.file-row-button,
+.chat-item-button,
+.file-item-button {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.file-item-button:hover {
+  background: var(--panel-hover-brush);
+  border-color: var(--border-brush);
+}
+
+.file-item-button.selected {
+  background: transparent;
+  border-color: var(--accent-brush);
+}
+
+/* Заголовки колонок таблицы файлов — Button.FileHeaderButton. */
+.file-header-button {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  color: var(--secondary-text-brush);
+}
+
+.file-header-button:hover { color: var(--primary-text-brush); }
+
+/* Border.FileRow:pointerover */
+.file-row:hover { background: var(--panel-hover-brush); }
+
+/* =========================================================================
+   Кнопки профиля — Button.ProfileButton / HeaderProfileButton.
+   ========================================================================= */
+.profile-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 18px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.profile-button:hover { background: var(--panel-hover-brush); }
+
+.header-profile-button {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.header-profile-button:hover { background: var(--panel-hover-brush); }
+
+/* =========================================================================
+   Вспомогательные классы текста — привязки *TextBrush в XAML.
+   ========================================================================= */
+.text-primary   { color: var(--primary-text-brush); }
+.text-secondary { color: var(--secondary-text-brush); }
+.text-subtle    { color: var(--subtle-text-brush); }
+.text-accent    { color: var(--accent-brush); }
+.text-white     { color: #FFFFFF; }
+.font-semibold  { font-weight: 600; }

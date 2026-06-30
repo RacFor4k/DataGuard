@@ -1,0 +1,25 @@
+/*
+ * placeholder.css
+ * Общие стили плейсхолдер-экранов (Groups/ExternalAccess/Audit/Settings/Account).
+ * Перенос одинаковой структуры: Border padding:28 (Background=AppBackground) →
+ * StackPanel Spacing:8 → TextBlock заголовок (24px SemiBold) + описание (14px Muted).
+ */
+.placeholder-border {
+  background: var(--app-background-brush);
+  padding: 28px;
+  height: 100vh;
+}
+.placeholder-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;          /* Spacing="8" */
+}
+.placeholder-title {
+  color: var(--primary-text-brush);
+  font-size: 24px;
+  font-weight: 600;  /* SemiBold */
+}
+.placeholder-desc {
+  color: var(--secondary-text-brush);
+  font-size: 14px;
+}

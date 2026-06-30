@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:Client.Manager.ViewModels"
+	             xmlns:vm="using:Client.Manager.ViewModels"
+	             xmlns:svg="using:Avalonia.Svg.Skia"
              x:Class="Client.Manager.Views.HomeView"
              x:DataType="vm:HomeViewModel"
              mc:Ignorable="d"
@@ -66,11 +67,11 @@
                              FontSize="12"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center" />
-                  <!-- Иконка папки в дереве. -->
-                  <Image Grid.Column="2"
-                         Width="15"
-                         Height="15"
-                         Source="avares://Client.Styles/Assets/folder.svg" />
+	                  <!-- Иконка папки в дереве. -->
+	                  <svg:SvgImage Grid.Column="2"
+	                         Width="15"
+	                         Height="15"
+	                         UriSource="avares://Client.Styles/Assets/folder.svg" />
                   <!-- Название папки в дереве. -->
                   <TextBlock Grid.Column="3"
                              Text="{Binding Name}"
@@ -217,7 +218,7 @@
                         <!-- Группа иконки и имени файла. -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                           <!-- Иконка файла в строке таблицы. -->
-                          <Image Width="18" Height="18" Source="avares://Client.Styles/Assets/file.svg" />
+	                          <svg:SvgImage Width="18" Height="18" UriSource="avares://Client.Styles/Assets/file.svg" />
                           <!-- Название файла в строке таблицы. -->
                           <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" />
                         </StackPanel>
@@ -274,7 +275,7 @@
                   <!-- Вертикальная группа данных плитки файла. -->
                   <StackPanel Spacing="8">
                     <!-- Крупная иконка файла в плитке. -->
-                    <Image Width="28" Height="28" HorizontalAlignment="Left" Source="avares://Client.Styles/Assets/file.svg" />
+	                    <svg:SvgImage Width="28" Height="28" HorizontalAlignment="Left" UriSource="avares://Client.Styles/Assets/file.svg" />
                     <!-- Название файла в плитке. -->
                     <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="36" />
                     <!-- Размер файла в плитке. -->
@@ -296,12 +297,12 @@
           <!-- Кнопка включения табличного вида файлов. -->
           <Button Classes="ViewSwitchButton" Command="{Binding ShowListViewCommand}" ToolTip.Tip="Показать списком">
             <!-- Иконка табличного вида файлов. -->
-            <Image Width="15" Height="15" Source="avares://Client.Styles/Assets/list-view.svg" />
+	            <svg:SvgImage Width="15" Height="15" UriSource="avares://Client.Styles/Assets/list-view.svg" />
           </Button>
           <!-- Кнопка включения плиточного вида файлов. -->
           <Button Classes="ViewSwitchButton" Command="{Binding ShowTilesViewCommand}" ToolTip.Tip="Показать плитками">
             <!-- Иконка плиточного вида файлов. -->
-            <Image Width="15" Height="15" Source="avares://Client.Styles/Assets/tiles-view.svg" />
+	            <svg:SvgImage Width="15" Height="15" UriSource="avares://Client.Styles/Assets/tiles-view.svg" />
           </Button>
         </StackPanel>
       </Border>

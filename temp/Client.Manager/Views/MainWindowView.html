@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!--
+  Главное окно приложения.
+  Перенос MainWindowView.axaml — shell: боковая панель навигации (52px) + рабочая область.
+  Экраны подгружаются в <iframe id="content"> (аналог ContentControl + ViewLocator).
+-->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataGuard Manager</title>
+  <link rel="stylesheet" href="../../Client.Styles/Themes/DataGuardTheme.css" />
+  <style>
+    /* ColumnDefinitions="52,*" */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      height: 100vh;
+      background: var(--app-background-brush);
+    }
+
+    /* Левая боковая панель навигации (Grid.Column=0). */
+    .sidebar {
+      background: var(--sidebar-background-brush);
+      border-right: 1px solid var(--border-brush);
+      /* RowDefinitions="Auto,*,Auto" */
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+    }
+
+    /* Кнопка перехода на домашнюю страницу (Row=0): 32×32, Accent, CornerRadius 8. */
+    .dashboard-button {
+      width: 32px;
+      height: 32px;
+      margin: 12px 0 16px;
+      padding: 0;
+      border-radius: 8px;
+      background: var(--accent-brush);
+      border: 1px solid var(--accent-brush);
+      justify-self: center;
+    }
+    .dashboard-button.active {
+      background: var(--accent-soft-brush);
+      border-color: var(--accent-brush);
+    }
+    .dashboard-button .nav-icon { width: 20px; height: 20px; }
+
+    /* Основная группа кнопок разделов (Row=1). */
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-self: center;
+    }
+
+    /* Нижняя группа настроек и аккаунта (Row=2, VerticalAlignment=Bottom). */
+    .nav-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      align-self: end;
+      justify-self: center;
+      margin-bottom: 12px;
+    }
+
+    /* Контейнер иконки и бейджа (Grid для chat/audit). */
+    .icon-badge-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+    /* Бейдж уведомлений (Border Danger, круг). IsVisible по data-show. */
+    .notification-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 3px;
+      background: var(--danger-brush);
+      border-radius: 8px;
+      color: #FFFFFF;
+      font-size: 9px;
+      font-weight: 600;
+      display: none;        /* IsVisible=false по умолчанию */
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .notification-badge[data-show="true"] { display: inline-flex; }
+
+    /* Круглый контейнер аватара аккаунта: 28×28, AccentSoft + Accent. */
+    .account-avatar {
+      width: 28px;
+      height: 28px;
+      background: var(--accent-soft-brush);
+      border: 1px solid var(--accent-brush);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .account-avatar img { width: 16px; height: 16px; object-fit: contain; }
+
+    /* Правая рабочая область (Grid.Column=1) — ContentControl. */
+    .workspace {
+      background: var(--app-background-brush);
+      overflow: hidden;
+    }
+    #content {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    /* Tooltip-имитация (title-атрибут бразуера уже есть; текст кнопок скрыт). */
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  </style>
+</head>
+<body class="window">
+  <!-- Основная сетка главного окна с боковой панелью и рабочей областью. -->
+  <div class="main-grid">
+
+    <!-- Левая боковая панель навигации приложения. -->
+    <nav class="sidebar">
+
+      <!-- Кнопка перехода на домашнюю страницу панели управления. -->
+      <button class="dashboard-button active" data-view="dashboard" title="Домашняя страница"
+              aria-label="Домашняя страница">
+        <img class="nav-icon" src="../../Client.Styles/Assets/dashboard.svg" alt="" />
+      </button>
+
+      <!-- Основная группа кнопок разделов приложения. -->
+      <div class="nav-group">
+        <!-- Кнопка перехода к файловому разделу. -->
+        <button class="nav-button" data-view="home" title="Файлы" aria-label="Файлы">
+          <img class="nav-icon" src="../../Client.Styles/Assets/folder.svg" alt="" />
+        </button>
+
+        <!-- Кнопка перехода к разделу чата. -->
+        <button class="nav-button" data-view="messenger" title="Чат" aria-label="Чат"
+                data-sidebar-enabled="true">
+          <span class="icon-badge-wrap">
+            <img class="nav-icon" src="../../Client.Styles/Assets/chat.svg" alt="" />
+            <!-- Бейдж уведомлений раздела чата. -->
+            <span class="notification-badge" data-show="false">0</span>
+          </span>
+        </button>
+
+        <!-- Кнопка перехода к группам доступа. -->
+        <button class="nav-button" data-view="groups" title="Группы доступа" aria-label="Группы доступа"
+                data-sidebar-enabled="true">
+          <img class="nav-icon" src="../../Client.Styles/Assets/groups.svg" alt="" />
+        </button>
+
+        <!-- Кнопка перехода к внешнему доступу. -->
+        <button class="nav-button" data-view="external-access" title="Внешний доступ" aria-label="Внешний доступ"
+                data-sidebar-enabled="true">
+          <img class="nav-icon" src="../../Client.Styles/Assets/external-access.svg" alt="" />
+        </button>
+
+        <!-- Кнопка перехода к аудиту событий. -->
+        <button class="nav-button" data-view="audit" title="Аудит событий" aria-label="Аудит событий"
+                data-sidebar-enabled="true">
+          <span class="icon-badge-wrap">
+            <img class="nav-icon" src="../../Client.Styles/Assets/audit.svg" alt="" />
+            <!-- Бейдж уведомлений аудита событий. -->
+            <span class="notification-badge" data-show="false">0</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Нижняя группа кнопок настроек и аккаунта. -->
+      <div class="nav-bottom">
+        <!-- Кнопка перехода к настройкам приложения. -->
+        <button class="nav-button" data-view="settings" title="Настройки приложения" aria-label="Настройки приложения"
+                data-sidebar-enabled="true">
+          <img class="nav-icon" src="../../Client.Styles/Assets/settings.svg" alt="" />
+        </button>
+
+        <!-- Кнопка перехода к аккаунту пользователя. -->
+        <button class="nav-button" data-view="account" title="Аккаунт пользователя" aria-label="Аккаунт пользователя">
+          <span class="account-avatar">
+            <img src="../../Client.Styles/Assets/user.svg" alt="" />
+          </span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Правая рабочая область выбранного раздела приложения. -->
+    <main class="workspace">
+      <!-- Контейнер текущего представления приложения. -->
+      <iframe id="content" src="DashboardView.html" title="Рабочая область"></iframe>
+    </main>
+  </div>
+
+  <script src="MainWindowView.js"></script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!--
+  Корневой элемент пользовательского представления.
+  Перенос MessengerView.axaml — чат: список чатов (280px) + область переписки
+  (заголовок, лента сообщений, поле ввода).
+-->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Чат — DataGuard Manager</title>
+  <link rel="stylesheet" href="../../Client.Styles/Themes/DataGuardTheme.css" />
+  <style>
+    /* ColumnDefinitions="280,*" */
+    .messenger-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+      background: var(--app-background-brush);
+    }
+
+    /* Левая панель навигации по чатам (Col=0). */
+    .chats-panel {
+      background: var(--panel-brush);
+      border-right: 1px solid var(--border-brush);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      min-height: 0;
+    }
+
+    /* Row0: заголовок + папки чатов. */
+    .chats-header { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .chats-title { font-size: 18px; font-weight: 600; color: var(--primary-text-brush); }
+    .chat-folders { display: flex; gap: 8px; }
+    .chat-folder-inner { display: grid; grid-template-columns: auto auto; column-gap: 6px; align-items: center; }
+    .chat-folder-badge {
+      min-width: 18px; height: 18px; padding: 0 4px;
+      background: var(--danger-brush); border-radius: 9px;
+      color: #FFFFFF; font-size: 10px;
+      display: none; align-items: center; justify-content: center; line-height: 1;
+    }
+    .chat-folder-badge[data-show="true"] { display: inline-flex; }
+
+    /* Row1: поиск. */
+    .chats-search-wrap { padding: 0 12px 8px; }
+    .chats-search {
+      height: 30px; background: var(--panel-secondary-brush);
+      border: 1px solid var(--border-brush); border-radius: 6px;
+      display: flex; align-items: center; padding: 0 10px;
+      color: var(--subtle-text-brush); font-size: 13px;
+    }
+
+    /* Row2: список диалогов. */
+    .chats-list { margin: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+    .chat-item-inner { padding: 10px; width: 100%; }
+    /* ColumnDefinitions="34,*,Auto" */
+    .chat-item-grid {
+      display: grid; grid-template-columns: 34px 1fr auto; align-items: center; width: 100%;
+    }
+    .chat-avatar {
+      width: 30px; height: 30px; background: var(--panel-secondary-brush);
+      border-radius: 15px; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .chat-avatar img { width: 16px; height: 16px; object-fit: contain; }
+    .chat-meta { margin-left: 10px; min-width: 0; }
+    .chat-meta .name { font-size: 13px; font-weight: 600; color: var(--primary-text-brush); }
+    .chat-meta .preview { font-size: 12px; color: var(--secondary-text-brush);
+                          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-aside { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+    .chat-time { font-size: 11px; color: var(--subtle-text-brush); }
+    .chat-unread {
+      min-width: 18px; height: 18px; padding: 0 4px;
+      background: var(--danger-brush); border-radius: 9px;
+      color: #FFFFFF; font-size: 10px;
+      display: none; align-items: center; justify-content: center; line-height: 1;
+    }
+    .chat-unread[data-show="true"] { display: inline-flex; }
+
+    /* Правая область выбранного чата (Col=1): RowDefinitions="Auto,*,Auto". */
+    .chat-area { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
+
+    /* Заголовок выбранного чата. */
+    .chat-header { border-bottom: 1px solid var(--border-brush); }
+    .header-profile-grid { display: grid; grid-template-columns: 42px 1fr; margin: 12px 16px; align-items: center; }
+    .chat-header-avatar {
+      width: 34px; height: 34px; background: var(--accent-soft-brush);
+      border: 1px solid var(--accent-brush); border-radius: 17px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .chat-header-avatar img { width: 18px; height: 18px; object-fit: contain; }
+    .chat-header-meta { margin-left: 10px; }
+    .chat-header-meta .name { font-size: 14px; font-weight: 600; color: var(--primary-text-brush); }
+    .chat-header-meta .subtitle { font-size: 12px; color: var(--secondary-text-brush); }
+
+    /* Прокручиваемая лента сообщений. */
+    .messages { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .message { max-width: 520px; padding: 12px; border-radius: 10px; }
+    .message.in { align-self: flex-start; background: var(--panel-secondary-brush);
+                  border: 1px solid var(--border-brush); color: var(--primary-text-brush); }
+    .message.out { align-self: flex-end; background: var(--accent-brush); color: #FFFFFF; }
+    .message .text { white-space: pre-wrap; word-break: break-word; }
+    .message.in .actions { display: flex; gap: 8px; margin-top: 8px; }
+
+    /* Нижняя панель ввода. ColumnDefinitions="*,Auto" */
+    .compose-bar { padding: 12px 16px; border-top: 1px solid var(--border-brush);
+                   display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    .compose-input {
+      height: 38px; background: var(--panel-secondary-brush);
+      border: 1px solid var(--border-brush); border-radius: 8px;
+      display: grid; grid-template-columns: 34px 1fr; align-items: center;
+    }
+    .compose-attach {
+      padding: 6px; border: 0 !important; background: transparent !important; justify-self: center;
+      width: 34px; height: 38px;
+    }
+    .compose-attach img { width: 18px; height: 18px; object-fit: contain; }
+    .compose-placeholder { color: var(--subtle-text-brush); font-size: 13px; }
+    .compose-send { width: 38px; padding: 6px; }
+    .compose-send img { width: 18px; height: 18px; object-fit: contain; }
+  </style>
+</head>
+<body class="user-control">
+
+  <!-- Основная сетка мессенджера со списком чатов и областью переписки. -->
+  <div class="messenger-grid">
+
+    <!-- Левая панель навигации по чатам. -->
+    <aside class="chats-panel">
+
+      <!-- Верхний блок: заголовок и папки чатов. -->
+      <div class="chats-header">
+        <!-- Заголовок раздела чатов. -->
+        <div class="chats-title">Чат</div>
+
+        <!-- Список папок чатов (горизонтальная панель). -->
+        <div class="chat-folders">
+          <!-- Папка чатов (активная). -->
+          <button class="chat-folder-button active" data-selected="true" title="Показать чаты папки">
+            <span class="chat-folder-inner">
+              <span>Все</span>
+              <span class="chat-folder-badge" data-show="false">0</span>
+            </span>
+          </button>
+          <!-- Папка чатов с бейджем. -->
+          <button class="chat-folder-button" data-selected="false" title="Показать чаты папки">
+            <span class="chat-folder-inner">
+              <span>Непрочитанные</span>
+              <span class="chat-folder-badge" data-show="true">2</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Блок визуального поиска по чатам. -->
+      <div class="chats-search-wrap">
+        <div class="chats-search">Поиск</div>
+      </div>
+
+      <!-- Список доступных диалогов. -->
+      <div class="chats-list">
+        <!-- Диалог 1 (выбран). -->
+        <button class="chat-item-button selected" data-selected="true">
+          <div class="chat-item-inner">
+            <div class="chat-item-grid">
+              <span class="chat-avatar"><img src="../../Client.Styles/Assets/user.svg" alt="" /></span>
+              <div class="chat-meta">
+                <div class="name">Иван Петров</div>
+                <div class="preview">Добрый день. Нужно согласовать…</div>
+              </div>
+              <div class="chat-aside">
+                <span class="chat-time">14:32</span>
+                <span class="chat-unread" data-show="true">2</span>
+              </div>
+            </div>
+          </div>
+        </button>
+
+        <!-- Диалог 2. -->
+        <button class="chat-item-button" data-selected="false">
+          <div class="chat-item-inner">
+            <div class="chat-item-grid">
+              <span class="chat-avatar"><img src="../../Client.Styles/Assets/user.svg" alt="" /></span>
+              <div class="chat-meta">
+                <div class="name">Мария Сидорова</div>
+                <div class="preview">Отправила отчёт за май</div>
+              </div>
+              <div class="chat-aside">
+                <span class="chat-time">13:05</span>
+                <span class="chat-unread" data-show="false">0</span>
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Правая область выбранного чата. -->
+    <section class="chat-area">
+
+      <!-- Заголовок выбранного чата. -->
+      <div class="chat-header">
+        <button class="header-profile-button" title="Открыть карточку пользователя">
+          <div class="header-profile-grid">
+            <span class="chat-header-avatar"><img src="../../Client.Styles/Assets/user.svg" alt="" /></span>
+            <div class="chat-header-meta">
+              <div class="name">Иван Петров</div>
+              <div class="subtitle">Бухгалтерия · был недавно</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Прокручиваемая область сообщений выбранного чата. -->
+      <div class="messages">
+        <!-- Входящее сообщение. -->
+        <div class="message in">
+          <div class="text">Добрый день. Нужно согласовать внешний доступ к договору поставки.</div>
+        </div>
+
+        <!-- Исходящее сообщение. -->
+        <div class="message out">
+          <div class="text">Проверю права и срок действия ссылки.</div>
+        </div>
+
+        <!-- Входящее сообщение с действиями согласования. -->
+        <div class="message in">
+          <div class="text">Запрос на доступ к документу «Договор поставки.pdf».</div>
+          <div class="actions">
+            <!-- Кнопка одобрения запроса. -->
+            <button class="chat-folder-button">Одобрить</button>
+            <!-- Кнопка отклонения запроса. -->
+            <button class="chat-folder-button">Отклонить</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Нижняя панель ввода нового сообщения. -->
+      <div class="compose-bar">
+        <!-- Визуальное поле ввода сообщения с кнопкой вложения. -->
+        <div class="compose-input">
+          <!-- Кнопка прикрепления файла к сообщению. -->
+          <button class="chat-folder-button compose-attach" title="Прикрепить файл">
+            <img src="../../Client.Styles/Assets/attach.svg" alt="" />
+          </button>
+          <!-- Подсказка поля ввода сообщения. -->
+          <span class="compose-placeholder">Напишите сообщение...</span>
+        </div>
+        <!-- Кнопка отправки сообщения. -->
+        <button class="chat-folder-button compose-send" title="Отправить сообщение">
+          <img src="../../Client.Styles/Assets/send.svg" alt="" />
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    /*
+     * Логика MessengerView: выбор диалога/папки (SelectChatCommand/SelectFolderCommand).
+     */
+    (function () {
+      "use strict";
+
+      // SelectChatCommand: один активный диалог.
+      document.querySelectorAll(".chat-item-button").forEach(function (item) {
+        item.addEventListener("click", function () {
+          document.querySelectorAll(".chat-item-button").forEach(function (i) { i.classList.remove("selected"); });
+          item.classList.add("selected");
+        });
+      });
+
+      // SelectFolderCommand: одна активная папка.
+      document.querySelectorAll(".chat-folder-button").forEach(function (folder) {
+        folder.addEventListener("click", function (e) {
+          if (folder.closest(".actions") || folder.closest(".compose-input")) { return; }
+          document.querySelectorAll(".chat-folders .chat-folder-button").forEach(function (f) { f.classList.remove("active"); });
+          folder.classList.add("active");
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

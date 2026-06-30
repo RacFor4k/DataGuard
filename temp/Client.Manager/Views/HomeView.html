@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<!--
+  Корневой элемент пользовательского представления.
+  Перенос HomeView.axaml — файловый менеджер: дерево папок (320px), разделитель (5px),
+  область файлов с тулбаром, хлебными крошками, табличным/плиточным видом и переключателем.
+-->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Файлы — DataGuard Manager</title>
+  <link rel="stylesheet" href="../../Client.Styles/Themes/DataGuardTheme.css" />
+  <style>
+    /* ColumnDefinitions="320,5,*" */
+    .home-grid {
+      display: grid;
+      grid-template-columns: 320px 5px 1fr;
+      height: 100vh;
+      background: var(--app-background-brush);
+    }
+
+    /* Левая панель дерева папок (Grid.Column=0). */
+    .folder-panel {
+      background: var(--panel-brush);
+      border-right: 1px solid var(--border-brush);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .folder-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-brush);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+    .folder-header-label { font-size: 12px; font-weight: 600; color: var(--secondary-text-brush); }
+    .folder-header-title { font-size: 15px; font-weight: 600; color: var(--primary-text-brush); }
+
+    .folder-tree {
+      margin: 6px 4px;
+      overflow-y: auto;
+    }
+    /* Узел дерева: Button.TreeItemButton, отступ по Depth (IndentWidth = Depth*12). */
+    .tree-item { display: flex; align-items: center; gap: 0; height: 30px; }
+    .tree-item-indent { width: 12px; flex: 0 0 auto; }   /* Border Width=IndentWidth (по глубине) */
+    .tree-expander {
+      width: 14px; flex: 0 0 auto; text-align: center;
+      color: var(--secondary-text-brush); font-size: 12px;
+    }
+    .tree-folder-icon { width: 15px; height: 15px; flex: 0 0 auto; object-fit: contain; }
+    .tree-name { font-size: 12px; color: var(--primary-text-brush); margin-left: 2px; }
+
+    /* Вертикальный разделитель (GridSplitter, Col=1). */
+    .grid-splitter {
+      background: var(--border-brush);
+      width: 5px;
+      height: 100%;
+    }
+
+    /* Правая рабочая область (Col=2): RowDefinitions="Auto,Auto,*,Auto". */
+    .files-area {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      min-width: 0;
+    }
+
+    /* Row0: панель действий. ColumnDefinitions="Auto,Auto,*,Auto" */
+    .toolbar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-brush);
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .toolbar .toolbar-button:nth-child(2) { margin-left: 0; } /* Gap учитывает Margin 8,0,0,0 */
+    .search-box {
+      grid-column: 4;
+      width: 240px; height: 30px;
+      background: var(--panel-secondary-brush);
+      border: 1px solid var(--border-brush);
+      border-radius: 6px;
+      display: flex; align-items: center;
+      padding: 0 12px;
+      color: var(--subtle-text-brush);
+      font-size: 13px;
+      justify-self: end;
+    }
+
+    /* Row1: хлебные крошки. */
+    .breadcrumbs {
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--border-brush);
+      color: var(--subtle-text-brush);
+      font-size: 12px;
+    }
+
+    /* Row2: контент файлов. */
+    .files-content { min-height: 0; position: relative; }
+
+    /* Табличное представление (IsVisible=IsListView). */
+    .list-view { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+    .list-view.hidden { display: none; }
+
+    /* Заголовок таблицы. ColumnDefinitions="*,120,120,140,150" */
+    .table-header {
+      padding: 0 16px;
+      background: var(--panel-brush);
+      border-bottom: 1px solid var(--border-brush);
+      display: grid;
+      grid-template-columns: 1fr 120px 120px 140px 150px;
+      align-items: stretch;
+    }
+    .table-header .file-header-button .cell {
+      display: grid; grid-template-columns: 1fr auto; align-items: center; width: 100%;
+    }
+    .file-header-button { text-align: left; justify-content: flex-start; }
+
+    /* Прокручиваемая таблица. */
+    .table-body { overflow-y: auto; }
+    .file-row {
+      display: block; padding: 0; width: 100%;
+      border-bottom: 1px solid var(--border-brush);
+    }
+    .file-row .file-row-inner { display: grid; grid-template-columns: 1fr 120px 120px 140px 150px; align-items: center; padding: 11px 16px; }
+    .file-name-cell { display: flex; align-items: center; gap: 8px; }
+    .file-name-cell img { width: 18px; height: 18px; object-fit: contain; }
+    .file-name-cell .name { font-weight: 600; color: var(--primary-text-brush); }
+    .file-meta { color: var(--secondary-text-brush); }
+    .file-status { color: var(--accent-brush); }
+
+    /* Плиточное представление (IsVisible=IsTilesView). WrapPanel → flex-wrap. */
+    .tiles-view {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      padding: 16px; height: 100%; overflow-y: auto; align-content: flex-start;
+    }
+    .tiles-view.hidden { display: none; }
+    .file-tile {
+      width: 180px; height: 132px; padding: 14px;
+      background: var(--panel-brush); border: 1px solid var(--border-brush);
+      border-radius: 10px;
+    }
+    .file-tile .file-row-inner { display: block; padding: 0; height: 100%; }
+    .file-tile .tile-stack { display: flex; flex-direction: column; gap: 8px; height: 100%; }
+    .file-tile .tile-icon { width: 28px; height: 28px; object-fit: contain; }
+    .file-tile .tile-name { font-weight: 600; color: var(--primary-text-brush); max-height: 36px; overflow: hidden; }
+    .file-tile .tile-size { color: var(--secondary-text-brush); font-size: 12px; }
+    .file-tile .tile-status { color: var(--accent-brush); font-size: 12px; }
+
+    /* Row3: переключатель вида. */
+    .view-switch-bar {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border-brush);
+      display: flex; justify-content: flex-end; gap: 6px;
+    }
+    .view-switch-button img { width: 15px; height: 15px; object-fit: contain; }
+  </style>
+</head>
+<body class="user-control">
+
+  <!-- Основная сетка домашнего экрана с деревом папок, разделителем и областью файлов. -->
+  <div class="home-grid">
+
+    <!-- Левая панель дерева папок корпоративного хранилища. -->
+    <aside class="folder-panel">
+      <!-- Заголовок левой панели папок. -->
+      <div class="folder-header">
+        <div>
+          <!-- Подпись раздела папок. -->
+          <div class="folder-header-label">Папки</div>
+          <!-- Название текущего корпоративного хранилища. -->
+          <div class="folder-header-title">Корпоративное хранилище</div>
+        </div>
+        <!-- Кнопка создания новой папки в дереве. -->
+        <button class="toolbar-button" title="Создать папку">+</button>
+      </div>
+
+      <!-- Прокручиваемая область дерева видимых папок. -->
+      <div class="folder-tree">
+        <!-- Узел 0 (Depth=0, раскрыт). -->
+        <button class="tree-item-button" data-selected="false">
+          <div class="tree-item">
+            <span class="tree-item-indent" style="width:0"></span>
+            <span class="tree-expander">▾</span>
+            <img class="tree-folder-icon" src="../../Client.Styles/Assets/folder.svg" alt="" />
+            <span class="tree-name">Корпоративные файлы</span>
+          </div>
+        </button>
+        <!-- Узел 1 (Depth=1). -->
+        <button class="tree-item-button selected" data-selected="true">
+          <div class="tree-item">
+            <span class="tree-item-indent" style="width:12px"></span>
+            <span class="tree-expander">▸</span>
+            <img class="tree-folder-icon" src="../../Client.Styles/Assets/folder.svg" alt="" />
+            <span class="tree-name">Договоры</span>
+          </div>
+        </button>
+        <!-- Узел 2 (Depth=1). -->
+        <button class="tree-item-button" data-selected="false">
+          <div class="tree-item">
+            <span class="tree-item-indent" style="width:12px"></span>
+            <span class="tree-expander">▸</span>
+            <img class="tree-folder-icon" src="../../Client.Styles/Assets/folder.svg" alt="" />
+            <span class="tree-name">Отчёты</span>
+          </div>
+        </button>
+        <!-- Узел 3 (Depth=1). -->
+        <button class="tree-item-button" data-selected="false">
+          <div class="tree-item">
+            <span class="tree-item-indent" style="width:12px"></span>
+            <span class="tree-expander">▸</span>
+            <img class="tree-folder-icon" src="../../Client.Styles/Assets/folder.svg" alt="" />
+            <span class="tree-name">Архив</span>
+          </div>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Вертикальный разделитель между деревом папок и областью файлов. -->
+    <div class="grid-splitter"></div>
+
+    <!-- Правая рабочая область со списком файлов и переключателем вида. -->
+    <section class="files-area">
+
+      <!-- Верхняя панель действий над текущей папкой. -->
+      <div class="toolbar">
+        <!-- Кнопка загрузки файла в текущую папку. -->
+        <button class="toolbar-button" title="Добавить файл в текущую папку">Загрузить</button>
+        <!-- Кнопка создания новой папки в текущем разделе. -->
+        <button class="toolbar-button" title="Создать новую папку">Новая папка</button>
+        <!-- Визуальное поле поиска файлов. -->
+        <div class="search-box">Поиск файлов...</div>
+      </div>
+
+      <!-- Панель хлебных крошек текущего расположения. -->
+      <div class="breadcrumbs">
+        <!-- TextBlock с Run-элементами. -->
+        <span>DataGuard</span>
+        <span> / </span>
+        <span>Корпоративные файлы</span>
+      </div>
+
+      <!-- Область контента файлов с табличным и плиточным представлениями. -->
+      <div class="files-content">
+
+        <!-- Табличное представление файлов (IsVisible=IsListView). -->
+        <div class="list-view" id="listView">
+
+          <!-- Заголовок таблицы файлов с кнопками сортировки. -->
+          <div class="table-header">
+            <!-- Кнопка сортировки по имени. -->
+            <button class="file-header-button" data-sort="Name">
+              <span class="cell"><span>Имя</span><span>↑</span></span>
+            </button>
+            <!-- Кнопка сортировки по типу. -->
+            <button class="file-header-button" data-sort="Type">
+              <span class="cell"><span>Тип</span><span></span></span>
+            </button>
+            <!-- Кнопка сортировки по размеру. -->
+            <button class="file-header-button" data-sort="Size">
+              <span class="cell"><span>Размер</span><span></span></span>
+            </button>
+            <!-- Кнопка сортировки по дате изменения. -->
+            <button class="file-header-button" data-sort="UpdatedAt">
+              <span class="cell"><span>Изменен</span><span></span></span>
+            </button>
+            <!-- Кнопка сортировки по статусу. -->
+            <button class="file-header-button" data-sort="Status">
+              <span class="cell"><span>Статус</span><span></span></span>
+            </button>
+          </div>
+
+          <!-- Прокручиваемая таблица файлов. -->
+          <div class="table-body">
+            <!-- Строка файла 1. -->
+            <button class="file-row file-item-button" data-selected="false">
+              <div class="file-row-inner">
+                <div class="file-name-cell">
+                  <img src="../../Client.Styles/Assets/file.svg" alt="" />
+                  <span class="name">Договор поставки.pdf</span>
+                </div>
+                <span class="file-meta">PDF</span>
+                <span class="file-meta">1.4 МБ</span>
+                <span class="file-meta">12.05.2026</span>
+                <span class="file-status">Опубликован</span>
+              </div>
+            </button>
+            <!-- Строка файла 2. -->
+            <button class="file-row file-item-button selected" data-selected="true">
+              <div class="file-row-inner">
+                <div class="file-name-cell">
+                  <img src="../../Client.Styles/Assets/file.svg" alt="" />
+                  <span class="name">Спецификация.xlsx</span>
+                </div>
+                <span class="file-meta">XLSX</span>
+                <span class="file-meta">340 КБ</span>
+                <span class="file-meta">10.05.2026</span>
+                <span class="file-status">На согласовании</span>
+              </div>
+            </button>
+            <!-- Строка файла 3. -->
+            <button class="file-row file-item-button" data-selected="false">
+              <div class="file-row-inner">
+                <div class="file-name-cell">
+                  <img src="../../Client.Styles/Assets/file.svg" alt="" />
+                  <span class="name">Протокол совещания.docx</span>
+                </div>
+                <span class="file-meta">DOCX</span>
+                <span class="file-meta">86 КБ</span>
+                <span class="file-meta">08.05.2026</span>
+                <span class="file-status">Черновик</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Плиточное представление файлов (IsVisible=IsTilesView). -->
+        <div class="tiles-view hidden" id="tilesView">
+          <!-- Плитка файла 1. -->
+          <button class="file-item-button file-tile" data-selected="false">
+            <div class="file-row-inner">
+              <div class="tile-stack">
+                <img class="tile-icon" src="../../Client.Styles/Assets/file.svg" alt="" />
+                <div class="tile-name">Договор поставки.pdf</div>
+                <div class="tile-size">1.4 МБ</div>
+                <div class="tile-status">Опубликован</div>
+              </div>
+            </div>
+          </button>
+          <!-- Плитка файла 2. -->
+          <button class="file-item-button file-tile selected" data-selected="true">
+            <div class="file-row-inner">
+              <div class="tile-stack">
+                <img class="tile-icon" src="../../Client.Styles/Assets/file.svg" alt="" />
+                <div class="tile-name">Спецификация.xlsx</div>
+                <div class="tile-size">340 КБ</div>
+                <div class="tile-status">На согласовании</div>
+              </div>
+            </div>
+          </button>
+          <!-- Плитка файла 3. -->
+          <button class="file-item-button file-tile" data-selected="false">
+            <div class="file-row-inner">
+              <div class="tile-stack">
+                <img class="tile-icon" src="../../Client.Styles/Assets/file.svg" alt="" />
+                <div class="tile-name">Протокол совещания.docx</div>
+                <div class="tile-size">86 КБ</div>
+                <div class="tile-status">Черновик</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Нижняя панель переключения режима отображения файлов. -->
+      <div class="view-switch-bar">
+        <!-- Кнопка включения табличного вида файлов. -->
+        <button class="view-switch-button" id="showListView" title="Показать списком">
+          <img src="../../Client.Styles/Assets/list-view.svg" alt="" />
+        </button>
+        <!-- Кнопка включения плиточного вида файлов. -->
+        <button class="view-switch-button" id="showTilesView" title="Показать плитками">
+          <img src="../../Client.Styles/Assets/tiles-view.svg" alt="" />
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    /*
+     * Логика HomeView: переключение спискового/плиточного вида (IsListView/IsTilesView),
+     * выделение файлов и узлов дерева (SelectFileCommand/SelectFolderNodeCommand).
+     */
+    (function () {
+      "use strict";
+
+      var listView = document.getElementById("listView");
+      var tilesView = document.getElementById("tilesView");
+
+      // ShowListViewCommand / ShowTilesViewCommand.
+      function showListView() {
+        listView.classList.remove("hidden");
+        tilesView.classList.add("hidden");
+      }
+      function showTilesView() {
+        listView.classList.add("hidden");
+        tilesView.classList.remove("hidden");
+      }
+
+      document.getElementById("showListView").addEventListener("click", showListView);
+      document.getElementById("showTilesView").addEventListener("click", showTilesView);
+
+      // SelectFileCommand: пометка выбранного файла в обоих представлениях.
+      document.querySelectorAll(".file-item-button").forEach(function (item) {
+        item.addEventListener("click", function () {
+          item.classList.toggle("selected");
+          item.setAttribute("data-selected", item.classList.contains("selected"));
+        });
+      });
+
+      // SelectFolderNodeCommand: выбор узла дерева (снятие выделения с остальных).
+      document.querySelectorAll(".tree-item-button").forEach(function (node) {
+        node.addEventListener("click", function () {
+          document.querySelectorAll(".tree-item-button").forEach(function (n) { n.classList.remove("selected"); });
+          node.classList.add("selected");
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

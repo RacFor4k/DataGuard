@@ -1,0 +1,135 @@
+/*
+ * AppStyles.css
+ * Перенос AppStyles.axaml (альтернативная тёмная дизайн-система).
+ * ВНИМАНИЕ: в оригинале НЕ подключена в рантайме (StyleInclude отсутствует) —
+ * воспроизведена исключительно для сохранения разбиения на файлы. В HTML по умолчанию
+ * тоже не подключается (используется DataGuardTheme.css).
+ *
+ * Цвета жёстко зашитые, как в XAML (тёмная тема #0F1117 / акцент #3B82F6).
+ */
+
+/* Style Selector=":is(Control)" — ресурсы, общие для всех контролов. */
+:root {
+  --bg-base-brush: #0F1117;
+  --bg-surface-brush: #161B27;
+  --bg-card-brush: #1E2535;
+  --bg-hover-brush: #252D3F;
+  --bg-selected-brush: #1A2B4A;
+  --accent-blue-brush: #3B82F6;
+  --accent-green-brush: #22C55E;
+  --accent-red-brush: #EF4444;
+  --accent-yellow-brush: #F59E0B;
+  --text-primary-brush: #F1F5F9;
+  --text-secondary-brush: #94A3B8;
+  --text-muted-brush: #475569;
+  --border-normal-brush: #2D3748;
+  --border-focus-brush: #3B82F6;
+}
+
+/* Window */
+.window-appstyle {
+  background: #0F1117;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Text styles — TextBlock.h1/h2/h3/body/muted/validation-* */
+.h1 { font-size: 24px; font-weight: 700; color: #F1F5F9; }
+.h2 { font-size: 18px; font-weight: 600; color: #F1F5F9; }
+.h3 { font-size: 14px; font-weight: 600; color: #F1F5F9; }
+.body { font-size: 13px; color: #94A3B8; }
+.muted { font-size: 12px; color: #475569; }
+.validation-ok { font-size: 11px; color: #22C55E; }
+.validation-err { font-size: 11px; color: #EF4444; }
+
+/* Primary Button */
+.btn-primary {
+  background: #3B82F6; color: #FFFFFF; border: 0; border-radius: 8px;
+  padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.btn-primary:hover { background: #2563EB; }
+
+/* Secondary Button */
+.btn-secondary {
+  background: #1E2535; color: #F1F5F9; border: 1px solid #2D3748; border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; cursor: pointer;
+}
+.btn-secondary:hover { background: #252D3F; }
+
+/* Danger Button */
+.btn-danger {
+  background: #7F1D1D; color: #FCA5A5; border: 0; border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; cursor: pointer;
+}
+.btn-danger:hover { background: #991B1B; }
+
+/* Success Button */
+.btn-success {
+  background: #14532D; color: #86EFAC; border: 0; border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; cursor: pointer;
+}
+.btn-success:hover { background: #166534; }
+
+/* Ghost Button */
+.btn-ghost {
+  background: transparent; color: #94A3B8; border: 0; padding: 6px 8px; cursor: pointer;
+}
+.btn-ghost:hover { background: #252D3F; }
+
+/* Nav Button */
+.nav-btn {
+  background: transparent; color: #94A3B8; border: 0; border-radius: 8px;
+  padding: 10px 12px; text-align: left; width: 100%; font-size: 13px; cursor: pointer;
+}
+.nav-btn:hover { background: #252D3F; }
+
+/* TextBox */
+.textbox-appstyle {
+  background: #1E2535; color: #F1F5F9; border: 1px solid #2D3748; border-radius: 8px;
+  padding: 10px 12px; font-size: 14px;
+}
+.textbox-appstyle:focus { border-color: #3B82F6; outline: none; }
+.textbox-appstyle::placeholder { color: #475569; }
+
+/* Card */
+.card {
+  background: #1E2535; border: 1px solid #2D3748; border-radius: 12px; padding: 20px;
+}
+.card-sm {
+  background: #1E2535; border: 1px solid #2D3748; border-radius: 8px; padding: 10px 12px;
+}
+
+/* Badges */
+.badge-blue  { background: #1E3A5F; border-radius: 12px; padding: 3px 8px; }
+.badge-green { background: #14532D; border-radius: 12px; padding: 3px 8px; }
+.badge-red   { background: #7F1D1D; border-radius: 12px; padding: 3px 8px; }
+.badge-yellow { background: #78350F; border-radius: 12px; padding: 3px 8px; }
+
+/* Divider */
+.divider { background: #2D3748; height: 1px; border: 0; }
+
+/* Toast */
+.toast {
+  background: #1E2535; border: 1px solid #2D3748; border-radius: 10px;
+  padding: 10px 14px; width: 320px;
+}
+
+/* KPI Card */
+.kpi-card {
+  background: #1E2535; border: 1px solid #2D3748; border-radius: 10px; padding: 14px 16px;
+}
+
+/* ComboBox */
+.combobox-appstyle {
+  background: #1E2535; color: #F1F5F9; border: 1px solid #2D3748; border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* CheckBox */
+.checkbox-appstyle { color: #F1F5F9; font-size: 13px; }
+
+/* Title bar buttons */
+.titlebar-btn {
+  background: transparent; color: #94A3B8; border: 0; padding: 0; cursor: pointer;
+}
+.titlebar-btn:hover { background: #252D3F; }
+.titlebar-close:hover { background: #C0392B; color: #FFFFFF; }
